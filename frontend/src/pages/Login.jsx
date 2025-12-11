@@ -1,32 +1,36 @@
 import React, { useState } from 'react';
 import logo from '../assets/logo.png'; 
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
-  const [id, setId] = useState('');
+  const navigate = useNavigate();
+  // 1. Renamed state from 'id' to 'email'
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert(`Login attempt for: ${id}`);
+    // The browser automatically checks for '@' before this function runs!
+    alert(`Login attempt for: ${email}`);
   };
 
   return (
     // MAIN PAGE BACKGROUND
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#904DC9FF] via-[#2F64A6FF] to-[#5B43A3FF] p-4">
-      {/* --- BACKGROUND ART: Big Curvy Lines --- */}
-<svg className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-   <path d="M0 0 L0 20 Q 50 500 100 50 L90 0 Z" fill="none" stroke="white" strokeWidth="0.3" />
-   <path d="M0 100 L0 50 Q 50 0 40 50 L90 200 Z" fill="none" stroke="white" strokeWidth="0.3" />
+      
+      {/* BACKGROUND ART */}
+      <svg className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+         <path d="M0 0 L0 20 Q 50 500 100 50 L90 0 Z" fill="none" stroke="white" strokeWidth="0.3" />
+         <path d="M0 100 L0 50 Q 50 0 40 50 L90 200 Z" fill="none" stroke="white" strokeWidth="0.3" />
+      </svg>
 
-
-</svg>
       {/* CARD CONTAINER */}
       <div className="bg-white shadow-2xl rounded-2xl flex overflow-hidden max-w-5xl w-full min-h-[600px]">
         
         {/* --- LEFT SIDE: LOGIN FORM --- */}
         <div className="w-full md:w-1/2 p-10 md:p-14 flex flex-col">
           
-          {/* 1. Logo Section */}
+          {/* Logo Section */}
           <div className="mb-10">
             <div className="flex items-center gap-2">
                <img src={logo} alt="Logo" className="w-10 h-10 object-contain" />
@@ -34,34 +38,31 @@ const Login = () => {
             </div>
           </div>
 
-          {/* 2. Form Section */}
+          {/* Form Section */}
           <div className="flex-1 flex flex-col justify-center">
             
-            {/* Header Text (Removed 'absolute' so it sits perfectly) */}
             <h4 className="text-xl font-normal text-slate-800 mb-10">Please enter your details</h4>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               
-              {/* --- WRAPPER DIV: Groups Inputs & Button together --- */}
-              {/* The -mt-2 pulls everything up slightly closer to the text */}
               <div className="flex flex-col gap-8 -mt-2">
                 
-                {/* ID Input */}
+                {/* --- EMAIL INPUT (Updated) --- */}
                 <div className="relative">
                   <input 
-                    type="text" 
+                    type="email" // <--- THIS enforces the '@' symbol check
                     className="peer w-full border-b border-gray-300 py-2 text-slate-900 placeholder-transparent focus:border-[#4c1d95] focus:outline-none transition-colors"
-                    id="id"
-                    placeholder="ID Name"
-                    value={id}
-                    onChange={(e) => setId(e.target.value)}
+                    id="email"
+                    placeholder="Email Address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                   <label 
-                    htmlFor="id"
+                    htmlFor="email"
                     className="absolute left-0 -top-3.5 text-xs text-slate-400 transition-all peer-placeholder-shown:text-base peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-[#4c1d95]"
                   >
-                    User ID
+                    Email Address
                   </label>
                 </div>
 
@@ -84,9 +85,15 @@ const Login = () => {
                   </label>
                 </div>
 
-                {/* Footer Actions & Button */}
+                {/* Footer Actions */}
                 <div className="flex items-center justify-between pt-2">
-                  <a href="#" className="text-sm text-[#4c1d95] hover:text-[#5d35e1] transition-colors">Create an Account?</a>
+                  <button 
+                    type="button" 
+                    onClick={() => navigate('/register')}
+                    className="text-sm text-[#4c1d95] hover:text-[#5d35e1] transition-colors hover:underline"
+                  >
+                    Create an Account?
+                  </button>
                   
                   <button 
                     type="submit" 
@@ -97,7 +104,6 @@ const Login = () => {
                 </div>
 
               </div> 
-              {/* --- END OF WRAPPER DIV --- */}
               
             </form>
           </div>
@@ -130,4 +136,4 @@ const Login = () => {
   );
 };
 
-export default Login;   
+export default Login;
