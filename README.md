@@ -1,8 +1,4 @@
-# NeoBank – Personal Finance Management App
-
-A modern **NeoBank / Personal Finance Dashboard** built using **React + Tailwind CSS**, focused on account management, transactions tracking, and budgeting. This repository currently contains a **fully functional frontend** with API integrations planned for a backend service.
-
----
+# Tivra – Modern Banking Management App
 
 ## 🚀 What Has Been Implemented (Frontend)
 
