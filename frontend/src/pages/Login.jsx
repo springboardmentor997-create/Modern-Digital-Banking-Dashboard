@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Phone } from "lucide-react";
 import login from "../images/login.jpg";
 import signup from "../images/signup.jpg";
 
@@ -11,7 +11,9 @@ export default function Login() {
   const [form, setForm] = useState({
     name: "",
     email: "",
-    password: ""
+    phone: "",
+    password: "",
+    kyc_status: false
   });
 
   const [errors, setErrors] = useState({});
@@ -22,9 +24,10 @@ export default function Login() {
   }
 
   function handleChange(e) {
+    const { name, type, value, checked } = e.target;
     setForm({
       ...form,
-      [e.target.name]: e.target.value,
+      [name]: type === "checkbox" ? checked : value
     });
 
     setErrors({ ...errors, [e.target.name]: "" }); 
@@ -37,6 +40,10 @@ export default function Login() {
       if (!form.name.trim()) err.name = "Name is required";
       else if (!/^[A-Za-z\s]+$/.test(form.name))
         err.name = "Only letters allowed";
+      
+      if (!form.phone.trim()) err.phone = "Mobile No. is required";
+      else if (form.phone.length < 10)
+        err.password = "Mobile No. must have 10 digits";
     }
 
     if (!form.email.trim()) err.email = "Email is required";
@@ -78,25 +85,47 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="p-2 space-y-6">
 
             {!isLoginPage && (
-              <div>
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
+                    <input
+                      name="name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={form.name}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  {errors.name && (
+                    <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                  )}
+                </div>
+
+                <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
+                  Phone
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
+                  <Phone className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
                   <input
-                    name="name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={form.name}
+                    name="phone"
+                    type="phone"
+                    placeholder="eg.- 8845222251"
+                    value={form.phone}
                     onChange={handleChange}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
-                {errors.name && (
-                  <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                {errors.phone && (
+                  <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
                 )}
               </div>
+            </>
             )}
 
             <div>
@@ -146,6 +175,22 @@ export default function Login() {
               )}
             </div>
 
+            {!isLoginPage && (
+              <div className="relative flex items-center gap-3 bg-white/10 ">
+                <input
+                  name="kyc_status"
+                  type="checkbox"
+                  id="kyc"
+                  checked={form.kyc_status}
+                  onChange={handleChange}
+                  className="w-5 h-5 cursor-pointer accent-blue-500 rounded-full hover:border-3"
+                />
+                <label htmlFor="kyc" className="text-blue-500 font-medium cursor-pointer">
+                  KYC Verified
+                </label>
+              </div>
+            )}
+
             {isLoginPage && (
               <button
                 type="button"
@@ -168,7 +213,7 @@ export default function Login() {
               {isLoginPage ? "Sign In" : "Create Account"}
               <ArrowRight className="w-5 h-5" />
             </button>
-
+            
           </form>
 
           <div className="text-center pb-6">
