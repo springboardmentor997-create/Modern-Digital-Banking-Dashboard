@@ -1,10 +1,24 @@
 import { Menu, X,Building2 } from "lucide-react";
-import React,{ useState } from "react";
+import React,{ useState , useEffect} from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const handleAccountClick = () => {
+    if (isLoggedIn) {
+      navigate("/Dashboard");
+    } else {
+      navigate("/login");
+    }
+  };
 
   return (
     <nav className="w-full fixed top-0 left-0 z-50 backdrop-blur-lg bg-white/10 border-b border-white/20 ">
@@ -21,9 +35,17 @@ export default function Navbar() {
           <li className="hover:text-blue-600 transition">Support</li>
         </ul>
 
-        <button onClick={() => navigate("/login")}
-        className="hidden md:block px-5 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all">
-          Login
+        <button
+          onClick={handleAccountClick}
+          className="hidden md:block px-5 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all">
+          {isLoggedIn ? (
+            <>
+              <UserCircle className="w-5 h-5" />
+              <span>My Account</span>
+            </>
+          ) : (
+            <span>Login</span>
+          )}
         </button>
 
         <button onClick={() => setOpen(!open)} className="md:hidden">
@@ -37,9 +59,18 @@ export default function Navbar() {
           <a className="py-2 hover:text-blue-600 transition">Services</a>
           <a className="py-2 hover:text-blue-600 transition">Analytics</a>
           <a className="py-2 hover:text-blue-600 transition">Support</a>
-          <button onClick={() => navigate("/login")}
-          className="mt-2 w-full px-5 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all">
-            Login
+          <button
+            onClick={handleAccountClick}
+            className="mt-2 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all"
+          >
+            {isLoggedIn ? (
+              <>
+                <UserCircle className="w-5 h-5" />
+                <span>My Account</span>
+              </>
+            ) : (
+              <span>Login</span>
+            )}
           </button>
         </div>
       )}

@@ -2,20 +2,23 @@ import React, { useState } from "react";
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import login from "../images/login.jpg";
-import signup from "../images/signup.jpg";
+import { login, register } from "../api/auth.js";
+import loginImg from "../images/login.jpg";
+import signupImg from "../images/signup.jpg";
 
 export default function Login() {
   const [isLoginPage, setIsLoginPage] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [clicked, setClicked] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
     email: "",
     phone: "",
-    password: ""
+    password: "",
+    kyc_status: false
   });
 
   const [errors, setErrors] = useState({});
@@ -26,10 +29,10 @@ export default function Login() {
   }
 
   function handleChange(e) {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setForm({
       ...form,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     });
 
     setErrors({ ...errors, [name]: "" }); 
@@ -67,44 +70,68 @@ export default function Login() {
       setErrors(validationErrors);
       return;
     }
-    
-    const apiUrl = "http://localhost:8000/api";
 
-    const endpoint = isLoginPage ? `${apiUrl}/auth/login` : `${apiUrl}/auth/register`;
-    
-    const payload = isLoginPage 
-      ? { email: form.email, password: form.password }
-      : { name: form.name, email: form.email, password: form.password, phone: form.phone };
+    setLoading(true);
 
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem("access_token", data.access_token);
-        localStorage.setItem("refresh_token", data.refresh_token);
-        toast.success("Login successful");
-
-        navigate("/");
+      let data;
+      
+      if (isLoginPage) {
+        data = await login(form.email, form.password);
       } else {
-        toast.error("Error: " + (data.detail || "Something went wrong"));
+        data = await register(form.name, form.email, form.password, form.phone);
       }
+
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("refresh_token", data.refresh_token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      
+      toast.success(isLoginPage ? "Login successful!" : "Account created successfully!");
+      
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 500);
+
     } catch (error) {
-      toast.error("Network error: " + error.message);
+      console.error("Authentication error:", error);
+      
+      let errorMessage = "Something went wrong";
+      
+      if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error?.detail) {
+        errorMessage = error.detail;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+      
+      if (errorMessage.toLowerCase().includes('email')) {
+        setErrors({ email: errorMessage });
+      } else if (errorMessage.toLowerCase().includes('password')) {
+        setErrors({ password: errorMessage });
+      } else if (errorMessage.toLowerCase().includes('already exists')) {
+        setErrors({ email: "Email already registered" });
+      } else if (errorMessage.toLowerCase().includes('invalid credentials')) {
+        setErrors({ email: "Invalid email or password", password: "Invalid email or password" });
+      }
+      
+    } finally {
+      setLoading(false);
     }
   }
- return (
+
+  function handleToggleForm() {
+    setIsLoginPage(!isLoginPage);
+    setForm({ name: "", email: "", phone: "", password: "", kyc_status: false });
+    setErrors({});
+  }
+
+  return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-blue-50 to-white-300 relative overflow-hidden">
-
       <div className="w-[80%] max-w-6xl bg-white/70 backdrop-blur-xl shadow-2xl rounded-3xl p-7 flex items-center justify-center lg:p-10">
-
         <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-4 lg:p-8">
-
           <h2 className="text-xl font-bold text-center text-blue-700 mt-2 mb-2">
             {isLoginPage
               ? "Login to continue your journey"
@@ -112,7 +139,6 @@ export default function Login() {
           </h2>
 
           <form onSubmit={handleSubmit} className="p-2 space-y-6">
-
             {!isLoginPage && (
               <>
                 <div>
@@ -127,7 +153,8 @@ export default function Login() {
                       placeholder="John Doe"
                       value={form.name}
                       onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500"
+                      disabled={loading}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
                   {errors.name && (
@@ -136,25 +163,26 @@ export default function Login() {
                 </div>
 
                 <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
-                  <input
-                    name="phone"
-                    type="phone"
-                    placeholder="eg.- 8845222251"
-                    value={form.phone}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
+                    <input
+                      name="phone"
+                      type="tel"
+                      placeholder="eg.- 8845222251"
+                      value={form.phone}
+                      onChange={handleChange}
+                      disabled={loading}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  {errors.phone && (
+                    <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                  )}
                 </div>
-                {errors.phone && (
-                  <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
-                )}
-              </div>
-            </>
+              </>
             )}
 
             <div>
@@ -169,7 +197,8 @@ export default function Login() {
                   placeholder="you@example.com"
                   value={form.email}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500"
+                  disabled={loading}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
               {errors.email && (
@@ -189,14 +218,16 @@ export default function Login() {
                   placeholder="••••••••"
                   value={form.password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500"
+                  disabled={loading}
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-400"
+                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
+                  disabled={loading}
                 >
-                  {showPassword ? <EyeOff /> : <Eye />}
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {errors.password && (
@@ -205,16 +236,17 @@ export default function Login() {
             </div>
 
             {!isLoginPage && (
-              <div className="relative flex items-center gap-3 bg-white/10 ">
+              <div className="relative flex items-center gap-3 bg-white/10">
                 <input
                   name="kyc_status"
                   type="checkbox"
                   id="kyc"
                   checked={form.kyc_status}
                   onChange={handleChange}
-                  className="w-5 h-5 cursor-pointer accent-blue-500 rounded-full hover:border-3"
+                  disabled={loading}
+                  className="w-5 h-5 cursor-pointer accent-blue-500 rounded disabled:cursor-not-allowed"
                 />
-                <label htmlFor="kyc" className="text-blue-500 font-medium cursor-pointer">
+                <label htmlFor="kyc" className="text-blue-500 font-medium cursor-pointer select-none">
                   KYC Verified
                 </label>
               </div>
@@ -224,9 +256,10 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => handleClick("forget")}
-                className={`text-blue-600 text-sm ${
+                className={`text-blue-600 text-sm hover:text-blue-800 transition-colors ${
                   clicked === "forget" ? "text-blue-800" : ""
                 }`}
+                disabled={loading}
               >
                 Forgot password?
               </button>
@@ -235,22 +268,32 @@ export default function Login() {
             <button
               type="submit"
               onClick={() => handleClick("Sign")}
-              className={`w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-md hover:opacity-90 ${
-                clicked === "Sign" ? "scale-105" : "scale-100"
+              disabled={loading}
+              className={`w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all ${
+                clicked === "Sign" && !loading ? "scale-105" : "scale-100"
               }`}
             >
-              {isLoginPage ? "Sign In" : "Create Account"}
-              <ArrowRight className="w-5 h-5" />
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Processing...</span>
+                </div>
+              ) : (
+                <>
+                  {isLoginPage ? "Sign In" : "Create Account"}
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
             </button>
-            
           </form>
 
           <div className="text-center pb-6">
             <p className="text-gray-600">
               {isLoginPage ? "Don't have an account?" : "Already have an account?"}
               <button
-                onClick={() => setIsLoginPage(!isLoginPage)}
-                className="text-blue-600 font-semibold ml-1 hover:scale-95"
+                onClick={handleToggleForm}
+                disabled={loading}
+                className="text-blue-600 font-semibold ml-1 hover:text-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoginPage ? "Sign Up" : "Sign In"}
               </button>
@@ -266,8 +309,8 @@ export default function Login() {
             <p className="text-blue-600 max-w-sm">
               Securely access your account and manage your finances in real time
             </p>
-            <div className="w-72 h-56 bg-blue-200 rounded-2xl mt-6 opacity-60">
-              <img src={login} alt="login" />
+            <div className="w-72 h-56 bg-blue-200 rounded-2xl mt-6 overflow-hidden">
+              <img src={loginImg} alt="login" className="w-full h-full object-cover" />
             </div>
           </div>
         ) : (
@@ -278,8 +321,8 @@ export default function Login() {
             <p className="text-blue-600 max-w-sm">
               Securely access your account and manage your finances in real time
             </p>
-            <div className="w-72 h-56 bg-blue-200 rounded-2xl mt-6 opacity-60">
-              <img src={signup} alt="signup" />
+            <div className="w-72 h-56 bg-blue-200 rounded-2xl mt-6 overflow-hidden">
+              <img src={signupImg} alt="signup" className="w-full h-full object-cover" />
             </div>
           </div>
         )}

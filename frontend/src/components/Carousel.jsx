@@ -68,7 +68,8 @@ export default function Carousel() {
   const CurrentIcon = slides[current].icon;
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-4">
+    <div className="w-full max-w-2xl mx-auto overflow-hidden">
+
       <div
         className="relative overflow-hidden rounded-3xl shadow-2xl"
         onMouseEnter={() => setIsHovered(true)}

@@ -1,7 +1,24 @@
-import React from 'react';
-import { Building2, Zap, IndianRupee, PieChart, Bell, Gift, DollarSign, ArrowRight, Star, TrendingUp, Wallet } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Building2, Zap, IndianRupee, PieChart, Bell, Gift, DollarSign, ArrowRight, Star, TrendingUp, Wallet, User, LogIn } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Carousel from '../components/Carousel';
+
 export default function Home() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const handleAuthClick = () => {
+    if (isLoggedIn) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
+  };
 
   const features = [
     {
@@ -65,8 +82,8 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-white ">
-      <section className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 py-20 px-4">
+    <div className="min-h-screen bg-white">
+      <section className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 py-20 px-4 pt-32">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -81,14 +98,16 @@ export default function Home() {
               <p className="text-xl text-gray-600 mb-8">
                 Manage accounts, track transactions, create budgets, pay bills, earn rewards, and convert currencies - all in one powerful platform.
               </p>
-                <button className="px-8 py-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center gap-2">
-                    Open Free Account <ArrowRight className="w-5 h-5" />
-                </button>
+              <button 
+                onClick={() => navigate('/login')}
+                className="px-8 py-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center gap-2 transition-colors"
+              >
+                Open Free Account <ArrowRight className="w-5 h-5" />
+              </button>
             </div>
-<div className="relative">
-  <Carousel />
-</div>
-
+            <div className="relative overflow:hidden">
+              <Carousel />
+            </div>
           </div>
         </div>
       </section>
@@ -131,6 +150,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* How It Works Section */}
       <section id="how-it-works" className="py-20 px-4 bg-gradient-to-br from-blue-50 to-cyan-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -168,6 +188,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
       <section id="Feedback" className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -207,10 +228,13 @@ export default function Home() {
             Open your free Tivra Bank account today and experience smarter banking
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-4 bg-white text-blue-600 rounded-lg font-medium hover:bg-gray-100 text-lg">
+            <button 
+              onClick={() => navigate('/login')}
+              className="px-8 py-4 bg-white text-blue-600 rounded-lg font-medium hover:bg-gray-100 text-lg transition-colors"
+            >
               Create Free Account
             </button>
-            <button className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-lg font-medium hover:bg-white hover:text-blue-600 text-lg">
+            <button className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-lg font-medium hover:bg-white hover:text-blue-600 text-lg transition-colors">
               Schedule Demo
             </button>
           </div>
@@ -243,7 +267,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
     </div>
   );
 }

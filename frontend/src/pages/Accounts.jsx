@@ -1,5 +1,7 @@
-import React,{ useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Building2, CreditCard, DollarSign, X, Save } from 'lucide-react';
+import { getAccounts, createAccount, updateAccount, deleteAccount } from '../api/accounts';
+import toast from 'react-hot-toast';
 
 export default function Accounts() {
   const [accounts, setAccounts] = useState([]);
@@ -7,6 +9,7 @@ export default function Accounts() {
   const [editMode, setEditMode] = useState(false);
   const [currentAccount, setCurrentAccount] = useState(null);
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     bank_name: '',
@@ -16,7 +19,7 @@ export default function Accounts() {
     balance: '0.00'
   });
 
-  const accountTypes = ['Savings', 'Checking', 'Credit Card', 'Investment','Loan'];
+  const accountTypes = ['Savings', 'Checking', 'Credit Card', 'Investment', 'Loan'];
   const currencies = ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'AUD', 'CAD'];
 
   useEffect(() => {
@@ -25,19 +28,14 @@ export default function Accounts() {
 
   async function fetchAccounts() {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('/api/accounts', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setAccounts(data);
-      }
+      setLoading(true);
+      const data = await getAccounts();
+      setAccounts(data);
     } catch (error) {
       console.error('Error fetching accounts:', error);
+      toast.error('Failed to load accounts');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -75,10 +73,6 @@ export default function Accounts() {
 
     if (!validateForm()) return;
 
-    const token = localStorage.getItem('access_token');
-    const url = editMode ? `/api/accounts/${currentAccount.id}` : '/api/accounts';
-    const method = editMode ? 'PUT' : 'POST';
-
     const payload = {
       bank_name: form.bank_name,
       account_type: form.account_type,
@@ -88,49 +82,40 @@ export default function Accounts() {
     };
 
     try {
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        await fetchAccounts();
-        closeModal();
-        alert(editMode ? 'Account updated successfully!' : 'Account created successfully!');
+      setLoading(true);
+      
+      if (editMode) {
+        await updateAccount(currentAccount.id, payload);
+        toast.success('Account updated successfully!');
       } else {
-        const error = await response.json();
-        alert('Error: ' + (error.detail || 'Something went wrong'));
+        await createAccount(payload);
+        toast.success('Account created successfully!');
       }
+      
+      await fetchAccounts();
+      closeModal();
     } catch (error) {
-      alert('Network error: ' + error.message);
+      console.error('Error saving account:', error);
+      const errorMessage = typeof error === 'string' ? error : error?.detail || 'Failed to save account';
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   }
 
   async function handleDelete(accountId) {
     if (!confirm('Are you sure you want to delete this account?')) return;
 
-    const token = localStorage.getItem('access_token');
-
     try {
-      const response = await fetch(`/api/accounts/${accountId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        await fetchAccounts();
-        alert('Account deleted successfully!');
-      } else {
-        alert('Failed to delete account');
-      }
+      setLoading(true);
+      await deleteAccount(accountId);
+      toast.success('Account deleted successfully!');
+      await fetchAccounts();
     } catch (error) {
-      alert('Network error: ' + error.message);
+      console.error('Error deleting account:', error);
+      toast.error('Failed to delete account');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -181,7 +166,8 @@ export default function Accounts() {
       'Savings': 'from-blue-500 to-blue-600',
       'Checking': 'from-green-500 to-green-600',
       'Credit Card': 'from-purple-500 to-purple-600',
-      'Investment': 'from-orange-500 to-orange-600'
+      'Investment': 'from-orange-500 to-orange-600',
+      'Loan': 'from-red-500 to-red-600'
     };
     return colors[type] || 'from-gray-500 to-gray-600';
   };
@@ -189,7 +175,6 @@ export default function Accounts() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">My Accounts</h1>
@@ -197,21 +182,27 @@ export default function Accounts() {
           </div>
           <button
             onClick={openAddModal}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium flex items-center gap-2 hover:bg-blue-700 transition-all"
+            disabled={loading}
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium flex items-center gap-2 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-5 h-5" />
             Add Account
           </button>
         </div>
 
-        {accounts.length === 0 ? (
+        {loading && accounts.length === 0 ? (
+          <div className="bg-white rounded-2xl p-12 text-center shadow-lg">
+            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading accounts...</p>
+          </div>
+        ) : accounts.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 text-center shadow-lg">
             <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 mb-2">No Accounts Yet</h3>
             <p className="text-gray-600 mb-6">Add your first bank account to get started</p>
             <button
               onClick={openAddModal}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium inline-flex items-center gap-2"
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium inline-flex items-center gap-2 hover:bg-blue-700 transition-all"
             >
               <Plus className="w-5 h-5" />
               Add Your First Account
@@ -252,14 +243,16 @@ export default function Accounts() {
                   <div className="flex gap-3">
                     <button
                       onClick={() => openEditModal(account)}
-                      className="flex-1 py-2 border-2 border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
+                      disabled={loading}
+                      className="flex-1 py-2 border-2 border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Edit2 className="w-4 h-4" />
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(account.id)}
-                      className="flex-1 py-2 border-2 border-red-600 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                      disabled={loading}
+                      className="flex-1 py-2 border-2 border-red-600 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete
@@ -284,13 +277,14 @@ export default function Accounts() {
                 </h2>
                 <button
                   onClick={closeModal}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-all"
+                  disabled={loading}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-all disabled:opacity-50"
                 >
                   <X className="w-6 h-6 text-gray-600" />
                 </button>
               </div>
 
-              <div className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Bank Name *
@@ -303,7 +297,8 @@ export default function Accounts() {
                       placeholder="Chase Bank"
                       value={form.bank_name}
                       onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={loading}
+                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
                   {errors.bank_name && (
@@ -319,7 +314,8 @@ export default function Accounts() {
                     name="account_type"
                     value={form.account_type}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={loading}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {accountTypes.map((type) => (
                       <option key={type} value={type}>{type}</option>
@@ -343,7 +339,8 @@ export default function Accounts() {
                       maxLength="4"
                       value={form.masked_account}
                       onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={loading}
+                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
                   {errors.masked_account && (
@@ -359,7 +356,8 @@ export default function Accounts() {
                     name="currency"
                     value={form.currency}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={loading}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {currencies.map((curr) => (
                       <option key={curr} value={curr}>{curr}</option>
@@ -380,7 +378,8 @@ export default function Accounts() {
                       placeholder="0.00"
                       value={form.balance}
                       onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={loading}
+                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
                   {errors.balance && (
@@ -390,20 +389,32 @@ export default function Accounts() {
 
                 <div className="flex gap-3 pt-4">
                   <button
+                    type="button"
                     onClick={closeModal}
-                    className="flex-1 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all"
+                    disabled={loading}
+                    className="flex-1 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>
                   <button
-                    onClick={handleSubmit}
-                    className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Save className="w-5 h-5" />
-                    {editMode ? 'Update' : 'Create'}
+                    {loading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-5 h-5" />
+                        {editMode ? 'Update' : 'Create'}
+                      </>
+                    )}
                   </button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
         )}

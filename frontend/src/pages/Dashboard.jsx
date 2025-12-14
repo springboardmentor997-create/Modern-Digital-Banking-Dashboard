@@ -1,12 +1,196 @@
-import React,{ useState } from 'react';
-import { Home, CreditCard, ReceiptIndianRupee,Gift, TrendingUp, Calendar, Search,  Plus, ArrowUpRight, ArrowDownRight, RefreshCcw, User, Settings, LogOut, PieChart, Wallet, IndianRupee } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Home, CreditCard, ReceiptIndianRupee, Gift, TrendingUp, Calendar, Plus, ArrowUpRight, ArrowDownRight, RefreshCcw, User, Settings, LogOut, PieChart, IndianRupee, Mail, Phone, MapPin, Lock, Bell, Globe, ImageOff } from 'lucide-react';
 import Accounts from './Accounts.jsx';
 import Transactions from './Transactions.jsx';
 import Budgets from './Budgets.jsx';
+import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
   const [activePage, setActivePage] = useState('Home');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [userProfile, setUserProfile] = useState({
+    name: 'John Doe',
+    email: 'john@email.com',
+    phone: '',
+    location: ''
+  });
+  const navigate = useNavigate();
+  const [settings, setSettings] = useState({
+    notifications: true,
+    emailAlerts: true,
+    twoFactor: false,
+    darkMode: false,
+    currency: 'INR',
+    language: 'English'
+  });
+  const [passwordData, setPasswordData] = useState({
+    current_password: '',
+    new_password: '',
+    confirmPassword: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+
+  useEffect(() => {
+    loadUserProfile();
+    loadUserSettings();
+  }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:8000/api/user/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserProfile(data);
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
+
+  const loadUserSettings = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:8000/api/user/settings', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(data);
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      setLoading(true);
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      navigate("/");
+    } catch (error) {
+      console.error('Logout error:', error);
+      setMessage({ type: 'error', text: 'Error logging out' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProfileUpdate = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('access_token');
+
+      const response = await fetch('http://localhost:8000/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(userProfile)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: data.message || 'Profile updated successfully!' });
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+      } else {
+        setMessage({ type: 'error', text: data.detail || 'Failed to update profile' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSettingsUpdate = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('access_token');
+
+      const response = await fetch('http://localhost:8000/api/user/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(settings)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: data.message || 'Settings updated successfully!' });
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+      } else {
+        setMessage({ type: 'error', text: data.detail || 'Failed to update settings' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (passwordData.new_password !== passwordData.confirmPassword) {
+      setMessage({ type: 'error', text: 'New passwords do not match' });
+      return;
+    }
+
+    if (passwordData.new_password.length < 6) {
+      setMessage({ type: 'error', text: 'Password must be at least 6 characters' });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('access_token');
+
+      const response = await fetch('http://localhost:8000/api/user/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          current_password: passwordData.current_password,
+          new_password: passwordData.new_password
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: data.message || 'Password changed successfully!' });
+        setPasswordData({ current_password: '', new_password: '', confirmPassword: '' });
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+      } else {
+        setMessage({ type: 'error', text: data.detail || 'Failed to change password' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const transactions = [
     { name: 'Grocery Store', amount: -85.50, date: 'Today', category: 'Food', type: 'expense' },
@@ -37,12 +221,6 @@ export default function Dashboard() {
     { name: 'Next Reward', needed: 550, unlock: '50 Voucher' }
   ];
 
-  const currencies = [
-    { from: 'USD', to: 'EUR', rate: 0.92, amount: 1000 },
-    { from: 'USD', to: 'GBP', rate: 0.79, amount: 500 },
-    { from: 'USD', to: 'INR', rate: 83.12, amount: 2000 }
-  ];
-
   const MenuItem = ({ icon: Icon, label, page }) => (
     <button
       onClick={() => setActivePage(page)}
@@ -57,11 +235,8 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 pt-14">
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'}
-        bg-white/60 backdrop-blur-xl shadow-xl border-r border-white/40 transition-all`}>
-
+      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white/60 backdrop-blur-xl shadow-xl border-r border-white/40 transition-all`}>
         <div className="p-6">
-
           <nav className="space-y-2">
             <MenuItem icon={Home} label="Home" page="Home" />
             <MenuItem icon={CreditCard} label="Accounts" page="accounts" />
@@ -69,6 +244,7 @@ export default function Dashboard() {
             <MenuItem icon={PieChart} label="Budget" page="budget" />
             <MenuItem icon={ReceiptIndianRupee} label="Bills" page="bills" />
             <MenuItem icon={Gift} label="Rewards" page="rewards" />
+            <MenuItem icon={Settings} label="Settings" page="settings" />
           </nav>
         </div>
 
@@ -79,20 +255,20 @@ export default function Dashboard() {
             </div>
             {sidebarOpen && (
               <div>
-                <div className="font-medium text-sm">John Doe</div>
-                <div className="text-xs text-gray-500">john@email.com</div>
+                <div className="font-medium text-sm">{userProfile.name}</div>
+                <div className="text-xs text-gray-500">{userProfile.email}</div>
               </div>
             )}
           </div>
           {sidebarOpen && (
             <div className="space-y-2">
-              <button className="w-full flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600">
-                <Settings className="w-4 h-4" />
-                Settings
-              </button>
-              <button className="w-full flex items-center gap-2 text-sm text-gray-700 hover:text-red-600">
+              <button
+                onClick={handleLogout}
+                disabled={loading}
+                className="w-full flex items-center gap-2 text-sm text-gray-700 hover:text-red-600 disabled:opacity-50"
+              >
                 <LogOut className="w-4 h-4" />
-                Logout
+                {loading ? 'Logging out...' : 'Logout'}
               </button>
             </div>
           )}
@@ -100,16 +276,13 @@ export default function Dashboard() {
       </aside>
 
       <main className="flex-1 overflow-y-auto">
-
         <div className="p-8">
-          
           {activePage === 'Home' && (
-            
             <div className="space-y-6">
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6">
                   <div className="text-sm opacity-90 mb-2">Total Balance</div>
-                  <div className="text-3xl font-bold mb-4">$11,400.50</div>
+                  <div className="text-3xl font-bold mb-4">₹11,400.50</div>
                   <div className="flex items-center gap-2 text-sm">
                     <TrendingUp className="w-4 h-4" />
                     <span>+12.5% from last month</span>
@@ -117,7 +290,7 @@ export default function Dashboard() {
                 </div>
                 <div className="bg-white/70 backdrop-blur-md shadow-lg rounded-2xl p-6">
                   <div className="text-sm text-gray-500 mb-2">Monthly Income</div>
-                  <div className="text-3xl font-bold text-gray-900 mb-4">$5,000.00</div>
+                  <div className="text-3xl font-bold text-gray-900 mb-4">₹5,000.00</div>
                   <div className="flex items-center gap-2 text-sm text-green-600">
                     <ArrowUpRight className="w-4 h-4" />
                     <span>Salary deposited</span>
@@ -125,7 +298,7 @@ export default function Dashboard() {
                 </div>
                 <div className="bg-white/70 backdrop-blur-md shadow-lg rounded-2xl p-6">
                   <div className="text-sm text-gray-500 mb-2">Monthly Expenses</div>
-                  <div className="text-3xl font-bold text-gray-900 mb-4">$2,245.50</div>
+                  <div className="text-3xl font-bold text-gray-900 mb-4">₹2,245.50</div>
                   <div className="flex items-center gap-2 text-sm text-red-600">
                     <ArrowDownRight className="w-4 h-4" />
                     <span>-15% vs last month</span>
@@ -157,7 +330,7 @@ export default function Dashboard() {
                           </div>
                         </div>
                         <div className={`font-bold ${tx.type === 'income' ? 'text-green-600' : 'text-gray-900'}`}>
-                          {tx.type === 'income' ? '+' : ''}{tx.amount.toFixed(2)}
+                          {tx.type === 'income' ? '+' : ''}₹{tx.amount.toFixed(2)}
                         </div>
                       </div>
                     ))}
@@ -174,7 +347,7 @@ export default function Dashboard() {
                       <div key={i}>
                         <div className="flex justify-between mb-2">
                           <span className="text-sm font-medium">{budget.category}</span>
-                          <span className="text-sm text-gray-500">{budget.spent} / {budget.limit}</span>
+                          <span className="text-sm text-gray-500">₹{budget.spent} / ₹{budget.limit}</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div 
@@ -190,23 +363,9 @@ export default function Dashboard() {
             </div>
           )}
 
-          {activePage === 'accounts' && (
-            <div>
-              <Accounts/>
-            </div>
-          )}
-
-          {activePage === 'transactions' && (
-            <div className="space-y-6">
-              <Transactions/>
-            </div>
-          )}
-
-          {activePage === 'budget' && (
-            <div className="space-y-6">
-              <Budgets/>
-            </div>
-          )}
+          {activePage === 'accounts' && <Accounts />}
+          {activePage === 'transactions' && <Transactions />}
+          {activePage === 'budget' && <Budgets />}
 
           {activePage === 'bills' && (
             <div className="space-y-6">
@@ -235,7 +394,7 @@ export default function Dashboard() {
                       )}
                     </div>
                     <div className="text-2xl font-bold text-gray-900 mb-4">
-                      <IndianRupee/>{bill.amount.toFixed(2)}
+                      ₹{bill.amount.toFixed(2)}
                     </div>
                     <button className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
                       Pay Now
@@ -258,20 +417,248 @@ export default function Dashboard() {
                     <Gift className="w-12 h-12 text-purple-600 mb-4" />
                     <h3 className="font-bold text-gray-900 mb-2">{reward.name}</h3>
                     {reward.type === 'points' ? (
-                      <div className="text-3xl font-bold text-purple-600"><IndianRupee/>{reward.amount}</div>
+                      <div className="text-3xl font-bold text-purple-600">{reward.amount}</div>
                     ) : reward.unlock ? (
                       <div>
                         <div className="text-sm text-gray-500 mb-2">{reward.needed} points needed</div>
                         <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
                           <div className="w-3/4 h-2 bg-purple-500 rounded-full"></div>
                         </div>
-                        <div className="text-sm font-medium text-purple-600"><IndianRupee/>{reward.unlock}</div>
+                        <div className="text-sm font-medium text-purple-600">₹{reward.unlock}</div>
                       </div>
                     ) : (
-                      <div className="text-3xl font-bold text-green-600"><IndianRupee/>{reward.amount}</div>
+                      <div className="text-3xl font-bold text-green-600">₹{reward.amount}</div>
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {activePage === 'settings' && (
+            <div className="space-y-6">
+              {message.text && (
+                <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-red-100 text-red-700 border border-red-300'}`}>
+                  {message.text}
+                </div>
+              )}
+
+              <h2 className="text-2xl font-bold">Settings</h2>
+
+              <div className="bg-white/70 backdrop-blur-md shadow-lg rounded-2xl p-6">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  Profile Information
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                    <input
+                      type="text"
+                      value={userProfile.name || ''}
+                      onChange={(e) => setUserProfile({...userProfile, name: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2">
+                      <Mail className="w-5 h-5 text-gray-400" />
+                      <input
+                        type="email"
+                        value={userProfile.email || ''}
+                        onChange={(e) => setUserProfile({...userProfile, email: e.target.value})}
+                        className="w-full focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2">
+                      <Phone className="w-5 h-5 text-gray-400" />
+                      <input
+                        type="tel"
+                        value={userProfile.phone || ''}
+                        onChange={(e) => setUserProfile({...userProfile, phone: e.target.value})}
+                        className="w-full focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                    <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2">
+                      <MapPin className="w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={userProfile.location || ''}
+                        onChange={(e) => setUserProfile({...userProfile, location: e.target.value})}
+                        className="w-full focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={handleProfileUpdate}
+                  disabled={loading}
+                  className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? 'Saving...' : 'Save Profile'}
+                </button>
+              </div>
+
+              <div className="bg-white/70 backdrop-blur-md shadow-lg rounded-2xl p-6">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <Lock className="w-5 h-5" />
+                  Change Password
+                </h3>
+                <div className="space-y-4 max-w-md">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                    <input
+                      type="password"
+                      value={passwordData.current_password}
+                      onChange={(e) => setPasswordData({...passwordData, current_password: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                    <input
+                      type="password"
+                      value={passwordData.new_password}
+                      onChange={(e) => setPasswordData({...passwordData, new_password: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                    <input
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handlePasswordChange}
+                  disabled={loading}
+                  className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? 'Changing...' : 'Change Password'}
+                </button>
+              </div>
+
+              <div className="bg-white/70 backdrop-blur-md shadow-lg rounded-2xl p-6">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Preferences
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between py-3 border-b">
+                    <div className="flex items-center gap-3">
+                      <Bell className="w-5 h-5 text-gray-600" />
+                      <div>
+                        <div className="font-medium">Push Notifications</div>
+                        <div className="text-sm text-gray-500">Receive app notifications</div>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.notifications}
+                        onChange={(e) => setSettings({...settings, notifications: e.target.checked})}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between py-3 border-b">
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-5 h-5 text-gray-600" />
+                      <div>
+                        <div className="font-medium">Email Alerts</div>
+                        <div className="text-sm text-gray-500">Get transaction alerts via email</div>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.emailAlerts}
+                        onChange={(e) => setSettings({...settings, emailAlerts: e.target.checked})}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between py-3 border-b">
+                    <div className="flex items-center gap-3">
+                      <Lock className="w-5 h-5 text-gray-600" />
+                      <div>
+                        <div className="font-medium">Two-Factor Authentication</div>
+                        <div className="text-sm text-gray-500">Extra security for your account</div>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.twoFactor}
+                        onChange={(e) => setSettings({...settings, twoFactor: e.target.checked})}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between py-3 border-b">
+                    <div className="flex items-center gap-3">
+                      <Globe className="w-5 h-5 text-gray-600" />
+                      <div>
+                        <div className="font-medium">Currency</div>
+                        <div className="text-sm text-gray-500">Preferred currency display</div>
+                      </div>
+                    </div>
+                    <select
+                      value={settings.currency}
+                      onChange={(e) => setSettings({...settings, currency: e.target.value})}
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="INR">INR (₹)</option>
+                      <option value="USD">USD ($)</option>
+                      <option value="EUR">EUR (€)</option>
+                      <option value="GBP">GBP (£)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex items-center gap-3">
+                      <Globe className="w-5 h-5 text-gray-600" />
+                      <div>
+                        <div className="font-medium">Language</div>
+                        <div className="text-sm text-gray-500">App language preference</div>
+                      </div>
+                    </div>
+                    <select
+                      value={settings.language}
+                      onChange={(e) => setSettings({...settings, language: e.target.value})}
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="English">English</option>
+                      <option value="Hindi">Hindi</option>
+                      <option value="Spanish">Spanish</option>
+                      <option value="French">French</option>
+                    </select>
+                  </div>
+                </div>
+                <button
+                  onClick={handleSettingsUpdate}
+                  disabled={loading}
+                  className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? 'Saving...' : 'Save Settings'}
+                </button>
               </div>
             </div>
           )}

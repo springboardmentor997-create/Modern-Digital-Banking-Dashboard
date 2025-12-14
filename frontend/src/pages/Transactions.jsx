@@ -1,12 +1,18 @@
-import React,{ useState, useEffect } from 'react';
-import { Upload, Download, Filter, Search, ArrowUpRight, ArrowDownRight, Calendar, Tag, Building2, X, FileText } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Upload, Download, Filter, Search, ArrowUpRight, ArrowDownRight, X, FileText } from 'lucide-react';
+import { getAccounts } from '../api/accounts';
+import { getTransactions, importCSV } from '../api/transactions';
+import toast from 'react-hot-toast';
 
 export default function Transactions() {
+  const [accounts, setAccounts] = useState([]);
+  const [selectedAccountId, setSelectedAccountId] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [csvFile, setCsvFile] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
     category: 'all',
@@ -16,28 +22,49 @@ export default function Transactions() {
   });
 
   const categories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Healthcare', 'Salary', 'Investment', 'Other'];
-  const transactionTypes = ['debit', 'credit'];
 
   useEffect(() => {
-    fetchTransactions();
+    fetchAccounts();
   }, []);
+
+  useEffect(() => {
+    if (selectedAccountId) {
+      fetchTransactions();
+    }
+  }, [selectedAccountId]);
 
   useEffect(() => {
     applyFilters();
   }, [filters, transactions]);
 
-  async function fetchTransactions() {
+  async function fetchAccounts() {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('/api/transactions', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setTransactions(data);
+      setLoading(true);
+      const data = await getAccounts();
+      setAccounts(data);
+      if (data.length > 0 && !selectedAccountId) {
+        setSelectedAccountId(data[0].id);
       }
     } catch (error) {
+      console.error('Error fetching accounts:', error);
+      toast.error('Failed to load accounts');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchTransactions() {
+    if (!selectedAccountId) return;
+    
+    try {
+      setLoading(true);
+      const data = await getTransactions(selectedAccountId, 0, 100);
+      setTransactions(data);
+    } catch (error) {
       console.error('Error fetching transactions:', error);
+      toast.error('Failed to load transactions');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -80,32 +107,28 @@ export default function Transactions() {
 
   async function handleCsvUpload() {
     if (!csvFile) {
-      alert('Please select a CSV file');
+      toast.error('Please select a CSV file');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', csvFile);
+    if (!selectedAccountId) {
+      toast.error('Please select an account first');
+      return;
+    }
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('/api/transactions/import-csv', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData
-      });
-
-      if (response.ok) {
-        alert('Transactions imported successfully!');
-        setShowUploadModal(false);
-        setCsvFile(null);
-        fetchTransactions();
-      } else {
-        const error = await response.json();
-        alert('Error: ' + (error.detail || 'Failed to import'));
-      }
+      setLoading(true);
+      const result = await importCSV(selectedAccountId, csvFile);
+      toast.success(`Success! Imported ${result.count} transactions`);
+      setShowUploadModal(false);
+      setCsvFile(null);
+      await fetchTransactions();
     } catch (error) {
-      alert('Network error: ' + error.message);
+      console.error('Error importing CSV:', error);
+      const errorMessage = typeof error === 'string' ? error : error?.detail || 'Failed to import CSV';
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -132,6 +155,7 @@ export default function Transactions() {
     a.href = url;
     a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+    toast.success('Transactions exported successfully!');
   }
 
   const totalIncome = filteredTransactions
@@ -145,7 +169,6 @@ export default function Transactions() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
@@ -154,19 +177,38 @@ export default function Transactions() {
           <div className="flex gap-3">
             <button
               onClick={() => setShowUploadModal(true)}
-              className="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-blue-700"
+              disabled={loading}
+              className="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Download className="w-5 h-5" />
+              <Upload className="w-5 h-5" />
               Import CSV
             </button>
             <button
               onClick={exportToCSV}
-              className="px-5 py-2 bg-white border-2 border-blue-600 text-blue-600 rounded-lg font-medium flex items-center gap-2 hover:bg-blue-50"
+              disabled={loading || filteredTransactions.length === 0}
+              className="px-5 py-2 bg-white border-2 border-blue-600 text-blue-600 rounded-lg font-medium flex items-center gap-2 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Upload className="w-5 h-5" />
+              <Download className="w-5 h-5" />
               Export
             </button>
           </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-4 mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Select Account</label>
+          <select
+            value={selectedAccountId || ''}
+            onChange={(e) => setSelectedAccountId(parseInt(e.target.value))}
+            disabled={loading}
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <option value="">Choose an account...</option>
+            {accounts.map(account => (
+              <option key={account.id} value={account.id}>
+                {account.bank_name} - {account.account_type} (****{account.masked_account})
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-6">
@@ -221,14 +263,16 @@ export default function Transactions() {
                 placeholder="Search..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500"
+                disabled={loading}
+                className="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500 disabled:opacity-50"
               />
             </div>
 
             <select
               value={filters.category}
               onChange={(e) => handleFilterChange('category', e.target.value)}
-              className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500"
+              disabled={loading}
+              className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500 disabled:opacity-50"
             >
               <option value="all">All Categories</option>
               {categories.map(cat => (
@@ -239,7 +283,8 @@ export default function Transactions() {
             <select
               value={filters.type}
               onChange={(e) => handleFilterChange('type', e.target.value)}
-              className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500"
+              disabled={loading}
+              className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500 disabled:opacity-50"
             >
               <option value="all">All Types</option>
               <option value="credit">Income</option>
@@ -250,84 +295,97 @@ export default function Transactions() {
               type="date"
               value={filters.dateFrom}
               onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-              className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500"
-              placeholder="From Date"
+              disabled={loading}
+              className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500 disabled:opacity-50"
             />
 
             <input
               type="date"
               value={filters.dateTo}
               onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-              className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500"
-              placeholder="To Date"
+              disabled={loading}
+              className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500 disabled:opacity-50"
             />
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Date</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Description</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Merchant</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Category</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Type</th>
-                  <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">Amount</th>
-                  <th className="px-6 py-4 text-center text-sm font-bold text-gray-700">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {filteredTransactions.length === 0 ? (
+          {loading && transactions.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading transactions...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
                   <tr>
-                    <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
-                      No transactions found. Import CSV to get started.
-                    </td>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Date</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Description</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Merchant</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Category</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Type</th>
+                    <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">Amount</th>
+                    <th className="px-6 py-4 text-center text-sm font-bold text-gray-700">Action</th>
                   </tr>
-                ) : (
-                  filteredTransactions.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {new Date(tx.txn_date).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {tx.description}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{tx.merchant}</td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
-                          {tx.category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        {tx.txn_type === 'credit' ? (
-                          <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                            <ArrowUpRight className="w-4 h-4" /> Income
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1 text-red-600 text-sm font-medium">
-                            <ArrowDownRight className="w-4 h-4" /> Expense
-                          </span>
-                        )}
-                      </td>
-                      <td className={`px-6 py-4 text-right text-sm font-bold ${tx.txn_type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                        {tx.txn_type === 'credit' ? '+' : '-'}${parseFloat(tx.amount).toFixed(2)} {tx.currency}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <button
-                          onClick={() => setSelectedTransaction(tx)}
-                          className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-                        >
-                          View Details
-                        </button>
+                </thead>
+                <tbody className="divide-y">
+                  {!selectedAccountId ? (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                        Please select an account to view transactions
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : filteredTransactions.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                        No transactions found. Import CSV to get started.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredTransactions.map((tx) => (
+                      <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {new Date(tx.txn_date).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                          {tx.description}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{tx.merchant}</td>
+                        <td className="px-6 py-4">
+                          <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                            {tx.category}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {tx.txn_type === 'credit' ? (
+                            <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                              <ArrowUpRight className="w-4 h-4" /> Income
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-red-600 text-sm font-medium">
+                              <ArrowDownRight className="w-4 h-4" /> Expense
+                            </span>
+                          )}
+                        </td>
+                        <td className={`px-6 py-4 text-right text-sm font-bold ${tx.txn_type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
+                          {tx.txn_type === 'credit' ? '+' : '-'}${parseFloat(tx.amount).toFixed(2)} {tx.currency}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <button
+                            onClick={() => setSelectedTransaction(tx)}
+                            className="text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors"
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {showUploadModal && (
@@ -335,12 +393,22 @@ export default function Transactions() {
             <div className="bg-white rounded-2xl max-w-md w-full p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Import Transactions</h2>
-                <button onClick={() => setShowUploadModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <button 
+                  onClick={() => setShowUploadModal(false)} 
+                  disabled={loading}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-all disabled:opacity-50"
+                >
                   <X className="w-6 h-6" />
                 </button>
               </div>
 
               <div className="space-y-4">
+                {!selectedAccountId && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p className="text-sm text-yellow-800">Please select an account first!</p>
+                  </div>
+                )}
+
                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
                   <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-sm text-gray-600 mb-4">Upload CSV file with transaction data</p>
@@ -348,7 +416,8 @@ export default function Transactions() {
                     type="file"
                     accept=".csv"
                     onChange={handleFileChange}
-                    className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                    disabled={loading}
+                    className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 file:cursor-pointer disabled:opacity-50"
                   />
                   {csvFile && (
                     <p className="mt-2 text-sm text-green-600">Selected: {csvFile.name}</p>
@@ -363,15 +432,24 @@ export default function Transactions() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowUploadModal(false)}
-                    className="flex-1 py-3 border-2 border-gray-300 rounded-lg font-medium hover:bg-gray-50"
+                    disabled={loading}
+                    className="flex-1 py-3 border-2 border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-all disabled:opacity-50"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleCsvUpload}
-                    className="flex-1 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700"
+                    disabled={!selectedAccountId || !csvFile || loading}
+                    className="flex-1 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                   >
-                    Import
+                    {loading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Importing...
+                      </>
+                    ) : (
+                      'Import'
+                    )}
                   </button>
                 </div>
               </div>
@@ -384,7 +462,10 @@ export default function Transactions() {
             <div className="bg-white rounded-2xl max-w-lg w-full p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Transaction Details</h2>
-                <button onClick={() => setSelectedTransaction(null)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <button 
+                  onClick={() => setSelectedTransaction(null)} 
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-all"
+                >
                   <X className="w-6 h-6" />
                 </button>
               </div>
