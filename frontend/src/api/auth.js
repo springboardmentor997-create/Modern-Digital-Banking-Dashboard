@@ -31,3 +31,11 @@ export const logout = () => {
   localStorage.removeItem("refresh_token");
   localStorage.removeItem("user");
 };
+
+export function getAuthHeaders() {
+  const token = localStorage.getItem('access_token');
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+}

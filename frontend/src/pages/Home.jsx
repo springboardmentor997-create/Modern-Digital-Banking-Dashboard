@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Building2, Zap, IndianRupee, PieChart, Bell, Gift, DollarSign, ArrowRight, Star, TrendingUp, Wallet, User, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Carousel from '../components/Carousel';
+import toast from 'react-hot-toast';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
-
+  
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     setIsLoggedIn(!!token);

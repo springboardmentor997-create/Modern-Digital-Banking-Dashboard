@@ -1,5 +1,6 @@
 import React,{ useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, TrendingUp, AlertCircle, CheckCircle, PieChart, Calendar, X, Save } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function Budgets() {
   const [budgets, setBudgets] = useState([]);
@@ -90,13 +91,13 @@ export default function Budgets() {
       if (response.ok) {
         await fetchBudgets();
         closeModal();
-        alert(editMode ? 'Budget updated!' : 'Budget created!');
+        toast.success(editMode ? 'Budget updated!' : 'Budget created!');
       } else {
         const error = await response.json();
-        alert('Error: ' + (error.detail || 'Something went wrong'));
+        toast.error('Error: ' + (error.detail || 'Something went wrong'));
       }
     } catch (error) {
-      alert('Network error: ' + error.message);
+      toast.error('Network error: ' + error.message);
     }
   }
 
@@ -112,10 +113,10 @@ export default function Budgets() {
 
       if (response.ok) {
         await fetchBudgets();
-        alert('Budget deleted!');
+        toast.success('Budget deleted!');
       }
     } catch (error) {
-      alert('Network error: ' + error.message);
+      toast.error('Network error: ' + error.message);
     }
   }
 
