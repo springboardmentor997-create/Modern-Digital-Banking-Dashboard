@@ -1,4 +1,5 @@
 # backend/app/models/adminlog.py
+
 from sqlalchemy import Column, Integer, ForeignKey, Text, String, TIMESTAMP
 from sqlalchemy.orm import relationship
 from .base import Base
