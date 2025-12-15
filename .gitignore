@@ -1,0 +1,44 @@
+# -------------------------
+# Python cache & compiled
+# -------------------------
+__pycache__/
+*.pyc
+*.pyo
+
+# -------------------------
+# Virtual environments
+# -------------------------
+.venv/
+venv/
+env/
+
+# -------------------------
+# Environment files
+# -------------------------
+.env
+.env.*
+
+# -------------------------
+# Local database files
+# -------------------------
+*.db
+*.sqlite3
+
+# -------------------------
+# Logs
+# -------------------------
+logs/
+*.log
+
+# -------------------------
+# Testing / tools cache
+# -------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# -------------------------
+# Alembic
+# -------------------------
+alembic/__pycache__/
+alembic/versions/__pycache__/
