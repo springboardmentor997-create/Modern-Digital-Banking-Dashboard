@@ -1,12 +1,12 @@
 from sqlalchemy import Column, Integer, String, Enum, Date, DateTime
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from ..database import Base
 import enum
 
 class KYCStatus(str, enum.Enum):
     unverified = "unverified"
     verified = "verified"
-
 
 class User(Base):
     __tablename__ = "users"
@@ -17,10 +17,15 @@ class User(Base):
     password = Column(String, nullable=False)
     phone = Column(String, nullable=False)
 
-    # New fields for frontend compatibility
     dob = Column(Date, nullable=True)
     address = Column(String, nullable=True)
-    pin_code = Column(String, nullable=True)   # store as plain for now or hashed later
+    pin_code = Column(String, nullable=True)
 
     kyc_status = Column(Enum(KYCStatus), nullable=False, server_default=KYCStatus.unverified.value)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    accounts = relationship(
+        "Account",
+        back_populates="user",
+        cascade="all, delete"
+    )
