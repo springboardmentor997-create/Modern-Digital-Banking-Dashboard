@@ -4,8 +4,10 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 import traceback, logging
-
-from app.dependencies import get_db
+from app.auth.service import forgot_password, reset_password
+from app.database import get_db   
+from app.auth.schemas import ForgotPasswordRequest, ResetPasswordRequest
+import app.auth.service as auth_service
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse
 from app.schemas.token import TokenResponse
@@ -15,6 +17,7 @@ from app.utils.jwt import (
     create_refresh_token,
     decode_refresh_token
 )
+
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 logger = logging.getLogger("uvicorn.error")
@@ -207,3 +210,33 @@ def refresh_from_cookie(request: Request):
         raise
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+
+
+@router.post("/forgot-password")
+def forgot_password_api(
+    data: ForgotPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    auth_service.forgot_password(db, data.email)
+    return {
+        "message": "Reset link sent"
+    }
+
+
+@router.post("/reset-password")
+def reset_password_api(
+    data: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    success = auth_service.reset_password(db, data.token, data.new_password)
+
+    if not success:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired token"
+        )
+
+    return {
+        "message": "Password updated successfully"
+    }

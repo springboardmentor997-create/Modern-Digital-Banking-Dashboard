@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 import jwt
-from app.models.user import User  # your SQLAlchemy user model
-from app.database import SessionLocal
+from app.models.user import User
 from sqlalchemy.exc import IntegrityError
+import secrets
+from sqlalchemy.orm import Session
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -47,3 +48,48 @@ def create_user(db_session, *, name, email, password, phone=None, dob=None, pin=
 
 def get_user_by_email(db_session, email: str):
     return db_session.query(User).filter(User.email == email).first()
+
+
+# =========================
+# FORGOT / RESET PASSWORD
+# =========================
+
+def generate_reset_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def forgot_password(db: Session, email: str):
+    """
+    Generates reset token for user.
+    Always returns success (even if user not found).
+    """
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        return
+
+    user.reset_token = secrets.token_urlsafe(32)
+    user.reset_token_expiry = datetime.utcnow() + timedelta(minutes=30)
+
+    db.add(user)        # 🔑 REQUIRED
+    db.commit()
+    db.refresh(user)    # 🔑 REQUIRED
+
+
+def reset_password(db: Session, token: str, new_password: str) -> bool:
+    """
+    Resets password using valid reset token.
+    """
+    user = db.query(User).filter(User.reset_token == token).first()
+
+    if not user:
+        return False
+
+    if not user.reset_token_expiry or user.reset_token_expiry < datetime.utcnow():
+        return False
+
+    user.password = hash_password(new_password)
+    user.reset_token = None
+    user.reset_token_expiry = None
+
+    db.commit()
+    return True

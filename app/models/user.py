@@ -24,6 +24,9 @@ class User(Base):
     kyc_status = Column(Enum(KYCStatus), nullable=False, server_default=KYCStatus.unverified.value)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
+    reset_token = Column(String, nullable=True)
+    reset_token_expiry = Column(DateTime, nullable=True)
+
     accounts = relationship(
         "Account",
         back_populates="user",
