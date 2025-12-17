@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, TIMESTAMP, text
+from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, DateTime
 from sqlalchemy.orm import relationship
 from app.database import Base
+from datetime import datetime
 
 class Account(Base):
     __tablename__ = "accounts"
@@ -21,8 +22,7 @@ class Account(Base):
     balance = Column(Numeric(12, 2), default=0)
 
     created_at = Column(
-        TIMESTAMP(timezone=True),
-        server_default=text("now()")
+    DateTime,
+    default=datetime.utcnow
     )
-
     user = relationship("User", back_populates="accounts")

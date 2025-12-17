@@ -10,6 +10,12 @@ class AccountCreate(BaseModel):
     balance: Decimal = 0
 
 
+class AccountUpdate(BaseModel):
+    bank_name: Optional[str] = None
+    account_type: Optional[str] = None
+    balance: Optional[Decimal] = None
+
+
 class AccountResponse(BaseModel):
     id: int
     bank_name: str
