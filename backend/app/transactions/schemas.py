@@ -1,18 +1,27 @@
 from pydantic import BaseModel, Field
 from decimal import Decimal
-from datetime import datetime
-from typing import Literal
+from datetime import date, datetime
 
-class TransactionBase(BaseModel):
+from app.transactions.models import TransactionType, TransactionCategory
+
+
+class TransactionCreate(BaseModel):
     account_id: int
     amount: Decimal = Field(..., gt=0)
+    transaction_type: TransactionType
+    category: TransactionCategory
+    description: str | None = None
+    transaction_date: date
 
-class TransactionCreate(TransactionBase):
-    type: Literal["DEPOSIT", "WITHDRAW"]
 
-class TransactionResponse(TransactionBase):
+class TransactionOut(BaseModel):
     id: int
-    type: str
+    account_id: int
+    amount: Decimal
+    transaction_type: TransactionType
+    category: TransactionCategory
+    description: str | None
+    transaction_date: date
     created_at: datetime
 
     class Config:
