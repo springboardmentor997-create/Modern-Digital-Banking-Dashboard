@@ -5,7 +5,7 @@ from app.dependencies import get_current_user_email
 app = FastAPI(title="Modern Digital Banking API")
 
 app.include_router(auth_router)
-
+app.include_router(accounts_router)
 
 @app.get("/protected")
 def protected_route(current_user: str = Depends(get_current_user_email)):
@@ -13,3 +13,4 @@ def protected_route(current_user: str = Depends(get_current_user_email)):
         "message": "You are authenticated",
         "user": current_user
     }
+
