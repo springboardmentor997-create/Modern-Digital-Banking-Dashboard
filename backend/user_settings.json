@@ -1,0 +1,34 @@
+{
+  "4": {
+    "notifications": true,
+    "emailAlerts": true,
+    "twoFactor": false,
+    "darkMode": false,
+    "currency": "INR",
+    "language": "English"
+  },
+  "5": {
+    "notifications": true,
+    "emailAlerts": true,
+    "twoFactor": false,
+    "darkMode": false,
+    "currency": "INR",
+    "language": "English"
+  },
+  "7": {
+    "notifications": true,
+    "emailAlerts": true,
+    "twoFactor": false,
+    "darkMode": false,
+    "currency": "INR",
+    "language": "English"
+  },
+  "8": {
+    "notifications": true,
+    "emailAlerts": true,
+    "twoFactor": false,
+    "darkMode": false,
+    "currency": "INR",
+    "language": "English"
+  }
+}
