@@ -21,7 +21,7 @@ class UserOut(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ---------- AUTH TOKEN SCHEMA ----------

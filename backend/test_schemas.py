@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from app.schemas.user_schema import UserCreate, UserOut
+
 
 def test_user_create():
     user = UserCreate(
@@ -19,7 +20,7 @@ def test_user_out():
         email="test@example.com",
         phone="9999999999",
         kyc_status="unverified",
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     print("UserOut schema validated successfully")
     print(user)
