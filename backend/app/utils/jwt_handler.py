@@ -1,12 +1,16 @@
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from jose import JWTError, jwt
 
-# ⚠️ In production, this must come from env vars
-SECRET_KEY = "CHANGE_THIS_SECRET_KEY"
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("JWT_SECRET_KEY not set")
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -45,3 +49,4 @@ def verify_access_token(token: str) -> dict:
         return payload
     except JWTError:
         raise ValueError("Invalid or expired token")
+
