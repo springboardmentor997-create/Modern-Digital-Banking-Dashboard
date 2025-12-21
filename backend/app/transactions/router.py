@@ -10,6 +10,9 @@ from app.transactions.service import (
 from app.dependencies import get_db, get_current_user_email
 from app.models.user import User
 
+from fastapi import UploadFile, File
+from app.transactions.csv_import import import_transactions_csv
+
 router = APIRouter(
     prefix="/transactions",
     tags=["Transactions"]
@@ -58,3 +61,22 @@ def list_account_transactions(
         raise HTTPException(status_code=404, detail="User not found")
 
     return get_account_transactions(db, user.id, account_id)
+
+
+@router.post("/import/csv", status_code=status.HTTP_201_CREATED)
+def import_transactions(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user_email: str = Depends(get_current_user_email),
+):
+    user = db.query(User).filter(User.email == current_user_email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    try:
+        imported = import_transactions_csv(db, user.id, file)
+        return {
+            "imported_count": len(imported)
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
