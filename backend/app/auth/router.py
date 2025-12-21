@@ -1,51 +1,43 @@
-import logging
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
-from app.schemas.user_schema import LoginRequest, LoginResponse, SignupRequest, SignupResponse
-from app.utils.jwt_handler import create_access_token, create_refresh_token
-from app.utils.hash_password import verify_password, hash_password
-from app.database import get_db
-from app.models.user import User
 
-logger = logging.getLogger(__name__)
-router = APIRouter(tags=["Auth"])
+from app.schemas.user_schema import UserCreate, UserOut, Token
+from app.auth.service import create_user, authenticate_user
+from app.dependencies import get_db
+from app.utils.jwt_handler import create_access_token
 
-@router.post("/signup")
-def signup(payload: SignupRequest, db: Session = Depends(get_db)):
-    existing_user = db.query(User).filter(User.email == payload.email).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="User already exists with this email")
-    
-    hashed_password = hash_password(payload.password)
-    
-    new_user = User(
-        name=payload.name,
-        email=payload.email,
-        password=hashed_password
-    )
-    
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    
-    return {"message": "User created successfully", "user_id": new_user.id}
+router = APIRouter(
+    prefix="/auth",
+    tags=["Auth"]
+)
 
-@router.post("/login")
-def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == payload.email).first()
-    
+
+@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
+    try:
+        user = create_user(db, user_in)
+        return user
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+@router.post("/login", response_model=Token)
+def login_user(user_in: UserCreate, db: Session = Depends(get_db)):
+    user = authenticate_user(db, user_in.email, user_in.password)
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    if not verify_password(payload.password, user.password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    access_token = create_access_token({"user_id": user.id})
-    refresh_token = create_refresh_token({"user_id": user.id})
-    
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+
+    access_token = create_access_token(
+        data={"sub": user.email}
+    )
+
     return {
-        "message": "Login successful", 
-        "access_token": access_token, 
-        "refresh_token": refresh_token
+        "access_token": access_token,
+        "token_type": "bearer"
     }
