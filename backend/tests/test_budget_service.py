@@ -1,6 +1,8 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
+from app.budgets.models import Budget
+
 from app.database import SessionLocal
 from app.budgets.schemas import BudgetCreate
 from app.budgets.service import (
