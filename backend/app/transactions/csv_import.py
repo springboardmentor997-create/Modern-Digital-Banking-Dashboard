@@ -36,12 +36,12 @@ def import_transactions_csv(
     try:
         for row in reader:
             tx = TransactionCreate(
-                account_id=int(row["account_id"]),
-                amount=row["amount"],
-                transaction_type=row["transaction_type"],
-                category=row["category"],
-                description=row.get("description"),
-                transaction_date=row["transaction_date"],
+                account_id=int(row["account_id"].strip()),
+                amount=row["amount"].strip(),
+                transaction_type=row["transaction_type"].strip(),
+                category=row["category"].strip(),
+                description=row.get("description", "").strip() or None,
+                transaction_date=row["transaction_date"].strip(),
             )
 
             created = create_transaction(db, user_id, tx)
@@ -52,4 +52,5 @@ def import_transactions_csv(
     except Exception:
         db.rollback()
         raise
+
 
