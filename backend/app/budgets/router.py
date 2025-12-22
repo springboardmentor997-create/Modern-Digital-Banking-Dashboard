@@ -35,7 +35,11 @@ def create_user_budget(
     exceeded = False
 
     return {
-        **budget.__dict__,
+        "id": budget.id,
+        "category": budget.category,
+        "limit_amount": budget.limit_amount,
+        "period": budget.period,
+        "created_at": budget.created_at,
         "spent_amount": spent,
         "remaining_amount": remaining,
         "is_exceeded": exceeded,
@@ -73,10 +77,15 @@ def list_user_budgets(
         )
 
         results.append({
-            **budget.__dict__,
+            "id": budget.id,
+            "category": budget.category,
+            "limit_amount": budget.limit_amount,
+            "period": budget.period,
+            "created_at": budget.created_at,
             "spent_amount": spent,
             "remaining_amount": remaining,
             "is_exceeded": exceeded,
         })
 
     return results
+
