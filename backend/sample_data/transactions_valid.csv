@@ -1,0 +1,6 @@
+account_id,amount,transaction_type,category,description,transaction_date
+1,5000,income,salary,Monthly salary,2025-01-01
+1,1200,expense,rent,January rent,2025-01-02
+1,250,expense,food,Grocery shopping,2025-01-03
+1,300,expense,utilities,Electricity bill,2025-01-05
+1,150,expense,entertainment,Movie night,2025-01-06

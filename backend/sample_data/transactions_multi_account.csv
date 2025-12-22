@@ -1,0 +1,7 @@
+account_id,amount,transaction_type,category,description,transaction_date
+1,3000,income,salary,Salary credited,2025-01-01
+1,500,expense,food,Restaurant,2025-01-02
+2,2000,income,other,Freelance payment,2025-01-03
+2,800,expense,shopping,Online shopping,2025-01-04
+3,10000,income,other,Investment return,2025-01-05
+3,1500,expense,travel,Flight booking,2025-01-06
