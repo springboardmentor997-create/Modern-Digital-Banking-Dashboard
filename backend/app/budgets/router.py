@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import date, timedelta
 from decimal import Decimal
 
+from app.alerts.service import create_budget_exceeded_alert
 from app.dependencies import get_db, get_current_user
 from app.budgets.schemas import BudgetCreate, BudgetWithStats
 from app.budgets.service import (
@@ -76,6 +77,14 @@ def list_user_budgets(
             end_date,
         )
 
+        if exceeded:
+            create_budget_exceeded_alert(
+                db=db,
+                user_id=current_user.id,
+                budget=budget,
+            )
+
+
         results.append({
             "id": budget.id,
             "category": budget.category,
@@ -88,4 +97,5 @@ def list_user_budgets(
         })
 
     return results
+
 
