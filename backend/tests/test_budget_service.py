@@ -16,16 +16,29 @@ USER_ID = 2  # as agreed
 
 
 print("Creating budget...")
-budget = create_budget(
-    db,
-    USER_ID,
-    BudgetCreate(
-        category="food",
-        limit_amount=Decimal("1000.00"),
-        period=BudgetPeriod.monthly,
+try:
+    budget = create_budget(
+        db,
+        USER_ID,
+        BudgetCreate(
+            category="food",
+            limit_amount=Decimal("1000.00"),
+            period=BudgetPeriod.monthly,
+        )
     )
-)
-print("Budget created:", budget.id)
+    print("Budget created:", budget.id)
+except ValueError as e:
+    print("Budget already exists, fetching existing one...")
+    budget = (
+        db.query(Budget)
+        .filter(
+            Budget.user_id == USER_ID,
+            Budget.category == "food",
+            Budget.period == BudgetPeriod.monthly,
+        )
+        .first()
+    )
+
 
 print("Calculating spent amount...")
 spent = get_budget_spent_amount(
