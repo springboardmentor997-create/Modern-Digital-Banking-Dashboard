@@ -31,3 +31,19 @@ def get_current_user_email(token: str = Depends(oauth2_scheme)) -> str:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
         )
+
+
+def get_current_user(db=Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = verify_access_token(token)
+    email = payload.get("sub")
+    role = payload.get("role")
+
+    if not email or not role:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    return user
+
