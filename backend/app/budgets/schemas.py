@@ -20,3 +20,8 @@ class BudgetOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class BudgetWithStats(BudgetOut):
+    spent_amount: Decimal
+    remaining_amount: Decimal
+    is_exceeded: bool
