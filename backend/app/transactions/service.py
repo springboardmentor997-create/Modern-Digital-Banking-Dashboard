@@ -53,7 +53,7 @@ def create_transaction(
     # 4️⃣ Persist changes atomically
     account.balance = new_balance
     db.add(transaction)
-    db.commit()
+    db.flush()
     db.refresh(transaction)
 
     return transaction
@@ -82,3 +82,4 @@ def get_user_transactions(db: Session, user_id: int):
         .order_by(Transaction.transaction_date.desc())
         .all()
     )
+
