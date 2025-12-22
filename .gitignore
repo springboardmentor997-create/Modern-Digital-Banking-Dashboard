@@ -42,6 +42,7 @@ backend/venv/
 backend/.venv/
 backend/env/
 backend/.env
+backend/.env.example
 
 # Alembic migration artifacts
 backend/alembic/versions/*.pyc
