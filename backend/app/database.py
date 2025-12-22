@@ -5,6 +5,8 @@ from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 load_dotenv()
 
+# Ensure all models are loaded before mapper configuration
+import app.models
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
