@@ -16,6 +16,9 @@ REQUIRED_COLUMNS = {
     "transaction_date",
 }
 
+if file.content_type not in ["text/csv", "application/vnd.ms-excel"]:
+    raise ValueError("Only CSV files are allowed")
+
 
 def import_transactions_csv(
     db: Session,
@@ -49,3 +52,4 @@ def import_transactions_csv(
     except Exception:
         db.rollback()
         raise
+
