@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
+from app.models.user import UserRole
 
 
 # ---------- INPUT SCHEMA ----------
@@ -18,6 +19,7 @@ class UserOut(BaseModel):
     email: EmailStr
     phone: Optional[str]
     kyc_status: str
+    role: UserRole
     created_at: datetime
 
     class Config:
@@ -28,3 +30,4 @@ class UserOut(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
