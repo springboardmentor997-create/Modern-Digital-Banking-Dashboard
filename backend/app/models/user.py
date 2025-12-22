@@ -2,10 +2,17 @@ from sqlalchemy import Column, Integer, String, TIMESTAMP, Enum
 from sqlalchemy.sql import func
 from .base import Base
 import enum
+from sqlalchemy import Enum
 
 class KycStatus(str, enum.Enum):
     unverified = "unverified"
     verified = "verified"
+    
+class UserRole(str, enum.Enum):
+    admin = "admin"
+    user = "user"
+    auditor = "auditor"
+    support = "support"
 
 class User(Base):
     __tablename__ = "users"
@@ -25,3 +32,9 @@ class User(Base):
         server_default=func.now(),
         nullable=False
     )
+    role = Column(
+    Enum(UserRole, name="user_role"),
+    nullable=False,
+    default=UserRole.user
+    )
+
