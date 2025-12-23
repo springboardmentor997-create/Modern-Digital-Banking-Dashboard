@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 from sqlalchemy.orm import Session
-from app.dependencies import get_current_user, RoleChecker
+from app.dependencies import get_current_user, RoleChecker, require_admin, require_auditor_or_admin
 from app.models.user import User
 from app.database import get_db
 from app.bills import service as bills_service
@@ -11,7 +11,8 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[BillResponse])
-def list_bills(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+def list_bills(db: Session = Depends(get_db), current_user: User = Depends(require_auditor_or_admin)):
+	# Admins and auditors can list bills (auditor is read-only)
 	return bills_service.get_bills_for_user(db, current_user.id)
 
 
@@ -29,7 +30,7 @@ def update_bill(bill_id: int, payload: BillUpdate, db: Session = Depends(get_db)
 
 
 @router.delete("/{bill_id}")
-def delete_bill(bill_id: int, db: Session = Depends(get_db), current_user: User = Depends(RoleChecker(["admin"]))):
+def delete_bill(bill_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
 	# Admins can delete any bill
 	bill = bills_service.get_bill_by_id(db, bill_id)
 	if not bill:

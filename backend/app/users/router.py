@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 import re
 from sqlalchemy.orm import Session
 from typing import List, Dict
-from app.dependencies import get_current_user, RoleChecker
+from app.dependencies import get_current_user, RoleChecker, require_admin, require_auditor_or_admin
 from app.models.user import User
 from app.database import get_db
 from app.auth.schemas import UserResponse
@@ -18,8 +18,8 @@ async def get_profile(current_user=Depends(get_current_user)):
 
 
 @router.get("/", response_model=List[UserResponse])
-async def list_users(db: Session = Depends(get_db), current_user: User = Depends(RoleChecker(["admin"]))):
-    # Admin-only endpoint to list all users
+async def list_users(db: Session = Depends(get_db), current_user: User = Depends(require_auditor_or_admin)):
+    # Admin/auditor endpoint to list all users (read-only for auditors)
     users = db.query(type(current_user)).all()
     return users
 

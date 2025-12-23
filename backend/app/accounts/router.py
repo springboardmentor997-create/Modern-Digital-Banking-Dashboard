@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_auditor_or_admin
 from app.models.user import User
 from app.accounts.schemas import AccountCreate, AccountUpdate, AccountResponse
 from app.accounts.service import AccountService
@@ -20,9 +20,10 @@ async def create_account(
 
 @router.get("/", response_model=List[AccountResponse])
 async def get_accounts(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_auditor_or_admin),
     db: Session = Depends(get_db)
 ):
+    # Admins see all; auditors allowed read-only access
     accounts = AccountService.get_user_accounts(db, current_user.id)
     return accounts
 

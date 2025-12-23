@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_auditor_or_admin
 from app.models.user import User
 from app.budgets.schemas import BudgetCreate, BudgetUpdate, BudgetResponse
 from app.budgets.service import BudgetService
@@ -24,9 +24,10 @@ async def create_budget(
 async def get_budgets(
 	month: Optional[int] = Query(None),
 	year: Optional[int] = Query(None),
-	current_user: User = Depends(get_current_user),
+	current_user: User = Depends(require_auditor_or_admin),
 	db: Session = Depends(get_db)
 ):
+	# Admins and auditors can list budgets (auditor read-only)
 	budgets = BudgetService.get_user_budgets(db, current_user.id, month=month, year=year)
 	return budgets
 
