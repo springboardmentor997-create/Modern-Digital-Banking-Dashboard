@@ -27,8 +27,10 @@ class TransactionService:
     
     @staticmethod
     def get_account_transactions(db: Session, account_id: int, skip: int = 0, limit: int = 100):
+        # Exclude transactions where `posted_date` is NULL to avoid downstream errors
         return db.query(Transaction).filter(
-            Transaction.account_id == account_id
+            Transaction.account_id == account_id,
+            Transaction.posted_date.isnot(None)
         ).offset(skip).limit(limit).all()
     
     @staticmethod

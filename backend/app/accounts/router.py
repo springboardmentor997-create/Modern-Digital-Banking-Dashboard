@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-from app.dependencies import get_current_user, require_auditor_or_admin
+from app.dependencies import get_current_user, require_read_access, require_write_access, require_auditor_or_admin
 from app.models.user import User
 from app.accounts.schemas import AccountCreate, AccountUpdate, AccountResponse
 from app.accounts.service import AccountService
@@ -12,7 +12,7 @@ router = APIRouter()
 @router.post("/", response_model=AccountResponse)
 async def create_account(
     account_data: AccountCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_write_access),
     db: Session = Depends(get_db)
 ):
     account = AccountService.create_account(db, current_user.id, account_data)
@@ -47,7 +47,7 @@ async def get_account(
 async def update_account(
     account_id: int,
     account_data: AccountUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_write_access),
     db: Session = Depends(get_db)
 ):
     account = AccountService.get_account_by_id(db, account_id, current_user.id)
@@ -64,7 +64,7 @@ async def update_account(
 @router.delete("/{account_id}")
 async def delete_account(
     account_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_write_access),
     db: Session = Depends(get_db)
 ):
     account = AccountService.get_account_by_id(db, account_id, current_user.id)

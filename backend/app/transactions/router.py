@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile,
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_write_access
 from app.models.user import User
 from app.models.account import Account
 from app.transactions.schemas import TransactionCreate, TransactionResponse
@@ -14,7 +14,7 @@ router = APIRouter()
 async def create_transaction(
     account_id: int,
     transaction_data: TransactionCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_write_access),
     db: Session = Depends(get_db)
 ):
     # Verify account belongs to user
@@ -88,7 +88,7 @@ async def get_transaction(
 async def import_csv(
     account_id: int,
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_write_access),
     db: Session = Depends(get_db)
 ):
     # Verify account belongs to user

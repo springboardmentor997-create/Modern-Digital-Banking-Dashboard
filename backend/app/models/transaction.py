@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, VARCHAR, Enum, DateTime, NUMERIC, ForeignKey, TIMESTAMP
+from sqlalchemy import Column, Integer, String, VARCHAR, DateTime, NUMERIC, ForeignKey, TIMESTAMP
 from sqlalchemy.sql import func
 import enum
 from datetime import datetime
@@ -17,7 +17,7 @@ class Transaction(Base):
     category = Column(String(100))
     amount = Column(NUMERIC(15, 2), nullable=False)
     currency = Column(VARCHAR(3), default="USD")
-    txn_type = Column(Enum(TxnTypeEnum), nullable=False)
+    txn_type = Column(String(50), nullable=False)
     merchant = Column(String(255))
     txn_date = Column(TIMESTAMP, nullable=False)
     posted_date = Column(TIMESTAMP)

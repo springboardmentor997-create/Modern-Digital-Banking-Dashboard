@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 from sqlalchemy.orm import Session
-from app.dependencies import get_current_user, RoleChecker, require_admin, require_auditor_or_admin
+from app.dependencies import get_current_user, RoleChecker, require_admin, require_auditor_or_admin, require_write_access
 from app.models.user import User
 from app.database import get_db
 from app.bills import service as bills_service
@@ -17,12 +17,12 @@ def list_bills(db: Session = Depends(get_db), current_user: User = Depends(requi
 
 
 @router.post("/", response_model=BillResponse)
-def create_bill(payload: BillCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+def create_bill(payload: BillCreate, db: Session = Depends(get_db), current_user: User = Depends(require_write_access)):
 	return bills_service.create_bill(db, current_user.id, payload)
 
 
 @router.put("/{bill_id}", response_model=BillResponse)
-def update_bill(bill_id: int, payload: BillUpdate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+def update_bill(bill_id: int, payload: BillUpdate, db: Session = Depends(get_db), current_user: User = Depends(require_write_access)):
 	bill = bills_service.get_bill(db, bill_id, current_user.id)
 	if not bill:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bill not found")

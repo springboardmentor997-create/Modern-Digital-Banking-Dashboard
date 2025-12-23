@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
@@ -10,6 +10,8 @@ from app.budgets.router import router as budgets_router
 from app.users.router import router as users_router
 from app.bills.router import router as bills_router
 from app.rewards.router import router as rewards_router
+from app.dependencies import require_admin_only
+from app.models.user import User
 
 # Create tables - wrapped in try/except to handle database connection issues
 try:
@@ -126,7 +128,7 @@ def promote_render_test_to_admin():
 
 
 @app.post("/admin/fix-db")
-async def fix_db():
+async def fix_db(current_user: User = Depends(require_admin_only)):
     """Temporary endpoint to fix role column - DELETE AFTER USE"""
     from sqlalchemy import text
     from sqlalchemy.exc import SQLAlchemyError

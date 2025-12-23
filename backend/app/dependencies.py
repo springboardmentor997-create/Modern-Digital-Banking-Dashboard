@@ -104,3 +104,24 @@ def forbid_auditor_writes(request: Request, current_user: User = Depends(get_cur
     if user_role == "auditor" and request.method in ("POST", "PUT", "PATCH", "DELETE"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Auditor role is read-only; write operations are forbidden")
     return None
+
+
+def require_read_access(current_user: User = Depends(get_current_user)) -> User:
+    """ALL roles can READ (user, admin, auditor)."""
+    return current_user
+
+
+def require_write_access(current_user: User = Depends(get_current_user)) -> User:
+    """User and Admin only. Auditors are blocked from writes."""
+    user_role = getattr(current_user, "role", "user")
+    if user_role in ("user", "admin"):
+        return current_user
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User or admin privileges required for write")
+
+
+def require_admin_only(current_user: User = Depends(get_current_user)) -> User:
+    """Admin only."""
+    user_role = getattr(current_user, "role", "user")
+    if user_role == "admin":
+        return current_user
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required")
