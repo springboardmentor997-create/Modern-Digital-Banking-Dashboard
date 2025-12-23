@@ -39,7 +39,7 @@ export default function Footer() {
               </ul>
             </div>
           </div>
-          <div className="text-center text-sm  ">
+          <div className="text-center text-sm pt-10 ">
             © 2024 Tivra Bank. All rights reserved.
           </div>
         </div>

@@ -4,7 +4,7 @@ const BASE_URL = "/budgets";
 
 export const getBudgets = async (month, year) => {
   try {
-    const { data } = await axiosClient.get(BASE_URL);
+    const { data } = await axiosClient.get(`${BASE_URL}/`);
     return data;
   } catch (error) {
     throw error.response?.data?.detail || error.message;

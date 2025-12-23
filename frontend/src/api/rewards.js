@@ -1,60 +1,31 @@
-import { getAuthHeaders } from "./auth";
+import axiosClient from "../utils/axiosClient";
 
-const API_BASE_URL = 'https://modern-digital-banking-dashboard.onrender.com/api/rewards';
+const BASE_URL = "/rewards/";
 
-export async function fetchRewards() {
-  const response = await fetch(`${API_BASE_URL}/`, {
-    headers: getAuthHeaders(),
+export const fetchRewards = async () => {
+  const { data } = await axiosClient.get(BASE_URL);
+  return data;
+};
+
+export const createReward = async (payload) => {
+  const { data } = await axiosClient.post(BASE_URL, {
+    program_name: payload.program_name,
+    points_balance: payload.points_balance,
   });
+  return data;
+};
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch rewards');
-  }
+export const updateReward = async (id, payload) => {
+  const { data } = await axiosClient.put(
+    `${BASE_URL}${id}/`,
+    {
+      program_name: payload.program_name,
+      points_balance: payload.points_balance,
+    }
+  );
+  return data;
+};
 
-  return await response.json();
-}
-
-export async function createReward(data) {
-  const response = await fetch(`${API_BASE_URL}/`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({
-      program_name: data.program_name,
-      points_balance: data.points_balance,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to create reward');
-  }
-
-  return await response.json();
-}
-
-export async function updateReward(id, data) {
-  const response = await fetch(`${API_BASE_URL}/${id}/`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({
-      program_name: data.program_name,
-      points_balance: data.points_balance,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to update reward');
-  }
-
-  return await response.json();
-}
-
-export async function deleteReward(id) {
-  const response = await fetch(`${API_BASE_URL}/${id}/`, {
-    method: 'DELETE',
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to delete reward');
-  }
-}
+export const deleteReward = async (id) => {
+  await axiosClient.delete(`${BASE_URL}${id}/`);
+};

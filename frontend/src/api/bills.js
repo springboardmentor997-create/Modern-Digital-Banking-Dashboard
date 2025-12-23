@@ -1,44 +1,35 @@
-import { getAuthHeaders } from "./auth";
+import axiosClient from "../utils/axiosClient";
 
-const BASE_URL = 'https://modern-digital-banking-dashboard.onrender.com/api/bills';
+const BASE_URL = "/bills/";
 
 export const getBills = async () => {
-  const res = await fetch(BASE_URL, { headers: getAuthHeaders() });
-  if (!res.ok) throw new Error('Failed to fetch bills');
-  return res.json();
+  const { data } = await axiosClient.get(BASE_URL);
+  return data;
 };
 
+
 export const addBill = async (payload) => {
-  const res = await fetch(BASE_URL, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error('Failed to add bill');
+  const { data } = await axiosClient.post(BASE_URL, payload);
+  return data;
 };
 
 export const updateBill = async (id, payload) => {
-  const res = await fetch(`${BASE_URL}${id}`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error('Failed to update bill');
+  const { data } = await axiosClient.put(
+    `${BASE_URL}${id}/`,
+    payload
+  );
+  return data;
 };
 
+
 export const deleteBill = async (id) => {
-  const res = await fetch(`${BASE_URL}${id}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders(),
-  });
-  if (!res.ok) throw new Error('Failed to delete bill');
+  await axiosClient.delete(`${BASE_URL}${id}/`);
 };
 
 export const markPaid = async (id) => {
-  const res = await fetch(`${BASE_URL}${id}`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ status: 'paid' }),
-  });
-  if (!res.ok) throw new Error('Failed to mark paid');
+  const { data } = await axiosClient.put(
+    `${BASE_URL}${id}/`,
+    { status: "paid" }
+  );
+  return data;
 };

@@ -61,8 +61,7 @@ export default function Transactions() {
       const data = await getTransactions(selectedAccountId, 0, 100);
       setTransactions(data);
     } catch (error) {
-      console.error('Error fetching transactions:', error);
-      toast.error('Failed to load transactions');
+      toast.error('No transactions found');
     } finally {
       setLoading(false);
     }
