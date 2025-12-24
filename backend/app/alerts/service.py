@@ -1,8 +1,6 @@
 from sqlalchemy.orm import Session
-from datetime import date
 
-from app.alerts.models import Alert
-from app.alerts.schemas import AlertType
+from app.alerts.models import Alerts, AlertType
 from app.budgets.models import Budget
 
 
@@ -11,21 +9,25 @@ def create_budget_exceeded_alert(
     user_id: int,
     budget: Budget,
 ):
-    # Prevent duplicate alerts for same budget + period
-    existing = (
-        db.query(Alert)
+    """
+    Create a budget_exceeded alert for a user
+    Only one alert per budget category is allowed
+    """
+
+    existing_alert = (
+        db.query(Alerts)
         .filter(
-            Alert.user_id == user_id,
-            Alert.type == AlertType.budget_exceeded,
-            Alert.message.contains(budget.category),
+            Alerts.user_id == user_id,
+            Alerts.type == AlertType.budget_exceeded,
+            Alerts.message.contains(budget.category),
         )
         .first()
     )
 
-    if existing:
+    if existing_alert:
         return None
 
-    alert = Alert(
+    alert = Alerts(
         user_id=user_id,
         type=AlertType.budget_exceeded,
         message=f"Budget exceeded for {budget.category} ({budget.period.value})",
@@ -34,4 +36,5 @@ def create_budget_exceeded_alert(
     db.add(alert)
     db.commit()
     db.refresh(alert)
+
     return alert
