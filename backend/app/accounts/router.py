@@ -20,11 +20,15 @@ async def create_account(
 
 @router.get("/", response_model=List[AccountResponse])
 async def get_accounts(
-    current_user: User = Depends(require_auditor_or_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # Admins see all; auditors allowed read-only access
-    accounts = AccountService.get_user_accounts(db, current_user.id)
+    # Admins and auditors may see all accounts; regular users see only their own
+    user_role = getattr(current_user, "role", "user")
+    if user_role in ("admin", "auditor"):
+        accounts = AccountService.get_all_accounts(db)
+    else:
+        accounts = AccountService.get_user_accounts(db, current_user.id)
     return accounts
 
 @router.get("/{account_id}", response_model=AccountResponse)
@@ -33,15 +37,26 @@ async def get_account(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    account = AccountService.get_account_by_id(db, account_id, current_user.id)
-    
+    # Fetch account without owner filter, then enforce access rules:
+    account = AccountService.get_account_by_id_any(db, account_id)
+
     if not account:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Account not found"
         )
-    
-    return account
+
+    # Allow if owner
+    if account.user_id == current_user.id:
+        return account
+
+    # Allow if admin or auditor
+    user_role = getattr(current_user, "role", "user")
+    if user_role in ("admin", "auditor"):
+        return account
+
+    # Otherwise forbid
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient privileges")
 
 @router.put("/{account_id}", response_model=AccountResponse)
 async def update_account(

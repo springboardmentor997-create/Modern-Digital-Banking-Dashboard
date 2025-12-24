@@ -34,6 +34,16 @@ class AccountService:
         return db.query(Account).filter(Account.user_id == user_id).all()
     
     @staticmethod
+    def get_all_accounts(db: Session):
+        return db.query(Account).all()
+
+    @staticmethod
+    def get_account_by_id_any(db: Session, account_id: int):
+        return db.query(Account).filter(
+            Account.id == account_id
+        ).first()
+    
+    @staticmethod
     def get_account_by_id(db: Session, account_id: int, user_id: int):
         return db.query(Account).filter(
             Account.id == account_id,

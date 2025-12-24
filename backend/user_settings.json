@@ -46,5 +46,21 @@
     "darkMode": false,
     "currency": "INR",
     "language": "English"
+  },
+  "21": {
+    "notifications": true,
+    "emailAlerts": true,
+    "twoFactor": false,
+    "darkMode": false,
+    "currency": "INR",
+    "language": "English"
+  },
+  "23": {
+    "notifications": true,
+    "emailAlerts": true,
+    "twoFactor": false,
+    "darkMode": false,
+    "currency": "INR",
+    "language": "English"
   }
 }

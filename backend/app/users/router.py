@@ -8,6 +8,7 @@ from app.database import get_db
 from app.auth.schemas import UserResponse
 from app.users.schemas import UpdateProfile, UserSettings, ChangePasswordRequest
 from app.users.service import UserService
+from fastapi import Body
 
 router = APIRouter()
 
@@ -71,3 +72,11 @@ async def change_password(req: ChangePasswordRequest, db: Session = Depends(get_
     if error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
     return {"message": "Password changed successfully"}
+
+
+@router.post("/profile/verify-kyc", response_model=UserResponse)
+async def verify_kyc(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # This endpoint sets the current user's KYC status to 'verified'.
+    # It's intended to be called when the user checks the KYC checkbox on registration/profile.
+    updated = UserService.verify_kyc(db, current_user)
+    return updated

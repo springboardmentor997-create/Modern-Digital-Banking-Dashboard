@@ -3,6 +3,7 @@ import threading
 from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 from app.models.user import User
+from app.models.user import KycStatusEnum
 from app.utils.password_hash import hash_password, verify_password
 
 _settings_lock = threading.Lock()
@@ -66,3 +67,12 @@ class UserService:
         db.add(user)
         db.commit()
         return None
+
+    @staticmethod
+    def verify_kyc(db: Session, user: User):
+        # Set the user's KYC status to verified and persist
+        user.kyc_status = KycStatusEnum.verified
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
