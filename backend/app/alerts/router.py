@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_db, get_current_user
 from app.alerts.models import Alert
 from app.alerts.schemas import AlertOut
 
