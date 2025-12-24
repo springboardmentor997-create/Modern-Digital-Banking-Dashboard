@@ -7,5 +7,6 @@ from app.accounts.models import Account
 from app.transactions.models import Transaction
 # DO NOT import Budget here
 
+from app.alerts.models import Alerts
 
 __all__ = ["Base", "User"]
