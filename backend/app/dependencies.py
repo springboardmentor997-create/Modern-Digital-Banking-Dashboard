@@ -5,10 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.utils.jwt_handler import verify_access_token
-from app.models.user import User   # ✅ THIS WAS MISSING
+from app.models.user import User  
 
-
-# OAuth2 scheme for JWT (used by Swagger Authorize)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
@@ -20,9 +18,7 @@ def get_db():
         db.close()
 
 
-def get_current_user_email(
-    token: str = Depends(oauth2_scheme),
-) -> str:
+def get_current_user_email(token: str = Depends(oauth2_scheme)) -> str:
     try:
         payload = verify_access_token(token)
         email: str | None = payload.get("sub")
@@ -43,32 +39,20 @@ def get_current_user_email(
 
 
 def get_current_user(
-    db: Session = Depends(get_db),
+    db=Depends(get_db),
     token: str = Depends(oauth2_scheme),
 ):
-    try:
-        payload = verify_access_token(token)
-        email = payload.get("sub")
-        role = payload.get("role")
+    payload = verify_access_token(token)
 
-        if not email or not role:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token",
-            )
+    email = payload.get("sub")
+    role = payload.get("role")
 
-        user = db.query(User).filter(User.email == email).first()
+    if not email or not role:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found",
-            )
+    user = db.query(User).filter(User.email == email).first()
 
-        return user
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
 
-    except (JWTError, ValueError):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
+    return user

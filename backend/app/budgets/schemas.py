@@ -3,23 +3,28 @@ from decimal import Decimal
 from datetime import datetime
 
 from app.budgets.models import BudgetPeriod
+from app.transactions.models import TransactionCategory
 
 
 class BudgetCreate(BaseModel):
-    category: str = Field(..., max_length=50)
+    # 🔐 Enforced ENUM (Swagger dropdown, no free text)
+    category: TransactionCategory
+
     limit_amount: Decimal = Field(..., gt=0)
+
     period: BudgetPeriod = BudgetPeriod.monthly
 
 
 class BudgetOut(BaseModel):
     id: int
-    category: str
+    category: TransactionCategory
     limit_amount: Decimal
     period: BudgetPeriod
     created_at: datetime
 
     class Config:
         from_attributes = True
+
 
 class BudgetWithStats(BudgetOut):
     spent_amount: Decimal

@@ -4,7 +4,7 @@ from datetime import date
 
 from app.budgets.models import Budget
 from app.budgets.schemas import BudgetCreate
-from app.transactions.models import Transaction, TransactionType
+from app.transactions.models import Transaction, TransactionType, TransactionCategory
 
 
 def create_budget(
@@ -12,7 +12,7 @@ def create_budget(
     user_id: int,
     budget_in: BudgetCreate,
 ):
-    # 1️⃣ Prevent duplicate budgets (category + period per user)
+    # Prevent duplicate budgets (category + period per user)
     existing = (
         db.query(Budget)
         .filter(
@@ -28,7 +28,7 @@ def create_budget(
 
     budget = Budget(
         user_id=user_id,
-        category=budget_in.category,
+        category=budget_in.category,  # already validated by schema
         limit_amount=budget_in.limit_amount,
         period=budget_in.period,
     )
@@ -47,17 +47,23 @@ def get_budget_spent_amount(
     start_date: date,
     end_date: date,
 ) -> Decimal:
-    # Sum of expenses only
+    """
+    IMPORTANT:
+    - category comes from Budget (string)
+    - DB expects TransactionCategory enum values (lowercase)
+    """
+
+    normalized_category = TransactionCategory(category.lower())
+
     total = (
-        db.query(Transaction)
+        db.query(Transaction.amount)
         .filter(
             Transaction.user_id == user_id,
-            Transaction.category == category,
+            Transaction.category == normalized_category,
             Transaction.transaction_type == TransactionType.expense,
             Transaction.transaction_date >= start_date,
             Transaction.transaction_date <= end_date,
         )
-        .with_entities(Transaction.amount)
         .all()
     )
 

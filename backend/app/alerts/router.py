@@ -2,36 +2,32 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db, get_current_user
-from app.alerts.models import Alert
+from app.alerts.service import (
+    create_budget_exceeded_alert,
+    get_alerts_for_user,
+)
 from app.alerts.schemas import AlertOut
 
 router = APIRouter(prefix="/alerts", tags=["Alerts"])
 
 
 @router.post("/test", response_model=AlertOut)
-def create_test_alert(
+def test_alert(
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
-    alert = Alert(
+    alert = create_budget_exceeded_alert(
+        db=db,
         user_id=current_user.id,
-        type="test_alert",
-        message="This is a test alert"
+        category="food",
+        amount=500.0,
     )
-    db.add(alert)
-    db.commit()
-    db.refresh(alert)
     return alert
 
 
 @router.get("/", response_model=list[AlertOut])
-def get_user_alerts(
+def list_alerts(
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
-    return (
-        db.query(Alert)
-        .filter(Alert.user_id == current_user.id)
-        .order_by(Alert.created_at.desc())
-        .all()
-    )
+    return get_alerts_for_user(db, current_user.id)
