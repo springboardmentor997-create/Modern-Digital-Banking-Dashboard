@@ -37,7 +37,9 @@ class BillService:
 
     @staticmethod
     def update_bill(db: Session, bill: Bill, payload: BillUpdate):
-        for k, v in payload.dict(exclude_unset=True).items():
+        # Exclude unset and None values so partial updates don't overwrite
+        # existing fields with nulls when the client sends empty values.
+        for k, v in payload.dict(exclude_unset=True, exclude_none=True).items():
             setattr(bill, k, v)
         db.add(bill)
         db.commit()

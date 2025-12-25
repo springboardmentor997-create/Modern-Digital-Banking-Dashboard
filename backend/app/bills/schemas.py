@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import date, datetime
 from decimal import Decimal
+from pydantic import validator
 
 
 class BillCreate(BaseModel):
@@ -18,6 +19,32 @@ class BillUpdate(BaseModel):
     amount_due: Optional[Decimal]
     status: Optional[str]
     auto_pay: Optional[bool]
+
+    @validator("due_date", pre=True)
+    def _coerce_due_date(cls, v):
+        if v is None or v == "":
+            return None
+        if isinstance(v, str):
+            # Accept ISO date strings or full datetime strings
+            try:
+                return date.fromisoformat(v)
+            except Exception:
+                try:
+                    return datetime.fromisoformat(v).date()
+                except Exception:
+                    raise ValueError("Invalid date format; expected YYYY-MM-DD")
+        return v
+
+    @validator("amount_due", pre=True)
+    def _coerce_amount_due(cls, v):
+        if v is None or v == "":
+            return None
+        if isinstance(v, str):
+            try:
+                return Decimal(v)
+            except Exception:
+                raise ValueError("Invalid numeric format for amount_due")
+        return v
 
 
 class BillResponse(BaseModel):
