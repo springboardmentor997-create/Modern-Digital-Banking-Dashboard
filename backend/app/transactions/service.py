@@ -27,11 +27,19 @@ class TransactionService:
     
     @staticmethod
     def get_account_transactions(db: Session, account_id: int, skip: int = 0, limit: int = 100):
-        # Exclude transactions where `posted_date` is NULL to avoid downstream errors
         return db.query(Transaction).filter(
-            Transaction.account_id == account_id,
-            Transaction.posted_date.isnot(None)
-        ).offset(skip).limit(limit).all()
+            Transaction.account_id == account_id
+        ).order_by(Transaction.created_at.desc()).offset(skip).limit(limit).all()
+
+    @staticmethod
+    def get_user_transactions(db: Session, user_id: int, skip: int = 0, limit: int = 100):
+        """Return transactions for all accounts belonging to given user_id."""
+        # join with Account via relationship or account_id -> accounts table
+        from app.models.account import Account
+
+        return db.query(Transaction).join(Account, Transaction.account_id == Account.id).filter(
+            Account.user_id == user_id
+        ).order_by(Transaction.created_at.desc()).offset(skip).limit(limit).all()
     
     @staticmethod
     def get_transaction_by_id(db: Session, transaction_id: int, account_id: int):
