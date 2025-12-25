@@ -57,6 +57,9 @@ def create_bill(db: Session, user_id: int, payload: BillCreate):
 def get_bills_for_user(db: Session, user_id: int):
     return BillService.get_bills_for_user(db, user_id)
 
+def get_user_bills(db: Session, user_id: int):
+    return BillService.get_bills_for_user(db, user_id)
+
 def get_bill(db: Session, bill_id: int, user_id: int):
     return BillService.get_bill(db, bill_id, user_id)
 
