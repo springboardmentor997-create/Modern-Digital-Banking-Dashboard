@@ -6,6 +6,9 @@ from app.models.user import User
 from app.database import get_db
 from app.bills import service as bills_service
 from app.bills.schemas import BillCreate, BillUpdate, BillResponse
+from app.transactions.service import TransactionService
+from app.transactions.schemas import TransactionCreate
+from datetime import datetime
 
 router = APIRouter()
 
@@ -29,7 +32,30 @@ def update_bill(bill_id: int, payload: BillUpdate, db: Session = Depends(get_db)
 	bill = bills_service.get_bill(db, bill_id, current_user.id)
 	if not bill:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bill not found")
-	return bills_service.update_bill(db, bill, payload)
+
+	prev_status = getattr(bill, "status", None)
+	updated = bills_service.update_bill(db, bill, payload)
+
+	# If the bill transitioned to paid and client supplied an account_id, record a debit transaction
+	try:
+		new_status = getattr(updated, "status", None)
+		acct_id = getattr(payload, "account_id", None)
+		if prev_status != "paid" and new_status == "paid" and acct_id:
+			tx_payload = TransactionCreate(
+				description=f"Bill payment: {updated.biller_name}",
+				merchant=updated.biller_name,
+				amount=updated.amount_due,
+				category="Bills",
+				txn_type="debit",
+				currency="INR",
+				txn_date=datetime.utcnow()
+			)
+			TransactionService.create_transaction(db, acct_id, tx_payload)
+	except Exception:
+		# Don't fail the update if transaction creation fails
+		pass
+
+	return updated
 
 
 @router.delete("/{bill_id}")

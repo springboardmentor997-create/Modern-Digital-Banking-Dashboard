@@ -19,6 +19,7 @@ class BillUpdate(BaseModel):
     amount_due: Optional[Decimal]
     status: Optional[str]
     auto_pay: Optional[bool]
+    account_id: Optional[int]
 
     @validator("due_date", pre=True)
     def _coerce_due_date(cls, v):
