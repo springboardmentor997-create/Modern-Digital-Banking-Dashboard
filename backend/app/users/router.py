@@ -26,7 +26,7 @@ async def list_users(db: Session = Depends(get_db), current_user: User = Depends
 
 
 @router.put("/profile", response_model=UserResponse)
-async def update_profile(profile_data: UpdateProfile, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+async def update_profile(profile_data: UpdateProfile = Body({}), db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     # Normalize payload: exclude empty strings so they are not treated as provided
     raw = profile_data.dict()
     payload = {}
