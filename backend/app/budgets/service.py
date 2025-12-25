@@ -31,6 +31,15 @@ class BudgetService:
 		return query.order_by(Budget.created_at.desc()).all()
 
 	@staticmethod
+	def get_all_budgets(db: Session, month: int = None, year: int = None):
+		query = db.query(Budget)
+		if month is not None:
+			query = query.filter(Budget.month == month)
+		if year is not None:
+			query = query.filter(Budget.year == year)
+		return query.order_by(Budget.created_at.desc()).all()
+
+	@staticmethod
 	def get_budget_by_id(db: Session, budget_id: int, user_id: int):
 		return db.query(Budget).filter(
 			Budget.id == budget_id,
