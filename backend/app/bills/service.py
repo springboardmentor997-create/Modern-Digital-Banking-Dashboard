@@ -24,6 +24,10 @@ class BillService:
         return db.query(Bill).filter(Bill.user_id == user_id).all()
 
     @staticmethod
+    def get_all_bills(db: Session):
+        return db.query(Bill).order_by(Bill.created_at.desc()).all()
+
+    @staticmethod
     def get_bill(db: Session, bill_id: int, user_id: int):
         return db.query(Bill).filter(Bill.id == bill_id, Bill.user_id == user_id).first()
 

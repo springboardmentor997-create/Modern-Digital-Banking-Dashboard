@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 from sqlalchemy.orm import Session
-from app.dependencies import get_current_user, RoleChecker, require_admin, require_auditor_or_admin
+from app.dependencies import get_current_user, RoleChecker, require_admin, require_user_or_admin
 from app.database import get_db
 from app.rewards import service as rewards_service
 from app.rewards.schemas import RewardCreate, RewardUpdate, RewardResponse
@@ -12,10 +12,13 @@ router = APIRouter()
 
 @router.get("/", response_model=List[RewardResponse])
 async def list_rewards(
-	current_user: User = Depends(require_auditor_or_admin),
+	current_user: User = Depends(require_user_or_admin),
 	db: Session = Depends(get_db)
 ):
-	# Admins and auditors can list rewards (auditor read-only)
+	# Admins can list all rewards; regular users can see only their own.
+	user_role = getattr(current_user, "role", "user")
+	if user_role == "admin":
+		return rewards_service.get_all_rewards(db)
 	return rewards_service.get_rewards_for_user(db, current_user.id)
 
 

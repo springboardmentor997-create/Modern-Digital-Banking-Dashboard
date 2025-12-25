@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 from sqlalchemy.orm import Session
-from app.dependencies import get_current_user, RoleChecker, require_admin, require_auditor_or_admin, require_write_access
+from app.dependencies import get_current_user, RoleChecker, require_admin, require_user_or_admin, require_write_access
 from app.models.user import User
 from app.database import get_db
 from app.bills import service as bills_service
@@ -11,8 +11,11 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[BillResponse])
-def list_bills(db: Session = Depends(get_db), current_user: User = Depends(require_auditor_or_admin)):
-	# Admins and auditors can list bills (auditor is read-only)
+def list_bills(db: Session = Depends(get_db), current_user: User = Depends(require_user_or_admin)):
+	# Admins can list all bills; regular users only their own. Auditors remain read-only elsewhere.
+	user_role = getattr(current_user, "role", "user")
+	if user_role == "admin":
+		return bills_service.get_all_bills(db)
 	return bills_service.get_bills_for_user(db, current_user.id)
 
 

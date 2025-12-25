@@ -21,6 +21,10 @@ class RewardService:
         return db.query(Reward).filter(Reward.user_id == user_id).all()
 
     @staticmethod
+    def get_all_rewards(db: Session):
+        return db.query(Reward).order_by(Reward.id.desc()).all()
+
+    @staticmethod
     def get_reward(db: Session, reward_id: int, user_id: int):
         return db.query(Reward).filter(Reward.id == reward_id, Reward.user_id == user_id).first()
 
