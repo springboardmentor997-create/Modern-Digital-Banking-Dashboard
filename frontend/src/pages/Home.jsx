@@ -76,7 +76,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      <section className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 py-20 px-4 pt-32">
+      <section className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>

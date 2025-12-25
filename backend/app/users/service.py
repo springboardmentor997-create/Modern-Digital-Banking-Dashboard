@@ -29,7 +29,27 @@ def _save_all_settings(all_settings: Dict[str, Any]):
 
 class UserService:
     @staticmethod
-    def get_profile(user: User) -> User:
+    def get_profile(db: Session, user: User) -> User:
+        # Attach a list of account summaries to the user object for the profile
+        from app.models.account import Account
+
+        accounts = db.query(Account).filter(Account.user_id == user.id).all()
+        # convert to simple dicts for JSON/Pydantic
+        acct_list = [
+            {
+                "id": a.id,
+                "bank_name": a.bank_name,
+                "account_type": a.account_type.value if hasattr(a.account_type, 'value') else a.account_type,
+                "masked_account": a.masked_account,
+                "currency": a.currency,
+                "balance": float(a.balance) if a.balance is not None else None,
+                "created_at": a.created_at,
+            }
+            for a in accounts
+        ]
+
+        # Attach dynamically so pydantic `from_attributes` can pick it up if needed
+        setattr(user, "accounts", acct_list)
         return user
 
     @staticmethod

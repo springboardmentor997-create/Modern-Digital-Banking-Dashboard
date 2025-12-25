@@ -1,4 +1,5 @@
 import axiosClient from "../utils/axiosClient";
+import formatError from "../utils/formatError";
 
 export const register = async (name, email, password, phone = "") => {
   try {
@@ -10,7 +11,7 @@ export const register = async (name, email, password, phone = "") => {
     });
     return response.data;
   } catch (error) {
-    throw error.response?.data || error.message;
+    throw formatError(error);
   }
 };
 
@@ -22,7 +23,7 @@ export const login = async (email, password) => {
     });
     return response.data;
   } catch (error) {
-    throw error.response?.data || error.message;
+    throw formatError(error);
   }
 };
 
@@ -32,10 +33,7 @@ export const logout = () => {
   localStorage.removeItem("user");
 };
 
-export function getAuthHeaders() {
-  const token = localStorage.getItem('access_token');
-  return {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  };
-}
+export const getMe = async () => {
+  const res = await axiosClient.get("/auth/me");
+  return res.data;
+};

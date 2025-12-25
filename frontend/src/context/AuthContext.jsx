@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { getMe } from "../api/auth";
 
 const AuthContext = createContext(null);
 
@@ -9,27 +10,28 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
-    const storedUser = localStorage.getItem("user");
 
-    if (token && storedUser) {
-      setIsLoggedIn(true);
-      setUser(JSON.parse(storedUser));
+    if (token) {
+      getMe()
+        .then((data) => setUser(data))
+        .catch(() => {
+          localStorage.clear();
+          setUser(null);
+        })
+        .finally(() => setLoading(false));
     } else {
-      setIsLoggedIn(false);
-      setUser(null);
+      setLoading(false);
     }
-
-    setLoading(false);
   }, []);
-
-  const loginUser = (authResponse) => {
+  
+  const loginUser = async (authResponse) => {
     const { access_token, refresh_token, user } = authResponse;
 
     localStorage.setItem("access_token", access_token);
     localStorage.setItem("refresh_token", refresh_token);
-    localStorage.setItem("user", JSON.stringify(user));
-
-    setUser(user);
+    const me = await getMe();  
+    setUser(me);
+    localStorage.setItem("user", JSON.stringify(me));
     setIsLoggedIn(true);
   };
 

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
+from typing import List
 
 class UserRegister(BaseModel):
     name: str
@@ -25,6 +26,7 @@ class UserResponse(BaseModel):
     phone: Optional[str]
     role: str
     kyc_status: str
+    accounts: Optional[List[dict]] = None
     created_at: datetime
     
     class Config:

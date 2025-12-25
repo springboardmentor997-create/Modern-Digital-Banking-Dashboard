@@ -1,6 +1,8 @@
 import React, { useState,useEffect } from "react";
 import { Plus, Edit2, Trash2, AlertCircle, CheckCircle, PieChart, X, Save } from "lucide-react";
 import { getBudgets,createBudget,updateBudget,deleteBudget } from "../api/budgets";
+import toast from "react-hot-toast";
+import formatError from '../utils/formatError';
 
 export default function Budgets() {
   const [budgets, setBudgets] = useState([]);
@@ -14,7 +16,6 @@ export default function Budgets() {
   const [selectedYear, setSelectedYear] = useState(
     new Date().getFullYear()
   );
-  const [toast, setToast] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
@@ -40,11 +41,6 @@ export default function Budgets() {
     "July", "August", "September", "October", "November", "December",
   ];
 
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
   useEffect(() => {
     loadBudgets();
   }, [selectedMonth, selectedYear]);
@@ -55,7 +51,7 @@ export default function Budgets() {
       const data = await getBudgets(selectedMonth, selectedYear);
       setBudgets(Array.isArray(data) ? data : []);
     } catch (e) {
-      showToast(e.message, "error");
+      toast.error(formatError(e));
       setBudgets([]);
     } finally {
       setLoading(false);
@@ -64,7 +60,7 @@ export default function Budgets() {
 
   const handleSubmit = async () => {
     if (!form.limit_amount || form.limit_amount <= 0) {
-      showToast("Please enter a valid limit amount", "error");
+      toast.error("Please enter a valid limit amount");
       return;
     }
 
@@ -80,17 +76,17 @@ export default function Budgets() {
 
       if (editMode) {
         await updateBudget(currentBudget.id, payload);
-        showToast("Budget updated", "success");
+        toast.success("Budget updated");
       } else {
         await createBudget(payload);
-        showToast("Budget created", "success");
+        toast.success("Budget created");
       }
 
       setShowModal(false);
       resetForm();
       loadBudgets();
     } catch (e) {
-      showToast(e.message, "error");
+      toast.error(formatError(e));
     } finally {
       setSubmitting(false);
     }
@@ -101,10 +97,10 @@ export default function Budgets() {
 
     try {
       await deleteBudget(id);
-      showToast("Budget deleted", "success");
+      toast.success("Budget deleted");
       loadBudgets();
     } catch (e) {
-      showToast(e.message, "error");
+      toast.error(formatError(e));
     }
   };
 
@@ -152,8 +148,8 @@ export default function Budgets() {
   const filteredBudgets = budgets.filter(b => b.month === selectedMonth && b.year === selectedYear);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 ">
+      <div className=" mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold text-gray-800">Budget Manager</h1>
           <button
@@ -164,7 +160,6 @@ export default function Budgets() {
           </button>
         </div>
 
-        {/* Month/Year Selector */}
         <div className="bg-white p-4 rounded-lg shadow mb-6 flex gap-4">
           <select
             value={selectedMonth}
@@ -187,23 +182,6 @@ export default function Budgets() {
           </select>
         </div>
 
-        {/* Toast Notification */}
-        {toast && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
-            toast.type === "success" 
-              ? "bg-green-100 text-green-800" 
-              : "bg-red-100 text-red-800"
-          }`}>
-            {toast.type === "success" ? (
-              <CheckCircle size={20} />
-            ) : (
-              <AlertCircle size={20} />
-            )}
-            {toast.message}
-          </div>
-        )}
-
-        {/* Loading State */}
         {loading && (
           <div className="bg-white p-16 rounded-xl text-center shadow">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
@@ -211,7 +189,6 @@ export default function Budgets() {
           </div>
         )}
 
-        {/* Budgets Grid */}
         {!loading && filteredBudgets.length === 0 ? (
           <div className="bg-white p-16 rounded-xl text-center shadow">
             <PieChart className="mx-auto mb-4 text-gray-400" size={48} />
@@ -285,7 +262,6 @@ export default function Budgets() {
           )
         )}
 
-        {/* Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
             <div className="bg-white p-8 rounded-xl w-full max-w-md shadow-2xl">

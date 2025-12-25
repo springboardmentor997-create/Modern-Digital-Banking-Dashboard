@@ -3,6 +3,7 @@ import { Upload, Download, Filter, Search, ArrowUpRight, ArrowDownRight, X, File
 import { getAccounts } from '../api/accounts';
 import { getTransactions, importCSV } from '../api/transactions';
 import toast from 'react-hot-toast';
+import formatError from '../utils/formatError';
 
 export default function Transactions() {
   const [accounts, setAccounts] = useState([]);
@@ -28,9 +29,8 @@ export default function Transactions() {
   }, []);
 
   useEffect(() => {
-    if (selectedAccountId) {
-      fetchTransactions();
-    }
+    // Always fetch transactions when selectedAccountId changes (empty string = all accounts)
+    fetchTransactions();
   }, [selectedAccountId]);
 
   useEffect(() => {
@@ -42,27 +42,39 @@ export default function Transactions() {
       setLoading(true);
       const data = await getAccounts();
       setAccounts(data);
-      if (data.length > 0 && !selectedAccountId) {
-        setSelectedAccountId(data[0].id);
+      // If a specific account was pushed to localStorage (from Bills), prefer it
+      const pref = localStorage.getItem('selected_account');
+      if (pref) {
+        const parsed = parseInt(pref);
+        const found = data.find(a => a.id === parsed);
+        if (found) {
+          setSelectedAccountId(parsed);
+        } else if (data.length > 0 && !selectedAccountId) {
+          // default to showing all accounts
+          setSelectedAccountId('');
+        }
+        localStorage.removeItem('selected_account');
+      } else if (data.length > 0 && !selectedAccountId) {
+        // default to showing all accounts
+        setSelectedAccountId('');
       }
     } catch (error) {
       console.error('Error fetching accounts:', error);
-      toast.error('Failed to load accounts');
+      toast.error(formatError(error) || 'Failed to load accounts');
     } finally {
       setLoading(false);
     }
   }
 
   async function fetchTransactions() {
-    if (!selectedAccountId) return;
-    
     try {
       setLoading(true);
-      const data = await getTransactions(selectedAccountId, 0, 100);
-      setTransactions(data);
+      const acct = selectedAccountId ? selectedAccountId : null;
+      const data = await getTransactions(acct, 0, 100);
+      setTransactions(data || []);
     } catch (error) {
-      console.error('Error fetching transactions:', error);
-      toast.error('Failed to load transactions');
+      toast.error(formatError(error) || 'No transactions found');
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -73,8 +85,8 @@ export default function Transactions() {
 
     if (filters.search) {
       filtered = filtered.filter(tx => 
-        tx.description.toLowerCase().includes(filters.search.toLowerCase()) ||
-        tx.merchant.toLowerCase().includes(filters.search.toLowerCase())
+        (tx.description || '').toLowerCase().includes(filters.search.toLowerCase()) ||
+        (tx.merchant || '').toLowerCase().includes(filters.search.toLowerCase())
       );
     }
 
@@ -125,8 +137,7 @@ export default function Transactions() {
       await fetchTransactions();
     } catch (error) {
       console.error('Error importing CSV:', error);
-      const errorMessage = typeof error === 'string' ? error : error?.detail || 'Failed to import CSV';
-      toast.error(errorMessage);
+      toast.error(formatError(error) || 'Failed to import CSV');
     } finally {
       setLoading(false);
     }
@@ -198,11 +209,14 @@ export default function Transactions() {
           <label className="block text-sm font-medium text-gray-700 mb-2">Select Account</label>
           <select
             value={selectedAccountId || ''}
-            onChange={(e) => setSelectedAccountId(parseInt(e.target.value))}
+            onChange={(e) => {
+              const v = e.target.value;
+              setSelectedAccountId(v === '' ? '' : parseInt(v));
+            }}
             disabled={loading}
             className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="">Choose an account...</option>
+            <option value="">All accounts</option>
             {accounts.map(account => (
               <option key={account.id} value={account.id}>
                 {account.bank_name} - {account.account_type} (****{account.masked_account})
@@ -330,16 +344,10 @@ export default function Transactions() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {!selectedAccountId ? (
+                    {filteredTransactions.length === 0 ? (
                     <tr>
                       <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
-                        Please select an account to view transactions
-                      </td>
-                    </tr>
-                  ) : filteredTransactions.length === 0 ? (
-                    <tr>
-                      <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
-                        No transactions found. Import CSV to get started.
+                          No transactions found. Import CSV to get started.
                       </td>
                     </tr>
                   ) : (
@@ -503,7 +511,7 @@ export default function Transactions() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Posted Date:</span>
-                  <span className="font-medium">{new Date(selectedTransaction.posted_date).toLocaleString()}</span>
+                  <span className="font-medium">{selectedTransaction.posted_date ? new Date(selectedTransaction.posted_date).toLocaleString() : 'N/A'}</span>
                 </div>
               </div>
             </div>

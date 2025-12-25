@@ -5,6 +5,9 @@ from app.auth.schemas import UserRegister, UserLogin, AuthResponse, UserResponse
 from app.auth.service import AuthService
 from app.dependencies import get_current_user
 from app.models.user import User
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.users.service import UserService
 
 router = APIRouter()
 
@@ -30,8 +33,9 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_profile(current_user: User = Depends(get_current_user)):
-    return current_user
+async def get_current_user_profile(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # Return profile augmented with account summaries
+    return UserService.get_profile(db, current_user)
 
 @router.post("/login", response_model=AuthResponse)
 async def login(login_data: UserLogin, db: Session = Depends(get_db)):

@@ -14,8 +14,9 @@ router = APIRouter()
 
 
 @router.get("/profile", response_model=UserResponse)
-async def get_profile(current_user=Depends(get_current_user)):
-    return UserService.get_profile(current_user)
+async def get_profile(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    # Return user profile augmented with their accounts
+    return UserService.get_profile(db, current_user)
 
 
 @router.get("/", response_model=List[UserResponse])

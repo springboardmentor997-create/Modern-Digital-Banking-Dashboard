@@ -1,43 +1,31 @@
 import axiosClient from "../utils/axiosClient";
 
-export async function fetchRewards() {
-  try {
-    const response = await axiosClient.get("/rewards/");
-    return response.data;
-  } catch (err) {
-    throw err.response?.data || err.message;
-  }
-}
+const BASE_URL = "/rewards/";
 
-export async function createReward(data) {
-  try {
-    const response = await axio5544sClient.post("/rewards/", {
-      program_name: data.program_name,
-      points_balance: data.points_balance,
-    });
-    return response.data;
-  } catch (err) {
-    throw err.response?.data || err.message;
-  }
-}
+export const fetchRewards = async () => {
+  const { data } = await axiosClient.get(BASE_URL);
+  return data;
+};
 
-export async function updateReward(id, data) {
-  try {
-    const response = await axiosClient.put(`/rewards/${id}/`, {
-      program_name: data.program_name,
-      points_balance: data.points_balance,
-    });
-    return response.data;
-  } catch (err) {
-    throw err.response?.data || err.message;
-  }
-}
+export const createReward = async (payload) => {
+  const { data } = await axiosClient.post(BASE_URL, {
+    program_name: payload.program_name,
+    points_balance: payload.points_balance,
+  });
+  return data;
+};
 
-export async function deleteReward(id) {
-  try {
-    await axiosClient.delete(`/rewards/${id}/`);
-    return true;
-  } catch (err) {
-    throw err.response?.data || err.message;
-  }
-}
+export const updateReward = async (id, payload) => {
+  const { data } = await axiosClient.put(
+    `${BASE_URL}${id}/`,
+    {
+      program_name: payload.program_name,
+      points_balance: payload.points_balance,
+    }
+  );
+  return data;
+};
+
+export const deleteReward = async (id) => {
+  await axiosClient.delete(`${BASE_URL}${id}/`);
+};

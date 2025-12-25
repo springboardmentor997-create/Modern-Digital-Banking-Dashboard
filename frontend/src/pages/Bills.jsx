@@ -2,6 +2,8 @@ import React,{ useState, useEffect } from 'react';
 import { Plus, Trash2, Calendar, Bell, CheckCircle, Clock, X, Save,AlertTriangle } from 'lucide-react';
 import { getBills, addBill, updateBill, deleteBill, markPaid } from '../api/bills.js';
 import toast from 'react-hot-toast';
+import formatError from '../utils/formatError';
+import { useNavigate } from 'react-router-dom';
 
 export default function Bills() {
   const [bills, setBills] = useState([]);
@@ -19,6 +21,7 @@ export default function Bills() {
   });
 
   const statusOptions = ['upcoming', 'paid', 'overdue'];
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadBills();
@@ -70,7 +73,7 @@ export default function Bills() {
       closeModal();
       toast.success(editMode ? 'Bill updated!' : 'Bill added!');
     } catch (err) {
-      toast.error(err.message);
+      toast.error(formatError(err));
     }
   }
 
@@ -81,17 +84,25 @@ export default function Bills() {
       await loadBills();
       toast.success('Bill deleted!');
     } catch (err) {
-      toast.error(err.message);
+      toast.error(formatError(err));
     }
   }
 
   async function markAsPaid(id) {
     try {
-      await markPaid(id);
+      // Ask user to choose account id to pay from (quick UX); ideally show account picker modal
+      const acct = window.prompt('Enter account id to pay from (leave blank to skip transaction record):');
+      const account_id = acct ? Number(acct) : null;
+      await markPaid(id, account_id);
       await loadBills();
       toast.success('Bill marked as paid!');
+      if (account_id) {
+        // let Transactions page select this account and show the new txn
+        localStorage.setItem('selected_account', String(account_id));
+        navigate('/transactions');
+      }
     } catch (err) {
-      toast.error(err.message);
+      toast.error(formatError(err));
     }
   }
 

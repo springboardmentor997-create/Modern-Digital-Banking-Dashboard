@@ -1,6 +1,14 @@
 import React from "react";
 import { Building2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
 export default function Footer() {
+  const navigate = useNavigate();
+
+  const goToSignup = (role) => {
+    navigate("/login", { state: { role } });
+  };
+
     return(
       <footer className="py-12 px-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white">
         <div className="max-w-7xl mx-auto">
@@ -26,8 +34,10 @@ export default function Footer() {
               <h4 className="text-white font-bold mb-3">Company</h4>
               <ul className="space-y-2 text-sm">
                 <li><a href="#" className="hover:text-white">About Us</a></li>
-                <li><a href="#" className="hover:text-white">Careers</a></li>
                 <li><a href="#" className="hover:text-white">Contact</a></li>
+                <li><button onClick={() => goToSignup("user")}>Don't have an account</button></li>
+                <li><button onClick={() => goToSignup("admin")}>Admin here</button></li>
+                <li><button onClick={() => goToSignup("auditor")}>Auditor here</button></li>
               </ul>
             </div>
             <div className="flex-col items-center justify-center text-center">
@@ -39,7 +49,7 @@ export default function Footer() {
               </ul>
             </div>
           </div>
-          <div className="text-center text-sm  ">
+          <div className="text-center text-sm pt-10 ">
             © 2024 Tivra Bank. All rights reserved.
           </div>
         </div>

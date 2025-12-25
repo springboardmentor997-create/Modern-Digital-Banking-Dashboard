@@ -1,46 +1,43 @@
 import axiosClient from "../utils/axiosClient";
+import formatError from "../utils/formatError";
+
+const BASE_URL = "/bills/";
 
 export const getBills = async () => {
-  try {
-    const res = await axiosClient.get(`/bills/`);
-    return res.data;
-  } catch (err) {
-    throw err.response?.data || err.message;
-  }
+  const { data } = await axiosClient.get(BASE_URL);
+  return data;
 };
 
+
 export const addBill = async (payload) => {
-  try {
-    await axiosClient.post(`/bills/`, payload);
-    return true;
-  } catch (err) {
-    throw err.response?.data || err.message;
-  }
+  const { data } = await axiosClient.post(BASE_URL, payload);
+  return data;
 };
 
 export const updateBill = async (id, payload) => {
-  try {
-    await axiosClient.put(`/bills/${id}`, payload);
-    return true;
-  } catch (err) {
-    throw err.response?.data || err.message;
-  }
+  const { data } = await axiosClient.put(
+    `${BASE_URL}${id}/`,
+    payload
+  );
+  return data;
 };
+
 
 export const deleteBill = async (id) => {
   try {
-    await axiosClient.delete(`/bills/${id}`);
-    return true;
-  } catch (err) {
-    throw err.response?.data || err.message;
+    await axiosClient.delete(`${BASE_URL}${id}/`);
+  } catch (error) {
+    throw formatError(error);
   }
 };
 
-export const markPaid = async (id) => {
+export const markPaid = async (id, account_id = null) => {
+  const payload = { status: "paid" };
+  if (account_id) payload.account_id = account_id;
   try {
-    await axiosClient.put(`/bills/${id}`, { status: 'paid' });
-    return true;
-  } catch (err) {
-    throw err.response?.data || err.message;
+    const { data } = await axiosClient.put(`${BASE_URL}${id}/`, payload);
+    return data;
+  } catch (error) {
+    throw formatError(error);
   }
 };

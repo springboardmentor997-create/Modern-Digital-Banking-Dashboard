@@ -6,12 +6,14 @@ import { login, register } from "../api/auth.js";
 import loginImg from "../images/login.jpg";
 import signupImg from "../images/signup.jpg";
 import { useAuth } from "../context/AuthContext";
+import { useLocation } from "react-router-dom";
 
 export default function Login() {
   const [isLoginPage, setIsLoginPage] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [clicked, setClicked] = useState("");
   const [loading, setLoading] = useState(false);
+  const location = useLocation();
 
   const { loginUser } = useAuth();
 
@@ -21,7 +23,8 @@ export default function Login() {
     email: "",
     phone: "",
     password: "",
-    kyc_status: false
+    role: location.state?.role || "user",
+    kyc_status: "unverified"
   });
 
   const [errors, setErrors] = useState({});
@@ -35,7 +38,7 @@ export default function Login() {
     const { name, value, type, checked } = e.target;
     setForm({
       ...form,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked ? "verified" : "unverified" : value
     });
 
     setErrors({ ...errors, [name]: "" }); 
@@ -82,13 +85,17 @@ export default function Login() {
       if (isLoginPage) {
         data = await login(form.email, form.password);
       } else {
-        data = await register(form.name, form.email, form.password, form.phone);
+        data = await register(form.name, form.email, form.password, form.phone,form.kyc_status,form.role);
       }
+        await loginUser(data);
+
+        const role = JSON.parse(localStorage.getItem("user"))?.role;
+
+        if (role === "admin") navigate("/Admindashboard");
+        else if (role === "auditor") navigate("/AuditorDashboard");
+        else navigate("/Dashboard");
       
       toast.success(isLoginPage ? "Login successful!" : "Account created successfully!");
-      loginUser(data);
-      navigate("/");
-
     } catch (error) {
       console.error("Authentication error:", error);
       
@@ -121,7 +128,7 @@ export default function Login() {
 
   function handleToggleForm() {
     setIsLoginPage(!isLoginPage);
-    setForm({ name: "", email: "", phone: "", password: "", kyc_status: false });
+    setForm({ name: "", email: "", phone: "", password: "", kyc_status: "unverified" ,role: "" });
     setErrors({});
   }
 
@@ -238,7 +245,7 @@ export default function Login() {
                   name="kyc_status"
                   type="checkbox"
                   id="kyc"
-                  checked={form.kyc_status}
+                  checked={form.kyc_status === "verified" }
                   onChange={handleChange}
                   disabled={loading}
                   className="w-5 h-5 cursor-pointer accent-blue-500 rounded disabled:cursor-not-allowed"

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Building2, CreditCard, DollarSign, X, Save } from 'lucide-react';
 import { getAccounts, createAccount, updateAccount, deleteAccount } from '../api/accounts';
 import toast from 'react-hot-toast';
+import formatError from '../utils/formatError';
 
 export default function Accounts() {
   const [accounts, setAccounts] = useState([]);
@@ -34,7 +35,7 @@ export default function Accounts() {
       setAccounts(data);
     } catch (error) {
       console.error('Error fetching accounts:', error);
-      toast.error('Failed to load accounts');
+      toast.error(formatError(error));
     } finally {
       setLoading(false);
     }
@@ -97,8 +98,7 @@ export default function Accounts() {
       closeModal();
     } catch (error) {
       console.error('Error saving account:', error);
-      const errorMessage = typeof error === 'string' ? error : error?.detail || 'Failed to save account';
-      toast.error(errorMessage);
+      toast.error(formatError(error));
     } finally {
       setLoading(false);
     }
@@ -142,7 +142,7 @@ export default function Accounts() {
       await fetchAccounts();
     } catch (error) {
       console.error("Error deleting account:", error);
-      toast.error("Failed to delete account");
+      toast.error(formatError(error));
     } finally {
       setLoading(false);
     }
@@ -208,7 +208,7 @@ export default function Accounts() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Accounts</h1>
+            <h1 className="text-4xl font-bold text-gray-900">My Accounts</h1>
             <p className="text-gray-600 mt-1">Manage your bank accounts</p>
           </div>
           <button
