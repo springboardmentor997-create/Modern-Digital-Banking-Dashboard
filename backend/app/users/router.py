@@ -80,3 +80,14 @@ async def verify_kyc(db: Session = Depends(get_db), current_user: User = Depends
     # It's intended to be called when the user checks the KYC checkbox on registration/profile.
     updated = UserService.verify_kyc(db, current_user)
     return updated
+
+
+@router.delete("/profile")
+async def delete_profile(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    """Delete the current user's account.
+
+    This removes the user record from the database and any per-user settings stored on disk.
+    Caller must be authenticated as the target user.
+    """
+    UserService.delete_account(db, current_user)
+    return {"message": "Account deleted successfully"}

@@ -76,3 +76,21 @@ class UserService:
         db.commit()
         db.refresh(user)
         return user
+
+    @staticmethod
+    def delete_account(db: Session, user: User):
+        """Delete the given user and remove their stored settings."""
+        try:
+            # Remove user-specific settings if present
+            all_settings = _load_all_settings()
+            if str(user.id) in all_settings:
+                del all_settings[str(user.id)]
+                _save_all_settings(all_settings)
+
+            # Delete the user record
+            db.delete(user)
+            db.commit()
+            return True
+        except Exception:
+            db.rollback()
+            raise
