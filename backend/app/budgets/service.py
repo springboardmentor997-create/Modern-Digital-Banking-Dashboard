@@ -6,6 +6,8 @@ from app.budgets.models import Budget
 from app.budgets.schemas import BudgetCreate
 from app.transactions.models import Transaction, TransactionType, TransactionCategory
 
+from app.alerts.service import create_budget_exceeded_alert
+
 from calendar import monthrange
 
 
@@ -130,3 +132,25 @@ def get_budget_vs_actual(db: Session, user_id: int):
         })
 
     return results
+
+
+def trigger_budget_alerts(db: Session, user_id: int):
+    """
+    Creates alerts for budgets that are exceeded.
+    """
+
+    results = get_budget_vs_actual(db=db, user_id=user_id)
+
+    created_alerts = []
+
+    for item in results:
+        if item["exceeded"]:
+            alert = create_budget_exceeded_alert(
+                db=db,
+                user_id=user_id,
+                category=item["category"],
+                amount=item["spent"] - item["limit"],
+            )
+            created_alerts.append(alert)
+
+    return created_alerts
