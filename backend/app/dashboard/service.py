@@ -1,11 +1,12 @@
 from datetime import datetime
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, extract
 
 from app.accounts.models import Account
 from app.alerts.models import Alert
 from app.transactions.service import get_monthly_total_spent
 from app.budgets.service import get_budget_vs_actual
+from app.transactions.models import Transaction, TransactionType
 
 def get_dashboard_summary(db: Session, user_id: int):
     """
@@ -59,4 +60,22 @@ def get_account_summary(db: Session, user_id: int):
     return {
         "total_accounts": result[0],
         "total_balance": float(result[1]),
+    }
+
+
+def get_monthly_spending(db: Session, user_id: int):
+    now = datetime.utcnow()
+
+    total = (
+        db.query(func.coalesce(func.sum(Transaction.amount), 0))
+        .filter(Transaction.user_id == user_id)
+        .filter(Transaction.transaction_type == TransactionType.expense)
+        .filter(extract("year", Transaction.transaction_date) == now.year)
+        .filter(extract("month", Transaction.transaction_date) == now.month)
+        .scalar()
+    )
+
+    return {
+        "month": now.strftime("%Y-%m"),
+        "total_spent": float(total),
     }
