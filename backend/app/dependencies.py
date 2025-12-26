@@ -39,7 +39,7 @@ def get_current_user_email(token: str = Depends(oauth2_scheme)) -> str:
 
 
 def get_current_user(
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
     token: str = Depends(oauth2_scheme),
 ):
     payload = verify_access_token(token)
