@@ -84,7 +84,6 @@ def get_user_transactions(db: Session, user_id: int):
         .all()
     )
 
-
 def get_monthly_total_spent(
     db: Session,
     user_id: int,
@@ -96,11 +95,11 @@ def get_monthly_total_spent(
     """
 
     total = (
-        db.query(func.coalesce(func.sum(Transaction.amount), 0.0))
+        db.query(func.coalesce(func.sum(Transaction.amount), 0))
         .filter(Transaction.user_id == user_id)
-        .filter(Transaction.type == "expense")
-        .filter(extract("year", Transaction.created_at) == year)
-        .filter(extract("month", Transaction.created_at) == month)
+        .filter(Transaction.transaction_type == TransactionType.expense)
+        .filter(extract("year", Transaction.transaction_date) == year)
+        .filter(extract("month", Transaction.transaction_date) == month)
         .scalar()
     )
 
