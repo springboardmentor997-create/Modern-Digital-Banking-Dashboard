@@ -6,8 +6,8 @@ from app.transactions.models import TransactionType, TransactionCategory
 
 db = SessionLocal()
 
-USER_ID = 1       # must exist
-ACCOUNT_ID = 1    # must belong to user
+USER_ID = 1       
+ACCOUNT_ID = 1    
 
 tx = create_transaction(
     db,

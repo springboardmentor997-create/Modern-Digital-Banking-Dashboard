@@ -26,3 +26,8 @@ def test_get_monthly_total_spent():
 
     finally:
         db.close()
+
+
+# 👇 THIS is what you were missing
+if __name__ == "__main__":
+    test_get_monthly_total_spent()

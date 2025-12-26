@@ -14,7 +14,7 @@ from app.budgets.models import BudgetPeriod
 
 db = SessionLocal()
 
-USER_ID = 2  # as agreed
+USER_ID = 2  
 
 
 print("Creating budget...")
