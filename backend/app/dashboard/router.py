@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.dependencies import get_db, get_current_user
 from app.models.user import User
+from app.dashboard.service import get_monthly_spending
 
 router = APIRouter(
     prefix="/dashboard",
@@ -25,3 +26,11 @@ def dashboard_summary(
         "user_id": current_user.id,
         "role": current_user.role,
     }
+
+
+@router.get("/monthly-spending")
+def monthly_spending(
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    return get_monthly_spending(db, user.id)
