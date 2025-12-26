@@ -5,6 +5,7 @@ from app.transactions.models import Transaction, TransactionType
 from app.transactions.schemas import TransactionCreate
 from app.accounts.models import Account
 
+from sqlalchemy import extract, func
 
 def create_transaction(
     db: Session,
@@ -83,3 +84,24 @@ def get_user_transactions(db: Session, user_id: int):
         .all()
     )
 
+
+def get_monthly_total_spent(
+    db: Session,
+    user_id: int,
+    year: int,
+    month: int,
+) -> float:
+    """
+    Returns total expense amount for a user in a given month/year
+    """
+
+    total = (
+        db.query(func.coalesce(func.sum(Transaction.amount), 0.0))
+        .filter(Transaction.user_id == user_id)
+        .filter(Transaction.type == "expense")
+        .filter(extract("year", Transaction.created_at) == year)
+        .filter(extract("month", Transaction.created_at) == month)
+        .scalar()
+    )
+
+    return float(total)
