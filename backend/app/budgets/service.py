@@ -6,6 +6,8 @@ from app.budgets.models import Budget
 from app.budgets.schemas import BudgetCreate
 from app.transactions.models import Transaction, TransactionType, TransactionCategory
 
+from calendar import monthrange
+
 
 def create_budget(
     db: Session,
@@ -91,9 +93,14 @@ def is_budget_exceeded(
 def get_budget_vs_actual(db: Session, user_id: int):
     """
     Returns budget vs actual spending for all budgets of a user.
+    Assumes monthly budgets.
     """
 
     results = []
+
+    today = date.today()
+    start_date = date(today.year, today.month, 1)
+    end_date = date(today.year, today.month, monthrange(today.year, today.month)[1])
 
     budgets = (
         db.query(Budget)
@@ -106,8 +113,8 @@ def get_budget_vs_actual(db: Session, user_id: int):
             db=db,
             user_id=user_id,
             category=budget.category,
-            start_date=budget.start_date,
-            end_date=budget.end_date,
+            start_date=start_date,
+            end_date=end_date,
         )
 
         spent_float = float(spent)
@@ -123,4 +130,3 @@ def get_budget_vs_actual(db: Session, user_id: int):
         })
 
     return results
-
