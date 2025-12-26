@@ -22,8 +22,34 @@ async def get_profile(db: Session = Depends(get_db), current_user=Depends(get_cu
 @router.get("/", response_model=List[UserResponse])
 async def list_users(db: Session = Depends(get_db), current_user: User = Depends(require_auditor_or_admin)):
     # Admin/auditor endpoint to list all users (read-only for auditors)
+    # Return only non-sensitive user fields plus a limited `accounts` list per user.
     users = db.query(type(current_user)).all()
+
+    # Attach limited account summaries to each user object
+    for u in users:
+        acct_list = UserService.get_account_summaries(db, u.id)
+        setattr(u, "accounts", acct_list)
+
     return users
+
+
+
+@router.get("/{user_id}", response_model=UserResponse)
+async def get_user_by_id(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # Admins can fetch any user; normal users can fetch only their own record.
+    if getattr(current_user, "role", None) != "admin" and current_user.id != user_id:
+        # Not permitted
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    # Fetch target user
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Attach limited account summaries (only id, bank_name, account_type, balance, currency)
+    acct_list = UserService.get_account_summaries(db, target.id)
+    setattr(target, "accounts", acct_list)
+    return target
 
 
 @router.put("/profile", response_model=UserResponse)

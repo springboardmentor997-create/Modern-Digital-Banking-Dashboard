@@ -53,6 +53,26 @@ class UserService:
         return user
 
     @staticmethod
+    def get_account_summaries(db: Session, user_id: int):
+        """Return limited account fields for listing (no sensitive data).
+
+        Only include: id, bank_name, account_type, balance, currency.
+        """
+        from app.models.account import Account
+
+        accounts = db.query(Account).filter(Account.user_id == user_id).all()
+        return [
+            {
+                "id": a.id,
+                "bank_name": a.bank_name,
+                "account_type": a.account_type.value if hasattr(a.account_type, 'value') else a.account_type,
+                "balance": float(a.balance) if a.balance is not None else None,
+                "currency": a.currency,
+            }
+            for a in accounts
+        ]
+
+    @staticmethod
     def update_profile(db: Session, user: User, data: Dict[str, Any]):
         if data.get("name") is not None:
             user.name = data.get("name")
