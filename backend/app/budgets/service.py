@@ -86,3 +86,41 @@ def is_budget_exceeded(
     )
 
     return spent > budget.limit_amount
+
+
+def get_budget_vs_actual(db: Session, user_id: int):
+    """
+    Returns budget vs actual spending for all budgets of a user.
+    """
+
+    results = []
+
+    budgets = (
+        db.query(Budget)
+        .filter(Budget.user_id == user_id)
+        .all()
+    )
+
+    for budget in budgets:
+        spent = get_budget_spent_amount(
+            db=db,
+            user_id=user_id,
+            category=budget.category,
+            start_date=budget.start_date,
+            end_date=budget.end_date,
+        )
+
+        spent_float = float(spent)
+        limit_float = float(budget.limit_amount)
+
+        results.append({
+            "budget_id": budget.id,
+            "category": budget.category,
+            "limit": limit_float,
+            "spent": spent_float,
+            "remaining": limit_float - spent_float,
+            "exceeded": spent_float > limit_float,
+        })
+
+    return results
+
