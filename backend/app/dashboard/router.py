@@ -1,15 +1,27 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-from app.database import get_db
-from app.dependencies import get_current_user
-from app.dashboard.service import get_dashboard_summary
+from app.dependencies import get_db, get_current_user
+from app.models.user import User
 
-router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
+router = APIRouter(
+    prefix="/dashboard",
+    tags=["Dashboard"],
+)
 
 
-@router.get("/")
+@router.get("/summary")
 def dashboard_summary(
-    db=Depends(get_db),
-    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return get_dashboard_summary(db=db, user_id=current_user.id)
+    """
+    Simple placeholder dashboard summary.
+    We will expand this step-by-step
+    """
+
+    return {
+        "message": "Dashboard API working",
+        "user_id": current_user.id,
+        "role": current_user.role,
+    }
