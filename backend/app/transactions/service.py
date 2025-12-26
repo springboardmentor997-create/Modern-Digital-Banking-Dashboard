@@ -7,6 +7,10 @@ from app.accounts.models import Account
 
 from sqlalchemy import extract, func
 
+from app.budgets.models import Budget
+
+
+
 def create_transaction(
     db: Session,
     user_id: int,
@@ -84,6 +88,7 @@ def get_user_transactions(db: Session, user_id: int):
         .all()
     )
 
+
 def get_monthly_total_spent(
     db: Session,
     user_id: int,
@@ -104,3 +109,43 @@ def get_monthly_total_spent(
     )
 
     return float(total)
+
+
+
+def get_budget_vs_actual(db: Session, user_id: int):
+    """
+    Returns budget vs actual spending for each budget of a user.
+    """
+
+    results = []
+
+    budgets = (
+        db.query(Budget)
+        .filter(Budget.user_id == user_id)
+        .all()
+    )
+
+    for budget in budgets:
+        spent = (
+            db.query(func.coalesce(func.sum(Transaction.amount), 0))
+            .filter(Transaction.user_id == user_id)
+            .filter(Transaction.transaction_type == TransactionType.expense)
+            .filter(Transaction.category == budget.category)
+            .filter(Transaction.transaction_date >= budget.start_date)
+            .filter(Transaction.transaction_date <= budget.end_date)
+            .scalar()
+        )
+
+        spent = float(spent)
+        remaining = float(budget.amount) - spent
+
+        results.append({
+            "budget_id": budget.id,
+            "category": budget.category,
+            "limit": float(budget.amount),
+            "spent": spent,
+            "remaining": remaining,
+            "exceeded": spent > float(budget.amount),
+        })
+
+    return results
