@@ -8,7 +8,7 @@ before starting the backend server.
 Environment variable required:
 DATABASE_URL=postgresql://<user>:<password>@localhost:5432/digital_banking
 ##
-## Week 1 – Backend Foundation (COMPLETED)
+## Week 1 – Backend Foundation
 
 Status: ✅ Complete and stable
 
@@ -43,5 +43,3 @@ Status: ✅ Complete and stable
   - schemas → request/response validation
   - services → business logic
   - routers → API layer
-
-This checkpoint serves as a stable rollback point before starting Week 2.
