@@ -54,16 +54,18 @@ class BillService:
             setattr(bill, k, v)
 
         # Auto-deduction: only when transitioning to paid for the first time
-        if will_mark_paid and previous_status != "paid" and account_id is not None:
+        if will_mark_paid and previous_status != "paid":
             # perform balance adjustment using account model
             from app.models.account import Account
 
-            acct = db.query(Account).filter(Account.id == account_id).first()
-            if acct:
-                # Treat bill payment as a debit on the account balance (subtract amount_due)
-                # Use Decimal arithmetic to avoid float drift
-                acct.balance = (acct.balance or Decimal("0")) - (bill.amount_due or Decimal("0"))
-                db.add(acct)
+            # Prefer an account recorded on the bill if present, otherwise use the provided account_id
+            acct_lookup_id = getattr(bill, "account_id", None) or account_id
+            if acct_lookup_id is not None:
+                acct = db.query(Account).filter(Account.id == acct_lookup_id).first()
+                if acct:
+                    # Treat bill payment as a debit on the account balance (subtract amount_due)
+                    acct.balance = (acct.balance or Decimal("0")) - (bill.amount_due or Decimal("0"))
+                    db.add(acct)
 
         db.add(bill)
         # Commit once and refresh updated objects to keep transaction consistent

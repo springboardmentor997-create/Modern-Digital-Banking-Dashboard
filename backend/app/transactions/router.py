@@ -53,17 +53,19 @@ async def get_transactions(
     db: Session = Depends(get_db)
 ):
     # Verify account belongs to user
-    account = db.query(Account).filter(
-        Account.id == account_id,
-        Account.user_id == current_user.id
-    ).first()
-    
+    # Load account (admins may access any account)
+    account = db.query(Account).filter(Account.id == account_id).first()
+
     if not account:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Account not found"
         )
-    
+
+    # Allow admins to view any account; normal users only their own
+    if getattr(current_user, "role", None) != "admin" and account.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
     transactions = TransactionService.get_account_transactions(db, account_id, skip, limit)
     return transactions
 
@@ -75,17 +77,19 @@ async def get_transaction(
     db: Session = Depends(get_db)
 ):
     # Verify account belongs to user
-    account = db.query(Account).filter(
-        Account.id == account_id,
-        Account.user_id == current_user.id
-    ).first()
-    
+    # Load account (admins may access any account)
+    account = db.query(Account).filter(Account.id == account_id).first()
+
     if not account:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Account not found"
         )
-    
+
+    # Allow admins to view any account; normal users only their own
+    if getattr(current_user, "role", None) != "admin" and account.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
     transaction = TransactionService.get_transaction_by_id(db, transaction_id, account_id)
     
     if not transaction:

@@ -116,5 +116,40 @@ async def delete_profile(db: Session = Depends(get_db), current_user=Depends(get
     This removes the user record from the database and any per-user settings stored on disk.
     Caller must be authenticated as the target user.
     """
-    UserService.delete_account(db, current_user)
-    return {"message": "Account deleted successfully"}
+    user_id = current_user.id
+
+    # Cascade delete in safe order to avoid foreign key violations
+    from app.models.reward import Reward
+    from app.models.bill import Bill
+    from app.models.transaction import Transaction
+    from app.models.account import Account
+    import os
+
+    # 1) Delete rewards
+    db.query(Reward).filter(Reward.user_id == user_id).delete(synchronize_session=False)
+
+    # 2) Delete bills
+    db.query(Bill).filter(Bill.user_id == user_id).delete(synchronize_session=False)
+
+    # 3) Delete transactions for any accounts owned by the user
+    db.query(Transaction).filter(Transaction.account_id.in_(
+        db.query(Account.id).filter(Account.user_id == user_id)
+    )).delete(synchronize_session=False)
+
+    # 4) Delete accounts
+    db.query(Account).filter(Account.user_id == user_id).delete(synchronize_session=False)
+
+    # 5) Remove per-user settings file if present
+    settings_path = f"backend/user_settings_{user_id}.json"
+    if os.path.exists(settings_path):
+        try:
+            os.remove(settings_path)
+        except Exception:
+            pass
+
+    # 6) Delete user record
+    from app.models.user import User
+    db.query(User).filter(User.id == user_id).delete(synchronize_session=False)
+
+    db.commit()
+    return {"message": f"User {user_id} and all data deleted"}
