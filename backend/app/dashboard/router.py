@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_db, get_current_user
 from app.models.user import User
 from app.dashboard.service import get_monthly_spending
+from app.dashboard.service import get_dashboard_overview
 
 router = APIRouter(
     prefix="/dashboard",
@@ -29,3 +30,11 @@ def monthly_spending(
     current_user: User = Depends(get_current_user),
 ):
     return get_monthly_spending(db, current_user.id)
+
+
+@router.get("/overview")
+def dashboard_overview(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return get_dashboard_overview(db, current_user.id)
