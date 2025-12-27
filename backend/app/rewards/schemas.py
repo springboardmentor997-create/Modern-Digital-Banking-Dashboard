@@ -6,6 +6,10 @@ from datetime import datetime
 class RewardCreate(BaseModel):
     program_name: str
     points_balance: int = 0
+    # Optional: assign this reward to a specific user (admin only)
+    user_id: Optional[int] = None
+    # Optional: credit a particular account when creating the reward
+    account_id: Optional[int] = None
 
 
 class RewardUpdate(BaseModel):

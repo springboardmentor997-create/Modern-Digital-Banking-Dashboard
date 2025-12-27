@@ -1,11 +1,13 @@
 from sqlalchemy.orm import Session
 from app.models.reward import Reward
 from app.rewards.schemas import RewardCreate, RewardUpdate
+from datetime import datetime
 
 
 class RewardService:
     @staticmethod
     def create_reward(db: Session, user_id: int, payload: RewardCreate):
+        # Create the reward record
         r = Reward(
             user_id=user_id,
             program_name=payload.program_name,
@@ -14,6 +16,34 @@ class RewardService:
         db.add(r)
         db.commit()
         db.refresh(r)
+
+        # If caller requested to credit a specific account, attempt to do so.
+        # Use TransactionService.create_transaction so that account balance
+        # and transaction history are updated in a single place.
+        acct_id = getattr(payload, "account_id", None)
+        if acct_id:
+            try:
+                from app.models.account import Account
+                from app.transactions.schemas import TransactionCreate
+                from app.transactions.service import TransactionService
+
+                acct = db.query(Account).filter(Account.id == acct_id).first()
+                if acct and acct.user_id == user_id:
+                    tx_payload = TransactionCreate(
+                        description=f"Reward credit: {r.program_name}",
+                        merchant="Reward",
+                        amount=r.points_balance,
+                        category="Rewards",
+                        txn_type="credit",
+                        currency=getattr(acct, "currency", "USD"),
+                        txn_date=datetime.utcnow()
+                    )
+                    # This will create a transaction and update the account balance
+                    TransactionService.create_transaction(db, acct_id, tx_payload)
+            except Exception:
+                # Do not fail reward creation if crediting account fails
+                pass
+
         return r
 
     @staticmethod

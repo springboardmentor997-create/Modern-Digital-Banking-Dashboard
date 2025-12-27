@@ -25,10 +25,12 @@ async def list_rewards(
 @router.post("/", response_model=RewardResponse)
 async def create_reward(
 	reward_create: RewardCreate,
-	current_user: User = Depends(require_admin),
-	db: Session = Depends(get_db)
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
 ):
-	return rewards_service.create_reward(db, current_user.id, reward_create)
+	# Allow admin to optionally specify a target user_id in the payload.
+	target_user_id = reward_create.user_id if getattr(reward_create, "user_id", None) else current_user.id
+	return rewards_service.create_reward(db, target_user_id, reward_create)
 
 
 @router.put("/{reward_id}", response_model=RewardResponse)

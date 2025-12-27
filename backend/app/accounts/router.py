@@ -82,13 +82,21 @@ async def delete_account(
     current_user: User = Depends(require_write_access),
     db: Session = Depends(get_db)
 ):
-    account = AccountService.get_account_by_id(db, account_id, current_user.id)
-    
+    # Allow admins to delete any account; regular users only their own
+    account = AccountService.get_account_by_id_any(db, account_id)
+
     if not account:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Account not found"
         )
-    
-    AccountService.delete_account(db, account)
-    return {"message": "Account deleted successfully"}
+
+    if getattr(current_user, "role", "user") != "admin" and account.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Own account only")
+
+    result = AccountService.delete_account(db, account)
+    return {
+        "message": f"Account {account_id} deleted",
+        "transactions_deleted": result.get("txns_deleted", 0),
+        "bills_deleted": result.get("bills_deleted", 0)
+    }

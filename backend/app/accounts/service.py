@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from app.models.account import Account
 from app.accounts.schemas import AccountCreate, AccountUpdate
+from app.models.transaction import Transaction
+from app.models.bill import Bill
 
 class AccountService:
     @staticmethod
@@ -71,5 +73,14 @@ class AccountService:
     
     @staticmethod
     def delete_account(db: Session, account: Account):
+        # Delete related transactions and bills first to avoid FK constraint issues
+        txns_deleted = db.query(Transaction).filter(Transaction.account_id == account.id).delete(synchronize_session=False)
+        bills_deleted = db.query(Bill).filter(Bill.account_id == account.id).delete(synchronize_session=False)
+
         db.delete(account)
         db.commit()
+
+        return {
+            "txns_deleted": int(txns_deleted or 0),
+            "bills_deleted": int(bills_deleted or 0)
+        }
