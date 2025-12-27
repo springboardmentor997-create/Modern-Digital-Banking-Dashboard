@@ -8,7 +8,6 @@ import {
 import { getAccounts } from '../api/accounts';
 import { getTransactions,createTransaction} from '../api/transactions';
 import toast from 'react-hot-toast';
-import formatError from '../utils/formatError';
 
 export default function Transfer() {
   const [accounts, setAccounts] = useState([]);
@@ -39,10 +38,12 @@ export default function Transfer() {
   }, []);
 
   useEffect(() => {
-    if (selectedAccount) {
+    // Only load transactions when an account is chosen and that
+    // account exists in the loaded accounts list (avoids 403 for id=1)
+    if (selectedAccount && accounts.find(a => a.id === selectedAccount)) {
       loadTransactions();
     }
-  }, [selectedAccount]);
+  }, [selectedAccount, accounts]);
 
   const loadAccounts = async () => {
     try {
@@ -53,7 +54,7 @@ export default function Transfer() {
         setSelectedAccount(data[0].id);
       }
     } catch (e) {
-      toast.error(formatError(e) || 'Failed to load accounts');
+      toast.error(e.message || 'Failed to load accounts');
     } finally {
       setLoading(false);
     }
@@ -65,7 +66,8 @@ export default function Transfer() {
       const data = await getTransactions(selectedAccount);
       setTransactions(data);
     } catch (e) {
-      toast.error(formatError(e) || 'No transactions found');
+      const msg = e && e.detail ? e.detail : (e && e.message ? e.message : String(e));
+      toast.error(msg || 'No transactions found');
       setTransactions([]);
     } finally {
       setLoading(false);
@@ -100,8 +102,14 @@ export default function Transfer() {
         currency: 'INR'
       });
       loadTransactions();
+      // Refresh accounts so displayed balance updates after this transaction
+      try {
+        await loadAccounts();
+      } catch (e) {
+        // non-fatal
+      }
     } catch (e) {
-      toast.error(formatError(e) || 'Failed to create transaction');
+      toast.error(e.message || 'Failed to create transaction');
     } finally {
       setLoading(false);
     }

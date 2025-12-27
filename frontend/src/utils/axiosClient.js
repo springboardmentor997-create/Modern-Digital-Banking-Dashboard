@@ -43,36 +43,9 @@ axiosClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Normalize server error details into a readable string so UI code
-    // (e.g. `toast.error(...)`) doesn't receive raw objects/arrays which
-    // React cannot render directly and would throw.
-    try {
-      const serverDetail = error.response?.data?.detail;
-      if (serverDetail) {
-        if (typeof serverDetail === "string") {
-          error.message = serverDetail;
-        } else if (Array.isArray(serverDetail)) {
-          // Pydantic/FastAPI validation errors often come as arrays of objects
-          // with {loc, msg, type}. Join the messages for readability.
-          const parts = serverDetail.map((d) => d.msg || JSON.stringify(d));
-          error.message = parts.join("; ");
-        } else if (typeof serverDetail === "object") {
-          // Fallback: stringify objects
-          error.message = JSON.stringify(serverDetail);
-        }
-      } else if (error.response?.data) {
-        // If server provided a top-level message, prefer it
-        const data = error.response.data;
-        if (typeof data === "string") error.message = data;
-        else if (data.message) error.message = data.message;
-      }
-    } catch (e) {
-      // Preserve original error.message on any unexpected issue
-    }
-
     if (
       error.response?.status === 401 &&
-      !originalRequest._retry
+      !originalRequest._retry && !originalRequest.url.includes("/auth/login")
     ) {
       originalRequest._retry = true;
 
@@ -88,7 +61,6 @@ axiosClient.interceptors.response.use(
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
 
-        window.location.href = "/login";
         return Promise.reject(refreshError);
       }
     }

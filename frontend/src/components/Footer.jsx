@@ -37,7 +37,7 @@ export default function Footer() {
                 <li><a href="#" className="hover:text-white">Contact</a></li>
                 <li><button onClick={() => goToSignup("user")}>Don't have an account</button></li>
                 <li><button onClick={() => goToSignup("admin")}>Admin here</button></li>
-                <li><button onClick={() => goToSignup("auditor")}>Auditor here</button></li>
+                <li><button onClick={() => goToSignup("Auditor")}>Auditor here</button></li>
               </ul>
             </div>
             <div className="flex-col items-center justify-center text-center">

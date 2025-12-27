@@ -1,5 +1,4 @@
 import axiosClient from "../utils/axiosClient";
-import formatError from "../utils/formatError";
 
 const BASE_URL = "/bills/";
 
@@ -24,20 +23,11 @@ export const updateBill = async (id, payload) => {
 
 
 export const deleteBill = async (id) => {
-  try {
-    await axiosClient.delete(`${BASE_URL}${id}/`);
-  } catch (error) {
-    throw formatError(error);
-  }
+  await axiosClient.delete(`${BASE_URL}${id}/`);
 };
 
 export const markPaid = async (id, account_id = null) => {
-  const payload = { status: "paid" };
-  if (account_id) payload.account_id = account_id;
-  try {
-    const { data } = await axiosClient.put(`${BASE_URL}${id}/`, payload);
-    return data;
-  } catch (error) {
-    throw formatError(error);
-  }
+  const payload = account_id ? { account_id } : {};
+  const { data } = await axiosClient.post(`${BASE_URL}${id}/mark-paid`, payload);
+  return data;
 };

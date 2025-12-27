@@ -1,18 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import formatError from '../utils/formatError';
-import { User,Mail,Phone,Key,Lock,Globe,Settings,Bell,Banknote,Trash } from 'lucide-react';
+import { User,Mail,Phone,Key,Lock,Globe,Settings,Bell,Banknote} from 'lucide-react';
 import axiosClient from "../utils/axiosClient";
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 export default function Setting(){
   const [userProfile, setUserProfile] = useState({
     name: 'John Doe',
     email: 'john@email.com',
     phone: '',
-    kyc_status: "",
-    accounts: []
+    kyc_status: ""
   });
   
   const [passwordData, setPasswordData] = useState({
@@ -21,8 +17,6 @@ export default function Setting(){
     confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
-  const { logoutUser } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
     loadUserProfile();
@@ -35,8 +29,7 @@ export default function Setting(){
         name: data.name || "",
         email: data.email || "",
         phone: data.phone || "",
-        kyc_status: data.kyc_status,
-        accounts: data.accounts || []
+        kyc_status: data.kyc_status 
       });
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -47,38 +40,14 @@ export default function Setting(){
     try {
       setLoading(true);
   
-      // Send only allowed fields to avoid server-side validation errors
-      const payload = {
-        name: userProfile.name || undefined,
-        email: userProfile.email || undefined,
-        phone: userProfile.phone || undefined,
-        location: userProfile.location || undefined,
-      };
-
       const { data } = await axiosClient.put(
-        "/user/profile",
-        payload
+        "/user/profile/",
+        userProfile
       );
-
-      // Backend returns the updated user object; show simple success
-      toast.success('Profile updated successfully!');
-      // Update local profile with returned values if present
-      if (data) {
-        setUserProfile((prev) => ({ ...prev, name: data.name || prev.name, email: data.email || prev.email, phone: data.phone || prev.phone }));
-      }
+  
+      toast.success(data.message || "Profile updated successfully!");
     } catch (error) {
-      const resp = error.response?.data;
-      console.error('Profile update error:', resp ?? error);
-      // If FastAPI/Pydantic returned validation details, show them clearly
-      if (resp?.detail && Array.isArray(resp.detail)) {
-        const msg = resp.detail.map(d => {
-          const loc = Array.isArray(d.loc) ? d.loc.join('.') : String(d.loc);
-          return `${loc}: ${d.msg || JSON.stringify(d)}`;
-        }).join('; ');
-        toast.error(msg);
-      } else {
-        toast.error(formatError(error) || "Failed to update profile");
-      }
+      toast.error( error.response?.data?.detail || "Failed to update profile");
     } finally {
       setLoading(false);
     }
@@ -114,46 +83,7 @@ export default function Setting(){
         confirmPassword: "",
       });
     } catch (error) {
-      const resp = error.response?.data;
-      console.error('Change password error:', resp ?? error);
-      if (resp?.detail && Array.isArray(resp.detail)) {
-        const msg = resp.detail.map(d => d.msg || JSON.stringify(d)).join('; ');
-        toast.error(msg);
-      } else {
-        toast.error(formatError(error) || "Failed to change password");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const startKycVerification = async () => {
-    try {
-      setLoading(true);
-      const { data } = await axiosClient.post('/user/profile/verify-kyc');
-      toast.success('KYC verified');
-      setUserProfile((prev) => ({ ...prev, kyc_status: data.kyc_status || 'verified' }));
-    } catch (error) {
-      console.error('KYC error:', error.response?.data ?? error);
-      toast.error(formatError(error) || 'Failed to verify KYC');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    const ok = window.confirm('Are you sure you want to delete your account? This action cannot be undone.');
-    if (!ok) return;
-
-    try {
-      setLoading(true);
-      await axiosClient.delete('/user/profile/');
-      toast.success('Account deleted');
-      // clear local auth state and redirect to login
-      try { logoutUser(); } catch (e) {}
-      navigate('/login');
-    } catch (error) {
-      toast.error(formatError(error) || 'Failed to delete account');
+      toast.error(error.response?.data?.detail || "Failed to change password");
     } finally {
       setLoading(false);
     }
@@ -221,20 +151,6 @@ export default function Setting(){
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Location
-              </label>
-              <input
-                type="text"
-                value={userProfile.location || ""}
-                onChange={(e) =>
-                  setUserProfile({ ...userProfile, location: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-            </div>
-
             <div className="flex items-center gap-4 mt-6">
               <Key className="w-5 h-5 text-gray-500" />
               <div>
@@ -268,31 +184,6 @@ export default function Setting(){
           >
             {loading ? "Saving..." : "Save Profile"}
           </button>
-        </div>
-
-        <div className="bg-white/70 backdrop-blur-md shadow-lg rounded-2xl p-6">
-          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Banknote className="w-5 h-5 text-indigo-600" />
-            Accounts
-          </h3>
-          {userProfile.accounts && userProfile.accounts.length > 0 ? (
-            <div className="space-y-3">
-              {userProfile.accounts.map((a) => (
-                <div key={a.id} className="flex items-center justify-between border p-3 rounded-lg">
-                  <div>
-                    <p className="font-medium">{a.bank_name} — {a.account_type}</p>
-                    <p className="text-sm text-gray-500">****{a.masked_account} • ID: {a.id}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold">{a.currency} {a.balance !== null ? a.balance.toFixed(2) : '—'}</p>
-                    <p className="text-xs text-gray-400">Created: {new Date(a.created_at).toLocaleDateString()}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500">No accounts found for your profile.</p>
-          )}
         </div>
 
 
@@ -337,21 +228,6 @@ export default function Setting(){
         >
             {loading ? 'Changing...' : 'Change Password'}
         </button>
-        </div>
-        
-        <div className="bg-white/70 backdrop-blur-md shadow-lg rounded-2xl p-6">
-          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Trash className="w-5 h-5 text-red-600" />
-            Delete Account
-          </h3>
-          <p className="text-sm text-gray-600 mb-4">Permanently delete your account and all associated data stored locally (settings). This action cannot be undone.</p>
-          <button
-            onClick={handleDeleteAccount}
-            disabled={loading}
-            className="mt-2 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? 'Deleting...' : 'Delete My Account'}
-          </button>
         </div>
       </div>
   )

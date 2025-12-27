@@ -23,7 +23,7 @@ export default function Login() {
     email: "",
     phone: "",
     password: "",
-    role: location.state?.role || "user",
+    role: location.state?.role,
     kyc_status: "unverified"
   });
 
@@ -52,9 +52,7 @@ export default function Login() {
       else if (!/^[A-Za-z\s]+$/.test(form.name))
         err.name = "Only letters allowed";
       
-      if (!form.phone.trim()) err.phone = "Mobile No. is required";
-      else if (form.phone.length !== 10)
-        err.phone = "Mobile No. must have 10 digits";
+      if (form.phone && form.phone.length !== 10)  err.phone = "Mobile No. must have 10 digits";
     }
 
     if (!form.email.trim()) err.email = "Email is required";
@@ -80,25 +78,22 @@ export default function Login() {
     setLoading(true);
 
     try {
-      let data;
-      
+      let data,role;
       if (isLoginPage) {
         data = await login(form.email, form.password);
-      } else {
-        data = await register(form.name, form.email, form.password, form.phone,form.kyc_status,form.role);
       }
-        await loginUser(data);
-
-        const role = JSON.parse(localStorage.getItem("user"))?.role;
-
-        if (role === "admin") navigate("/Admindashboard");
-        else if (role === "auditor") navigate("/AuditorDashboard");
-        else navigate("/Dashboard");
+      else {
+        data = await register(form.name, form.email, form.password, form.phone,form.role);
+        role = form.role;
+      }
+      const user = await loginUser(data);
+      role = user.role
+      if (role === "admin") navigate("/AdminDashboard");
+      else if (role === "Auditor") navigate("/AuditorDashboard");
+      else navigate("/Dashboard");
       
       toast.success(isLoginPage ? "Login successful!" : "Account created successfully!");
     } catch (error) {
-      console.error("Authentication error:", error);
-      
       let errorMessage = "Something went wrong";
       
       if (typeof error === 'string') {
@@ -127,8 +122,9 @@ export default function Login() {
   }
 
   function handleToggleForm() {
+    console.log(location.state?.role);
     setIsLoginPage(!isLoginPage);
-    setForm({ name: "", email: "", phone: "", password: "", kyc_status: "unverified" ,role: "" });
+    setForm({ name: "", email: "", phone: "", password: "", kyc_status: "unverified" ,role: location.state?.role });
     setErrors({});
   }
 

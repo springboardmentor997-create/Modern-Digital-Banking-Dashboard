@@ -1,5 +1,4 @@
 import axiosClient from "../utils/axiosClient";
-import formatError from "../utils/formatError";
 
 export const getAccounts = async () => {
   try {
@@ -8,7 +7,7 @@ export const getAccounts = async () => {
       ? response.data
       : response.data.accounts;
   } catch (error) {
-    throw formatError(error);
+    throw error.response?.data || error.message;
   }
 };
 
@@ -17,7 +16,7 @@ export const getAccount = async (accountId) => {
     const response = await axiosClient.get(`/accounts/${accountId}`);
     return response.data;
   } catch (error) {
-    throw formatError(error);
+    throw error.response?.data || error.message;
   }
 };
 
@@ -26,7 +25,7 @@ export const createAccount = async (data) => {
     const response = await axiosClient.post("/accounts/", data);
     return response.data;
   } catch (error) {
-    throw formatError(error);
+    throw error.response?.data || error.message;
   }
 };
 
@@ -35,7 +34,7 @@ export const updateAccount = async (accountId, data) => {
     const response = await axiosClient.put(`/accounts/${accountId}`, data);
     return response.data;
   } catch (error) {
-    throw formatError(error);
+    throw error.response?.data || error.message;
   }
 };
 

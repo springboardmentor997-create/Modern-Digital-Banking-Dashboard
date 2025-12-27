@@ -3,16 +3,11 @@ import { Building2, Zap, IndianRupee, PieChart, Bell, Gift, DollarSign, ArrowRig
 import { useNavigate } from 'react-router-dom';
 import Carousel from '../components/Carousel';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext'; 
 
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
-  
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    setIsLoggedIn(!!token);
-  }, [isLoggedIn]);
-
+  const {isLoggedIn} = useAuth();
   const features = [
     {
       icon: Wallet,
@@ -73,7 +68,13 @@ export default function Home() {
       rating: 5
     }
   ];
-
+    const handleClick = () => {
+    if (isLoggedIn) {
+      navigate("/Dashboard");
+    } else {
+      navigate("/login");
+    }
+  };
   return (
     <div className="min-h-screen bg-white">
       <section className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 py-20 px-4">
@@ -92,7 +93,7 @@ export default function Home() {
                 Manage accounts, track transactions, create budgets, pay bills, earn rewards, and convert currencies - all in one powerful platform.
               </p>
               <button 
-                onClick={() => navigate('/login')}
+                onClick={handleClick}
                 className="px-8 py-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center gap-2 transition-colors"
               >
                 Open Free Account <ArrowRight className="w-5 h-5" />
@@ -222,7 +223,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button 
-              onClick={() => navigate('/login')}
+              onClick={handleClick}
               className="px-8 py-4 bg-white text-blue-600 rounded-lg font-medium hover:bg-gray-100 text-lg transition-colors"
             >
               Create Free Account

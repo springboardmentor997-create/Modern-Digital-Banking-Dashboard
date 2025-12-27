@@ -2,7 +2,6 @@ import React,{ useEffect, useState } from 'react';
 import { fetchRewards, createReward, updateReward, deleteReward } from '../api/rewards';
 import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import formatError from '../utils/formatError';
 
 export default function Rewards() {
   const [rewards, setRewards] = useState([]);
@@ -24,7 +23,7 @@ export default function Rewards() {
       const data = await fetchRewards();
       setRewards(data);
     } catch (err) {
-      toast.error(formatError(err));
+      toast.error(err.message);
     }
   }
 
@@ -63,7 +62,7 @@ export default function Rewards() {
       await loadRewards();
       closeModal();
     } catch (err) {
-      toast.error(formatError(err));
+      toast.error(err.message);
     }
   }
 
@@ -73,7 +72,7 @@ export default function Rewards() {
       await deleteReward(id);
       await loadRewards();
     } catch (err) {
-      toast.error(formatError(err));
+      toast.error(err.message);
     }
   }
 

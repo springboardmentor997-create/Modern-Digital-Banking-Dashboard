@@ -3,6 +3,8 @@ import { Users, CreditCard, DollarSign, TrendingUp, Bell, Settings, BarChart3, A
 import { useNavigate } from 'react-router-dom';
 import Transactions from './Transactions';
 import Rewards from './Rewards';
+import { getUsers } from '../api/users';
+import { useAuth } from "../context/AuthContext.jsx";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -20,6 +22,21 @@ const AdminDashboard = () => {
 
     return isMdUp;
   }
+  const [users, setUsers] = useState([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const data = await getUsers();
+        setUsers(data);
+      } catch (err) {
+        setError(err);
+      }
+    };
+
+    fetchUsers();
+  }, []);
   
   const isMobile = useIsMdUp();
 
@@ -77,7 +94,6 @@ const AdminDashboard = () => {
       case 'overview':
         return (
           <div className="space-y-6">
-            {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {stats.map((stat, idx) => {
                 const Icon = stat.icon;
@@ -87,10 +103,10 @@ const AdminDashboard = () => {
                     <div className="flex items-center justify-between relative z-10">
                       <div>
                         <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-                        <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                        <p className="text-xl font-bold text-gray-900">{stat.value}</p>
                         <p className="text-xs text-green-600 mt-1">{stat.change}</p>
                       </div>
-                      <div className={`${stat.color} p-3 rounded-lg shadow-md`}>
+                      <div className={`${stat.color} p-3 rounded-lg shadow-md md:opacity-100`}>
                         <Icon size={24} />
                       </div>
                     </div>
@@ -186,24 +202,29 @@ const AdminDashboard = () => {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User ID</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Accounts</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Active</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">kyc_Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {[1,2,3,4,5].map((i) => (
-                    <tr key={i} className="hover:bg-gray-50/80 transition-colors duration-200 relative overflow-hidden group">
-                      <td className="px-6 py-4 text-sm text-gray-900 relative z-10">USR-{1000 + i}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 relative z-10">User {i}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600 relative z-10">{2 + i}</td>
-                      <td className="px-6 py-4 relative z-10">
-                        <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Active</span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 relative z-10">{i}h ago</td>
+                  {users.map((i) => (
+                    <tr key={i.id} className="hover:bg-gray-50/80 transition-colors duration-200">
+                      <td className="px-6 py-4 text-sm text-gray-900">USR-{1000 + i.id}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{i.name}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">  {i.email}</td>
+                      <td className="px-6 py-4">  {i.kyc_status === "verified" ? 
+                        (    <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Verified </span>  ) : 
+                        (    <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full"> Unverified </span>  )}</td>
+                      <td className="px-6 py-4 text-sm text-center text-gray-600">  {i.phone === "string"? "-" : i.phone}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">  {i.role}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">  {new Date(i.created_at).toLocaleDateString()}</td>
                     </tr>
-                  ))}
-                </tbody>
+                    ))}
+                  </tbody>
+
               </table>
             </div>
           </div>
@@ -218,6 +239,7 @@ const AdminDashboard = () => {
     }
   };
   const navigate = useNavigate();
+  const { logoutUser } = useAuth();
 
     const handleLogout = () => {
     logoutUser();

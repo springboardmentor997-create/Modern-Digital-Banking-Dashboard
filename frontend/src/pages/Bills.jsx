@@ -2,8 +2,7 @@ import React,{ useState, useEffect } from 'react';
 import { Plus, Trash2, Calendar, Bell, CheckCircle, Clock, X, Save,AlertTriangle } from 'lucide-react';
 import { getBills, addBill, updateBill, deleteBill, markPaid } from '../api/bills.js';
 import toast from 'react-hot-toast';
-import formatError from '../utils/formatError';
-import { useNavigate } from 'react-router-dom';
+import { getAccounts } from '../api/accounts.js';
 
 export default function Bills() {
   const [bills, setBills] = useState([]);
@@ -11,17 +10,35 @@ export default function Bills() {
   const [editMode, setEditMode] = useState(false);
   const [currentBill, setCurrentBill] = useState(null);
   const [errors, setErrors] = useState({});
+  const [accounts,setAccounts] = useState([]);
+  const [SelectedAccount,setSelectedAccount] = useState(1);
+
+  const loadAccounts = async () => {
+      try {
+        const data = await getAccounts();
+        setAccounts(data);
+        if (data.length > 0) {
+          setSelectedAccount(data[0].id);
+        }
+      } catch (e) {
+        toast.error(e.message || 'Failed to load accounts');
+      } 
+    };
+
+  useEffect(() => {
+    loadAccounts();
+  }, []);
 
   const [form, setForm] = useState({
     biller_name: '',
     due_date: '',
     amount_due: '',
     status: 'upcoming',
-    auto_pay: false
+    auto_pay: false,
+    account_id: SelectedAccount
   });
 
   const statusOptions = ['upcoming', 'paid', 'overdue'];
-  const navigate = useNavigate();
 
   useEffect(() => {
     loadBills();
@@ -62,6 +79,7 @@ export default function Bills() {
       amount_due: parseFloat(form.amount_due),
       status: form.status,
       auto_pay: form.auto_pay,
+      account_id: SelectedAccount
     };
 
     try {
@@ -73,7 +91,7 @@ export default function Bills() {
       closeModal();
       toast.success(editMode ? 'Bill updated!' : 'Bill added!');
     } catch (err) {
-      toast.error(formatError(err));
+      toast.error(err.message);
     }
   }
 
@@ -84,25 +102,23 @@ export default function Bills() {
       await loadBills();
       toast.success('Bill deleted!');
     } catch (err) {
-      toast.error(formatError(err));
+      toast.error(err.message);
     }
   }
 
   async function markAsPaid(id) {
     try {
-      // Ask user to choose account id to pay from (quick UX); ideally show account picker modal
-      const acct = window.prompt('Enter account id to pay from (leave blank to skip transaction record):');
-      const account_id = acct ? Number(acct) : null;
-      await markPaid(id, account_id);
+      await markPaid(id, SelectedAccount);
       await loadBills();
-      toast.success('Bill marked as paid!');
-      if (account_id) {
-        // let Transactions page select this account and show the new txn
-        localStorage.setItem('selected_account', String(account_id));
-        navigate('/transactions');
+      // Refresh accounts so balance reflects the deduction performed server-side
+      try {
+        await loadAccounts();
+      } catch (e) {
+        // ignore
       }
+      toast.success('Bill marked as paid!');
     } catch (err) {
-      toast.error(formatError(err));
+      toast.error(err.message);
     }
   }
 
@@ -115,6 +131,7 @@ export default function Bills() {
       amount_due: '',
       status: 'upcoming',
       auto_pay: false,
+      account_id: SelectedAccount
     });
     setErrors({});
     setShowModal(true);
@@ -129,6 +146,7 @@ export default function Bills() {
       amount_due: bill.amount_due.toString(),
       status: bill.status,
       auto_pay: bill.auto_pay,
+      account_id: bill.account_id
     });
     setErrors({});
     setShowModal(true);
@@ -165,7 +183,7 @@ export default function Bills() {
 
   const upcomingBills = bills.filter(b => b.status === 'upcoming');
   const totalDue = upcomingBills.reduce((sum, b) => sum + parseFloat(b.amount_due), 0);
-
+  console.log(bills);
   return (
     <div>
       <div className="max-w-7xl mx-auto">
@@ -319,7 +337,20 @@ export default function Bills() {
                   />
                   {errors.amount_due && <p className="text-red-500 text-sm mt-1">{errors.amount_due}</p>}
                 </div>
-
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Account</label>
+                    <select
+                      value={SelectedAccount || ""}
+                      onChange={(e) => setSelectedAccount(Number(e.target.value))}
+                      className="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-blue-500"
+                    >
+                      {accounts.map(acc => (
+                        <option key={acc.id} value={acc.id}>
+                          {acc.bank_name} - {acc.masked_account} ({acc.currency})
+                        </option>
+                      ))}
+                    </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                   <select

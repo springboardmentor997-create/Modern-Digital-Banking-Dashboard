@@ -1,13 +1,14 @@
 import axiosClient from "../utils/axiosClient";
-import formatError from "../utils/formatError";
 
 export const getTransactions = async (accountId, skip = 0, limit = 100) => {
   try {
-    const url = accountId ? `/transactions/${accountId}` : `/transactions`;
-    const response = await axiosClient.get(url, { params: { skip, limit } });
+    const response = await axiosClient.get(
+      `/transactions/${accountId}`,
+      { params: { skip, limit } }
+    );
     return response.data;
   } catch (error) {
-    throw formatError(error);
+    throw error.response?.data || error.message;
   }
 };
 
@@ -18,7 +19,7 @@ export const getTransaction = async (accountId, transactionId) => {
     );
     return response.data;
   } catch (error) {
-    throw formatError(error);
+    throw error.response?.data || error.message;
   }
 };
 
@@ -30,7 +31,7 @@ export const createTransaction = async (accountId, transactionData) => {
     );
     return response.data;
   } catch (error) {
-    throw formatError(error);
+    throw error.response?.data || error.message;
   }
 };
 
@@ -51,6 +52,6 @@ export const importCSV = async (accountId, file) => {
 
     return response.data;
   } catch (error) {
-    throw formatError(error);
+    throw error.response?.data || error.message;
   }
 };

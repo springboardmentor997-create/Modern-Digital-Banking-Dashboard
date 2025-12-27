@@ -2,7 +2,6 @@ import React,{ useEffect, useState } from 'react';
 import { fetchRewards } from '../api/rewards';
 import { Gift } from 'lucide-react';
 import toast from 'react-hot-toast';
-import formatError from '../utils/formatError';
 
 export default function Gifts() {
   const [rewards, setRewards] = useState([]);
@@ -17,7 +16,7 @@ export default function Gifts() {
       const data = await fetchRewards();
       setRewards(data);
     } catch (err) {
-      toast.error(formatError(err));
+      toast.error(err.message);
     }
   }
 

@@ -1,8 +1,7 @@
 import React, { useState,useEffect } from "react";
-import { Plus, Edit2, Trash2, AlertCircle, CheckCircle, PieChart, X, Save } from "lucide-react";
+import { Plus, Edit2, Trash2, AlertCircle, CheckCircle, PieChart, X, Save,IndianRupee } from "lucide-react";
 import { getBudgets,createBudget,updateBudget,deleteBudget } from "../api/budgets";
 import toast from "react-hot-toast";
-import formatError from '../utils/formatError';
 
 export default function Budgets() {
   const [budgets, setBudgets] = useState([]);
@@ -51,7 +50,7 @@ export default function Budgets() {
       const data = await getBudgets(selectedMonth, selectedYear);
       setBudgets(Array.isArray(data) ? data : []);
     } catch (e) {
-      toast.error(formatError(e));
+      toast.error(e.message);
       setBudgets([]);
     } finally {
       setLoading(false);
@@ -86,7 +85,7 @@ export default function Budgets() {
       resetForm();
       loadBudgets();
     } catch (e) {
-      toast.error(formatError(e));
+      toast.error(e.message);
     } finally {
       setSubmitting(false);
     }
@@ -100,7 +99,7 @@ export default function Budgets() {
       toast.success("Budget deleted");
       loadBudgets();
     } catch (e) {
-      toast.error(formatError(e));
+      toast.error(e.message);
     }
   };
 
@@ -229,8 +228,8 @@ export default function Budgets() {
                     <div className="mb-4">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm font-semibold text-gray-700 mr-2">Spent</span>
-                        <span className={`text-sm font-bold ${isOverBudget ? "text-red-600" : "text-gray-800"}`}>
-                          ${spent.toFixed(2)} / ${limit.toFixed(2)}
+                        <span className={`text-sm flex font-bold ${isOverBudget ? "text-red-600" : "text-gray-800"}`}>
+                          <IndianRupee className="py-1"/>{spent.toFixed(2)} / <IndianRupee className="py-1"/> {limit.toFixed(2)}
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-3">
@@ -245,13 +244,13 @@ export default function Budgets() {
                       {isOverBudget && (
                         <div className="flex items-center gap-1 text-red-600 text-sm font-semibold">
                           <AlertCircle size={16} />
-                          Over budget by ${(spent - limit).toFixed(2)}
+                          Over budget by <IndianRupee size={14} className="mt-1"/>{(spent - limit).toFixed(2)}
                         </div>
                       )}
                       {!isOverBudget && (
                         <div className="flex items-center gap-1 text-green-600 text-sm font-semibold">
                           <CheckCircle size={16} />
-                          ${(limit - spent).toFixed(2)} remaining
+                          <IndianRupee size={14} className="mt-1"/>{(limit - spent).toFixed(2)} remaining
                         </div>
                       )}
                     </div>

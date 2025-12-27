@@ -13,11 +13,8 @@ export const AuthProvider = ({ children }) => {
 
     if (token) {
       getMe()
-        .then((data) => setUser(data))
-        .catch(() => {
-          localStorage.clear();
-          setUser(null);
-        })
+        .then((data) => {setUser(data); setIsLoggedIn(true);})
+
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
@@ -29,10 +26,11 @@ export const AuthProvider = ({ children }) => {
 
     localStorage.setItem("access_token", access_token);
     localStorage.setItem("refresh_token", refresh_token);
+    setIsLoggedIn(true);
     const me = await getMe();  
     setUser(me);
     localStorage.setItem("user", JSON.stringify(me));
-    setIsLoggedIn(true);
+    return me;
   };
 
   const logoutUser = () => {

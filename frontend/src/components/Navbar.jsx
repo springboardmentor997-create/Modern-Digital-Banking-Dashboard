@@ -11,13 +11,29 @@ export default function Navbar() {
   const { isLoggedIn } = useAuth();
 
   const handleAccountClick = () => {
-    if (isLoggedIn) {
-      navigate("/Dashboard");
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+
+      if (!user) return navigate("/login");
+
+      switch (user.role) {
+        case "admin":
+          navigate("/AdminDashboard");
+          break;
+        case "Auditor":
+          navigate("/AuditorDashboard");
+          break;
+        default:
+          navigate("/Dashboard");
+      }
+
       setOpen(false);
-    } else {
+    } catch (err) {
+      console.error("Invalid user data", err);
       navigate("/login");
     }
   };
+
 
   return (
     <nav className="w-full fixed top-0 left-0 z-50 backdrop-blur-lg bg-white/10 border-b border-white/20 mb-100">
