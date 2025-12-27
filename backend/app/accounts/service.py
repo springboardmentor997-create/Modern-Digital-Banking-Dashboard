@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.accounts.models import Account
 from app.accounts.schemas import AccountCreate
@@ -42,3 +43,26 @@ def get_account_by_id(db: Session, user_id: int, account_id: int):
         )
         .first()
     )
+
+
+def get_account_summary(db: Session, user_id: int):
+    """
+    Returns total accounts count and total balance for a user
+    """
+
+    total_accounts = (
+        db.query(Account)
+        .filter(Account.user_id == user_id)
+        .count()
+    )
+
+    total_balance = (
+        db.query(func.coalesce(func.sum(Account.balance), 0.0))
+        .filter(Account.user_id == user_id)
+        .scalar()
+    )
+
+    return {
+        "total_accounts": total_accounts,
+        "total_balance": float(total_balance),
+    }
