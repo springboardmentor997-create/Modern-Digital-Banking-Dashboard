@@ -4,58 +4,19 @@ from sqlalchemy import func, extract
 
 from app.accounts.models import Account
 from app.alerts.models import Alert
+from app.transactions.models import Transaction, TransactionType
 from app.transactions.service import get_monthly_total_spent
 from app.budgets.service import get_budget_vs_actual
-from app.transactions.models import Transaction, TransactionType
-from app.budgets.service import get_budget_vs_actual
-
-from app.accounts.service import get_account_summary
-from app.dashboard.service import get_monthly_spending  
-
-def get_dashboard_summary(db: Session, user_id: int):
-    """
-    Aggregated dashboard data for a user
-    """
-
-    # 1️⃣ Total balance (all accounts)
-    total_balance = (
-        db.query(func.coalesce(func.sum(Account.balance), 0))
-        .filter(Account.user_id == user_id)
-        .scalar()
-    )
-
-    # 2️⃣ Monthly spent
-    now = datetime.utcnow()
-    monthly_spent = get_monthly_total_spent(
-        db=db,
-        user_id=user_id,
-        year=now.year,
-        month=now.month,
-    )
-
-    # 3️⃣ Budget summaries
-    budgets = get_budget_vs_actual(db=db, user_id=user_id)
-
-    # 4️⃣ Alerts count
-    alerts_count = (
-        db.query(Alert)
-        .filter(Alert.user_id == user_id)
-        .count()
-    )
-
-    return {
-        "total_balance": float(total_balance),
-        "monthly_spent": float(monthly_spent),
-        "budgets": budgets,
-        "alerts_count": alerts_count,
-    }
 
 
+# -------------------------
+# Account summary
+# -------------------------
 def get_account_summary(db: Session, user_id: int):
     result = (
         db.query(
             func.count(Account.id),
-            func.coalesce(func.sum(Account.balance), 0)
+            func.coalesce(func.sum(Account.balance), 0),
         )
         .filter(Account.user_id == user_id)
         .first()
@@ -67,6 +28,9 @@ def get_account_summary(db: Session, user_id: int):
     }
 
 
+# -------------------------
+# Monthly spending
+# -------------------------
 def get_monthly_spending(db: Session, user_id: int):
     now = datetime.utcnow()
 
@@ -85,32 +49,36 @@ def get_monthly_spending(db: Session, user_id: int):
     }
 
 
-def get_dashboard_budget_summary(
-    db: Session,
-    user_id: int,
-):
-    """
-    Returns budget vs actual spending for dashboard
-    """
-    return get_budget_vs_actual(
-        db=db,
-        user_id=user_id,
+# -------------------------
+# Budget summary
+# -------------------------
+def get_dashboard_budget_summary(db: Session, user_id: int):
+    return get_budget_vs_actual(db=db, user_id=user_id)
+
+
+# -------------------------
+# Alerts count
+# -------------------------
+def get_alerts_count(db: Session, user_id: int):
+    return (
+        db.query(Alert)
+        .filter(Alert.user_id == user_id)
+        .count()
     )
 
 
+# -------------------------
+# FULL DASHBOARD OVERVIEW
+# -------------------------
 def get_dashboard_overview(db: Session, user_id: int):
-    """
-    Aggregated dashboard data for the logged-in user
-    """
-
-    now = datetime.utcnow()
-
     accounts = get_account_summary(db, user_id)
     spending = get_monthly_spending(db, user_id)
-    budgets = get_budget_vs_actual(db=db, user_id=user_id)
+    budgets = get_dashboard_budget_summary(db, user_id)
+    alerts_count = get_alerts_count(db, user_id)
 
     return {
         "accounts": accounts,
         "monthly_spending": spending,
         "budgets": budgets,
+        "alerts_count": alerts_count,
     }
