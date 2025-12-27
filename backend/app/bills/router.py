@@ -64,40 +64,43 @@ class MarkPaidPayload(BaseModel):
 	account_id: Optional[int] = None
 
 
-@router.put("/{bill_id}/mark-paid", response_model=BillResponse)
-def mark_bill_paid(bill_id: int, payload: MarkPaidPayload, db: Session = Depends(get_db), current_user: User = Depends(require_write_access)):
-	"""Mark a bill as paid, optionally recording which account paid it.
+@router.post("/{bill_id}/mark-paid", response_model=BillResponse)
+def mark_bill_paid(bill_id: int, payload: MarkPaidPayload, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+	"""Mark a bill as paid and auto-deduct balance if the bill records an account.
 
-	This is a minimal endpoint used by the UI to avoid full BillUpdate validation
-	when only marking a bill paid.
+	Uses a POST endpoint and performs ownership checks. This endpoint is
+	intentionally minimal to avoid Pydantic validation errors when the UI
+	only sends an optional `account_id`.
 	"""
-	# Fetch bill ensuring ownership (non-admin users)
-	bill = bills_service.get_bill(db, bill_id, current_user.id)
-	if not bill:
-		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bill not found")
+	# Fetch bill (safe helper raises 404 if missing)
+	bill = bills_service.get_bill_safe(db, bill_id)
 
-	# Use existing service to apply the status change
-	update_payload = BillUpdate(status="paid", account_id=payload.account_id)
-	updated = bills_service.update_bill(db, bill, update_payload)
+	# Ownership check: non-admins may only mark their own bills
+	if getattr(current_user, "role", None) != "admin" and bill.user_id != current_user.id:
+		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
-	# Record transaction if account_id provided
-	try:
-		acct_id = payload.account_id
-		if acct_id:
-			tx_payload = TransactionCreate(
-				description=f"Bill payment: {updated.biller_name}",
-				merchant=updated.biller_name,
-				amount=updated.amount_due,
-				category="Bills",
-				txn_type="debit",
-				currency="INR",
-				txn_date=datetime.utcnow()
-			)
-			TransactionService.create_transaction(db, acct_id, tx_payload)
-	except Exception:
-		pass
+	# If this is the first time marking paid, auto-deduct from bill.account_id when present
+	if getattr(bill, "status", None) != "paid":
+		if hasattr(bill, "account_id") and getattr(bill, "account_id"):
+			from app.models.account import Account
+			from decimal import Decimal
 
-	return updated
+			acct = db.query(Account).filter(Account.id == bill.account_id).first()
+			if acct:
+				try:
+					acct.balance = (acct.balance or Decimal("0")) - (bill.amount_due or Decimal("0"))
+					db.add(acct)
+					print(f"💰 AUTO-DEDUCT: Bill {bill_id} → Account {bill.account_id} balance: {acct.balance}")
+				except Exception:
+					# Defensive: if anything goes wrong with deduction, don't fail the whole request
+					pass
+
+	# Mark bill paid
+	bill.status = "paid"
+	db.add(bill)
+	db.commit()
+	db.refresh(bill)
+	return bill
 
 
 @router.delete("/{bill_id}")

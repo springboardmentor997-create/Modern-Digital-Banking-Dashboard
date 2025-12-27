@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.bill import Bill
 from app.bills.schemas import BillCreate, BillUpdate
 from decimal import Decimal
+from fastapi import HTTPException, status
 
 
 class BillService:
@@ -35,6 +36,14 @@ class BillService:
     @staticmethod
     def get_bill_by_id(db: Session, bill_id: int):
         return db.query(Bill).filter(Bill.id == bill_id).first()
+
+    @staticmethod
+    def get_bill_safe(db: Session, bill_id: int):
+        """Return a bill by id or raise 404 if not found."""
+        bill = db.query(Bill).filter(Bill.id == bill_id).first()
+        if not bill:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bill not found")
+        return bill
 
     @staticmethod
     def update_bill(db: Session, bill: Bill, payload: BillUpdate):
