@@ -29,17 +29,15 @@ async def create_transaction(
     current_user: User = Depends(require_write_access),
     db: Session = Depends(get_db)
 ):
-    # Verify account belongs to user
-    account = db.query(Account).filter(
-        Account.id == account_id,
-        Account.user_id == current_user.id
-    ).first()
-    
+    # Load account (admins may act on any account)
+    account = db.query(Account).filter(Account.id == account_id).first()
+
     if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Account not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+
+    # Allow admins to operate on any account; regular users only their own
+    if getattr(current_user, "role", None) != "admin" and account.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account not found")
     
     transaction = TransactionService.create_transaction(db, account_id, transaction_data)
     return transaction
@@ -108,16 +106,13 @@ async def import_csv(
     db: Session = Depends(get_db)
 ):
     # Verify account belongs to user
-    account = db.query(Account).filter(
-        Account.id == account_id,
-        Account.user_id == current_user.id
-    ).first()
-    
+    account = db.query(Account).filter(Account.id == account_id).first()
+
     if not account:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Account not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+
+    if getattr(current_user, "role", None) != "admin" and account.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account not found")
     
     # Read CSV content
     content = await file.read()

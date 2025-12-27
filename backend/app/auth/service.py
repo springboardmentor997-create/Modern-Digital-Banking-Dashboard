@@ -57,8 +57,11 @@ class AuthService:
         if not user:
             return None, "User not found"
 
-        access_token = create_access_token({"sub": str(user.id)})
-        # rotate refresh token
-        new_refresh_token = create_refresh_token({"sub": str(user.id)})
+        # Preserve role claim in newly issued tokens to ensure callers
+        # who rely on token role (e.g., admin checks) continue to work.
+        role = getattr(user, "role", "user")
+        access_token = create_access_token({"sub": str(user.id), "role": role})
+        # rotate refresh token and include role as well
+        new_refresh_token = create_refresh_token({"sub": str(user.id), "role": role})
 
         return (access_token, new_refresh_token), None
