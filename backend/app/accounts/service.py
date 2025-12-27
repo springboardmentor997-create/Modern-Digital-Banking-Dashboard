@@ -75,7 +75,14 @@ class AccountService:
     def delete_account(db: Session, account: Account):
         # Delete related transactions and bills first to avoid FK constraint issues
         txns_deleted = db.query(Transaction).filter(Transaction.account_id == account.id).delete(synchronize_session=False)
-        bills_deleted = db.query(Bill).filter(Bill.account_id == account.id).delete(synchronize_session=False)
+        bills_deleted = 0
+        # Some deployments / schemas may not have `Bill.account_id`; guard against AttributeError
+        try:
+            if hasattr(Bill, 'account_id'):
+                bills_deleted = db.query(Bill).filter(Bill.account_id == account.id).delete(synchronize_session=False)
+        except Exception as e:
+            # Log and continue — don't fail deletion because bills table differs
+            print(f"Warning: could not delete related bills for account {account.id}: {e}")
 
         db.delete(account)
         db.commit()
