@@ -1,5 +1,6 @@
 import json
 import threading
+import os
 from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 from app.models.user import User
@@ -121,13 +122,40 @@ class UserService:
     def delete_account(db: Session, user: User):
         """Delete the given user and remove their stored settings."""
         try:
-            # Remove user-specific settings if present
+            # 1) Delete rewards
+            from app.models.reward import Reward
+            from app.models.bill import Bill
+            from app.models.transaction import Transaction
+            from app.models.account import Account
+
+            db.query(Reward).filter(Reward.user_id == user.id).delete(synchronize_session=False)
+
+            # 2) Delete bills
+            db.query(Bill).filter(Bill.user_id == user.id).delete(synchronize_session=False)
+
+            # 3) Delete transactions for user's accounts
+            db.query(Transaction).filter(Transaction.account_id.in_(
+                db.query(Account.id).filter(Account.user_id == user.id)
+            )).delete(synchronize_session=False)
+
+            # 4) Delete accounts
+            db.query(Account).filter(Account.user_id == user.id).delete(synchronize_session=False)
+
+            # 5) Remove user-specific settings entry from aggregated settings
             all_settings = _load_all_settings()
             if str(user.id) in all_settings:
                 del all_settings[str(user.id)]
                 _save_all_settings(all_settings)
 
-            # Delete the user record
+            # 5b) Also remove any per-user settings file if present
+            settings_path = f"./user_settings_{user.id}.json"
+            if os.path.exists(settings_path):
+                try:
+                    os.remove(settings_path)
+                except Exception:
+                    pass
+
+            # 6) Delete the user record
             db.delete(user)
             db.commit()
             return True
