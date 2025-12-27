@@ -7,6 +7,8 @@ from app.alerts.models import Alert
 from app.transactions.service import get_monthly_total_spent
 from app.budgets.service import get_budget_vs_actual
 from app.transactions.models import Transaction, TransactionType
+from app.budgets.service import get_budget_vs_actual
+
 
 def get_dashboard_summary(db: Session, user_id: int):
     """
@@ -79,3 +81,16 @@ def get_monthly_spending(db: Session, user_id: int):
         "month": now.strftime("%Y-%m"),
         "total_spent": float(total),
     }
+
+
+def get_dashboard_budget_summary(
+    db: Session,
+    user_id: int,
+):
+    """
+    Returns budget vs actual spending for dashboard
+    """
+    return get_budget_vs_actual(
+        db=db,
+        user_id=user_id,
+    )
