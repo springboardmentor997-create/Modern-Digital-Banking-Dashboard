@@ -121,6 +121,3 @@ Deployment (Docker / Cloud)
 Anshika Aggarwal
 Backend & Full-Stack Development
 FastAPI | PostgreSQL | React
-Anshika Aggarwal
-Backend & Full-Stack Development
-FastAPI | PostgreSQL | React
