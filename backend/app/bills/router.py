@@ -64,38 +64,38 @@ class MarkPaidPayload(BaseModel):
 	account_id: Optional[int] = None
 
 
-@router.post("/{bill_id}/mark-paid", response_model=BillResponse)
-def mark_bill_paid(bill_id: int, payload: MarkPaidPayload, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-	"""Mark a bill as paid and auto-deduct balance if the bill records an account.
+@router.post("/{id}/mark-paid", response_model=BillResponse)
+def mark_bill_paid(id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+	"""Mark a bill as paid (inline DB query). Non-admins may only mark their own bills.
 
-	Uses a POST endpoint and performs ownership checks. This endpoint is
-	intentionally minimal to avoid Pydantic validation errors when the UI
-	only sends an optional `account_id`.
+	This handler performs a direct DB query to avoid reliance on service
+	helper methods and prevents AttributeError when a service method is missing.
 	"""
-	# Fetch bill (safe helper raises 404 if missing)
-	bill = bills_service.get_bill_safe(db, bill_id)
+	from app.models.bill import Bill
+	from app.models.account import Account
 
-	# Ownership check: non-admins may only mark their own bills
+	# Directly load the bill
+	bill = db.query(Bill).filter(Bill.id == id).first()
+	if not bill:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bill not found")
+
+	# RBAC: only admins or the bill owner may mark paid
 	if getattr(current_user, "role", None) != "admin" and bill.user_id != current_user.id:
-		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Own bill only")
 
-	# If this is the first time marking paid, auto-deduct from bill.account_id when present
-	if getattr(bill, "status", None) != "paid":
-		if hasattr(bill, "account_id") and getattr(bill, "account_id"):
-			from app.models.account import Account
-			from decimal import Decimal
+	# Auto-deduct balance if this is the first time the bill is paid and an account is present
+	if getattr(bill, "status", None) != "paid" and getattr(bill, "account_id", None):
+		acct = db.query(Account).filter(Account.id == bill.account_id).first()
+		if acct:
+			try:
+				acct.balance = float(acct.balance or 0) - float(bill.amount_due or 0)
+				db.add(acct)
+				print(f"💰 DEDUCTED: Bill {id} → Account {bill.account_id}: {acct.balance}")
+			except Exception:
+				# Don't fail the operation if deduction fails
+				pass
 
-			acct = db.query(Account).filter(Account.id == bill.account_id).first()
-			if acct:
-				try:
-					acct.balance = (acct.balance or Decimal("0")) - (bill.amount_due or Decimal("0"))
-					db.add(acct)
-					print(f"💰 AUTO-DEDUCT: Bill {bill_id} → Account {bill.account_id} balance: {acct.balance}")
-				except Exception:
-					# Defensive: if anything goes wrong with deduction, don't fail the whole request
-					pass
-
-	# Mark bill paid
+	# Mark as paid
 	bill.status = "paid"
 	db.add(bill)
 	db.commit()
