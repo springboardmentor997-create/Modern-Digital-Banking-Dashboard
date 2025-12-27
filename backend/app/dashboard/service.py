@@ -9,6 +9,8 @@ from app.budgets.service import get_budget_vs_actual
 from app.transactions.models import Transaction, TransactionType
 from app.budgets.service import get_budget_vs_actual
 
+from app.accounts.service import get_account_summary
+from app.dashboard.service import get_monthly_spending  
 
 def get_dashboard_summary(db: Session, user_id: int):
     """
@@ -94,3 +96,21 @@ def get_dashboard_budget_summary(
         db=db,
         user_id=user_id,
     )
+
+
+def get_dashboard_overview(db: Session, user_id: int):
+    """
+    Aggregated dashboard data for the logged-in user
+    """
+
+    now = datetime.utcnow()
+
+    accounts = get_account_summary(db, user_id)
+    spending = get_monthly_spending(db, user_id)
+    budgets = get_budget_vs_actual(db=db, user_id=user_id)
+
+    return {
+        "accounts": accounts,
+        "monthly_spending": spending,
+        "budgets": budgets,
+    }
