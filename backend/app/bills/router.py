@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from typing import List
 from sqlalchemy.orm import Session
 from app.dependencies import get_current_user, RoleChecker, require_admin, require_write_access
@@ -65,7 +65,7 @@ class MarkPaidPayload(BaseModel):
 
 
 @router.post("/{id}/mark-paid", response_model=BillResponse)
-def mark_bill_paid(id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def mark_bill_paid(id: int, payload: MarkPaidPayload = Body(None), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
 	"""Mark a bill as paid (inline DB query). Non-admins may only mark their own bills.
 
 	This handler performs a direct DB query to avoid reliance on service
@@ -83,14 +83,35 @@ def mark_bill_paid(id: int, current_user: User = Depends(get_current_user), db: 
 	if getattr(current_user, "role", None) != "admin" and bill.user_id != current_user.id:
 		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Own bill only")
 
-	# Auto-deduct balance if this is the first time the bill is paid and an account is present
-	if getattr(bill, "status", None) != "paid" and getattr(bill, "account_id", None):
-		acct = db.query(Account).filter(Account.id == bill.account_id).first()
+	# Auto-deduct balance: prefer provided payload.account_id, otherwise use bill.account_id
+	acct_id = None
+	if payload and getattr(payload, "account_id", None):
+		acct_id = payload.account_id
+	elif getattr(bill, "account_id", None):
+		acct_id = bill.account_id
+
+	if getattr(bill, "status", None) != "paid" and acct_id:
+		acct = db.query(Account).filter(Account.id == acct_id).first()
 		if acct:
 			try:
 				acct.balance = float(acct.balance or 0) - float(bill.amount_due or 0)
 				db.add(acct)
-				print(f"💰 DEDUCTED: Bill {id} → Account {bill.account_id}: {acct.balance}")
+				print(f"💰 DEDUCTED: Bill {id} → Account {acct_id}: {acct.balance}")
+				# Create transaction record for the deduction
+				try:
+					tx_payload = TransactionCreate(
+						description=f"Bill payment: {bill.biller_name}",
+						merchant=bill.biller_name,
+						amount=bill.amount_due,
+						category="Bills",
+						txn_type="debit",
+						currency="INR",
+						txn_date=datetime.utcnow()
+					)
+					TransactionService.create_transaction(db, acct_id, tx_payload)
+				except Exception:
+					# don't fail the mark-paid if transaction creation fails
+					pass
 			except Exception:
 				# Don't fail the operation if deduction fails
 				pass
