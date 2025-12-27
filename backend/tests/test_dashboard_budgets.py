@@ -12,3 +12,7 @@ def test_dashboard_budgets():
     assert isinstance(result, list)
 
     db.close()
+
+if __name__ == "__main__":
+    print("Running dashboard budgets test...")
+    test_dashboard_budgets()
