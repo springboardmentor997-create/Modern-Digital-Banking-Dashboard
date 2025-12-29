@@ -5,6 +5,7 @@ from .user import User
 from app.accounts.models import Account
 from app.transactions.models import Transaction
 from app.alerts.models import Alert
+from app.bills.models import Bill
 
 __all__ = [
     "Base",
