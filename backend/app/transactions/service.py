@@ -9,6 +9,7 @@ from sqlalchemy import extract, func
 
 from app.budgets.models import Budget
 
+from datetime import datetime
 
 
 def create_transaction(
@@ -149,3 +150,31 @@ def get_budget_vs_actual(db: Session, user_id: int):
         })
 
     return results
+
+
+def get_monthly_spending_by_category(
+    db,
+    user_id: int,
+):
+    now = datetime.utcnow()
+
+    results = (
+        db.query(
+            Transaction.category,
+            func.coalesce(func.sum(Transaction.amount), 0),
+        )
+        .filter(Transaction.user_id == user_id)
+        .filter(Transaction.transaction_type == TransactionType.expense)
+        .filter(extract("year", Transaction.transaction_date) == now.year)
+        .filter(extract("month", Transaction.transaction_date) == now.month)
+        .group_by(Transaction.category)
+        .all()
+    )
+
+    return [
+        {
+            "category": row[0].value if hasattr(row[0], "value") else row[0],
+            "total": float(row[1]),
+        }
+        for row in results
+    ]
