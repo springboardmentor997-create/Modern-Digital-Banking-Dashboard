@@ -4,9 +4,64 @@
 # 📙 **Backend README (backend/README.md)**
 
 ```md
-# Backend – Modern Digital Banking Dashboard
 
-This backend is a **feature-driven FastAPI application** built with real-world banking workflows in mind.
+
+# Modern Digital Banking Dashboard – Backend
+
+A modular, test-driven backend for a modern digital banking application built using **FastAPI**, **SQLAlchemy**, and **PostgreSQL**.  
+Designed for clean frontend integration, role-based access, and future scalability.
+
+---
+
+## 📌 Project Overview
+
+This backend powers a **multi-account personal finance system** with support for:
+
+- User authentication & roles
+- Bank accounts & transactions
+- Budgets & spending tracking
+- Bills & reminders
+- Rewards system
+- Alerts & insights
+- Aggregated dashboard APIs
+
+The system follows **production-grade architecture** with strict separation of concerns and comprehensive testing.
+
+---
+
+## 🧱 Tech Stack
+
+- **FastAPI** – API framework
+- **SQLAlchemy ORM** – Database layer
+- **PostgreSQL** – Primary database
+- **JWT Authentication** – Secure access
+- **Role-Based Access Control**
+- **Pytest-style modular tests**
+
+---
+
+## 🗂 Project Structure
+
+backend/
+│
+├── app/
+│ ├── auth/ # Authentication & JWT
+│ ├── accounts/ # Bank accounts
+│ ├── transactions/ # Income & expenses
+│ ├── budgets/ # Monthly budgets
+│ ├── bills/ # Bills & reminders
+│ ├── rewards/ # Reward points system
+│ ├── alerts/ # Alerts & notifications
+│ ├── dashboard/ # Aggregated insights
+│ ├── models/ # Base & shared models
+│ ├── schemas/ # Pydantic schemas
+│ ├── utils/ # Helpers (JWT, etc.)
+│ ├── database.py
+│ ├── dependencies.py
+│ └── main.py
+│
+├── tests/ # Feature-wise tests
+└── README.md.
 
 ---
 
@@ -116,3 +171,4 @@ Tests are runnable independently without API calls.
 ## 📌 Summary
 
 This backend is **production-structured**, **test-covered**, and ready for frontend integration or further system expansion.
+
