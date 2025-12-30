@@ -1,153 +1,118 @@
-🏦 Digital Banking Dashboard – Backend
 
-A production-style backend built with FastAPI and PostgreSQL, following clean architecture and milestone-based development.
+---
 
-🛠 Tech Stack
+# 📙 **Backend README (backend/README.md)**
 
-FastAPI
+```md
+# Backend – Modern Digital Banking Dashboard
 
-PostgreSQL
+This backend is a **feature-driven FastAPI application** built with real-world banking workflows in mind.
 
-SQLAlchemy ORM
+---
 
-JWT Authentication (OAuth2)
+## 🧠 Architectural Principles
 
-Passlib + bcrypt
+- Feature-based modular structure
+- Clear separation of concerns:
+  - Models → Database
+  - Schemas → Validation
+  - Services → Business logic
+  - Routers → API endpoints
+- No business logic inside routers
+- Every module tested independently
 
-Pydantic
+---
 
-python-dotenv
+## 🔐 Authentication & Authorization
 
-📁 Backend Structure
-backend/
-├── app/
-│   ├── auth/            # Login & registration
-│   ├── accounts/        # Bank accounts
-│   ├── transactions/    # Income & expenses
-│   ├── budgets/         # Budget planning
-│   ├── alerts/          # Budget & system alerts
-│   ├── dashboard/       # Aggregated dashboard APIs
-│   ├── models/          # SQLAlchemy models
-│   ├── schemas/         # Pydantic schemas
-│   ├── utils/           # JWT & password helpers
-│   ├── database.py
-│   ├── dependencies.py
-│   └── main.py
-├── tests/               # Manual service tests
-├── requirements.txt
-└── README.md
+- JWT-based authentication
+- Role-based authorization using FastAPI dependencies
+- Roles included in JWT claims
 
-🚩 Implemented Features
-🔐 Authentication
+Supported roles:
+- user
+- admin
+- auditor
+- support
 
-User registration & login
+---
 
-JWT token generation & validation
+## 🧩 Implemented Modules
 
-Role-based access support
+### 👤 Accounts
+- Multiple accounts per user
+- Balance tracking
+- Currency support
 
-Secure password hashing
+### 💳 Transactions
+- Income & expense handling
+- Account balance enforcement
+- Monthly spending calculations
 
-🏦 Accounts
+### 📊 Budgets
+- Monthly budgets per category
+- Budget vs actual comparison
+- Exceeded budget detection
 
-Multiple bank accounts per user
+### 🚨 Alerts
+- Budget exceeded alerts
+- Bill due alerts
+- Stored & queryable per user
 
-Balance tracking
+### 🧾 Bills
+- Bill creation & tracking
+- Due-date reminders
+- Paid/unpaid state handling
 
-Ownership enforcement
+### 🎁 Rewards
+- Manual reward creation
+- Auto rewards on bill payment
+- Total points calculation
 
-💳 Transactions
+### 📈 Dashboard
+- Aggregated financial summaries
+- Monthly spending trends
+- Budget overview
+- Account summaries
 
-Income & expense transactions
+---
 
-Balance validation
+## 🧪 Testing Strategy
 
-Monthly spending aggregation
+Each module includes:
+- Schema validation tests
+- Service logic tests
+- Insight & aggregation tests
 
-📊 Budgets
+Tests are runnable independently without API calls.
 
-Category-wise budgets
+---
 
-Period-based limits
+## 🔗 Integration Guide
 
-Budget vs actual calculation
+### Frontend
+- Use Swagger for API contracts
+- JWT-based authentication
+- Single dashboard API hydrates UI
 
-Exceeded budget detection
+### Backend Extensions
+- Add new insights in `dashboard/service.py`
+- Add new alerts via `alerts/service.py`
+- Background jobs can hook into services safely
 
-🚨 Alerts
+---
 
-Budget exceeded alerts
+## ⚠️ Pending (Planned)
 
-Persistent alert storage
+- Background workers (Celery)
+- Notifications (Email/SMS)
+- CSV/PDF exports
+- Exchange rate API
+- Admin dashboards
+- Deployment configs
 
-User-specific alert retrieval
+---
 
-📈 Dashboard
+## 📌 Summary
 
-Account summary
-
-Monthly spending
-
-Budget vs actual
-
-Alerts count
-
-Unified dashboard overview endpoint
-
-📌 Key API Endpoint
-GET /dashboard/overview
-
-
-Example response:
-
-{
-  "accounts": {
-    "total_accounts": 2,
-    "total_balance": 4500.0
-  },
-  "monthly_spending": {
-    "month": "2025-12",
-    "total_spent": 1200.0
-  },
-  "budgets": [
-    {
-      "budget_id": 6,
-      "category": "food",
-      "limit": 500.0,
-      "spent": 300.0,
-      "remaining": 200.0,
-      "exceeded": false
-    }
-  ],
-  "alerts_count": 1
-}
-
-🧪 Testing
-
-Each module has a dedicated test file:
-
-python -m tests.test_auth_service
-python -m tests.test_accounts_service
-python -m tests.test_transactions_service
-python -m tests.test_budget_vs_actual
-python -m tests.test_dashboard_overview
-
-
-Tests run against the real database, not mocks.
-
-🧠 Design Principles
-
-Service-oriented architecture
-
-No circular imports
-
-Explicit dependency injection
-
-Clear separation of concerns
-
-Realistic production patterns
-
-🚀 Status
-
-✅ Backend is stable, tested, and milestone-complete
-Ready for frontend integration and further analytics expansion.
+This backend is **production-structured**, **test-covered**, and ready for frontend integration or further system expansion.
