@@ -4,6 +4,9 @@ from datetime import date, timedelta
 from app.bills.models import Bill
 from app.bills.schemas import BillCreate 
 from app.alerts.models import Alert, AlertType
+from app.rewards.schemas import RewardCreate
+from app.rewards.service import create_reward
+
 
 
 def create_bill(
@@ -56,26 +59,25 @@ def get_upcoming_bills(
     )
 
 
-def mark_bill_as_paid(
-    db: Session,
-    bill_id: int,
-    user_id: int,
-):
-    bill = (
-        db.query(Bill)
-        .filter(
-            Bill.id == bill_id,
-            Bill.user_id == user_id,
-        )
-        .first()
-    )
-
-    if not bill:
-        raise ValueError("Bill not found")
+def mark_bill_as_paid(db, bill):
+    if bill.is_paid:
+        return bill
 
     bill.is_paid = True
+    bill.paid_at = date.today()
+
     db.commit()
     db.refresh(bill)
+
+    # 🎁 Auto reward: on-time payment
+    if bill.paid_at <= bill.due_date:
+        reward_in = RewardCreate(
+            user_id=bill.user_id,
+            title="On-time Bill Payment",
+            reason=f"Paid bill '{bill.name}' before due date",
+            points=20,
+        )
+        create_reward(db, reward_in)
 
     return bill
 
@@ -110,3 +112,4 @@ def generate_bill_due_alerts(db: Session, user_id: int):
         db.commit()
 
     return created_alerts
+
