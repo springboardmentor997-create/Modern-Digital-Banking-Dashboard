@@ -78,57 +78,147 @@ backend/
 
 ---
 
-## 🔐 Authentication & Authorization
+## 🔐 Authentication & Roles
 
+### Implemented
 - JWT-based authentication
-- Role-based authorization using FastAPI dependencies
-- Roles included in JWT claims
+- Role stored in database and JWT payload
 
-Supported roles:
-- user
-- admin
-- auditor
-- support
+### Supported Roles
+- `user`
+- `admin`
+- `auditor`
+- `support`
+
+### Integration
+- Frontend sends JWT via `Authorization: Bearer <token>`
+- Role-based access enforced via FastAPI dependencies
 
 ---
 
-## 🧩 Implemented Modules
+## 👤 Users & Accounts (Milestone 1)
 
-### 👤 Accounts
+### Features
 - Multiple accounts per user
-- Balance tracking
-- Currency support
+- Account metadata:
+  - Bank name
+  - Account type
+  - Currency
+  - Balance
 
-### 💳 Transactions
-- Income & expense handling
-- Account balance enforcement
-- Monthly spending calculations
+### Integration
+- Account listing
+- Total balance calculation
+- Dashboard aggregation
 
-### 📊 Budgets
+---
+
+## 💳 Transactions (Milestone 1–2)
+
+### Supported Types
+- Income
+- Expense
+- (Transfer reserved for Phase 2)
+
+### Features
+- Atomic balance updates
+- Category tagging
+- Monthly spending totals
+
+### Integration
+- Transaction lists
+- CSV import (future)
+- Spending charts
+
+---
+
+## 📊 Budgets (Milestone 2)
+
+### Features
 - Monthly budgets per category
-- Budget vs actual comparison
-- Exceeded budget detection
+- Duplicate prevention
+- Budget vs actual calculation:
+  - Spent
+  - Remaining
+  - Exceeded flag
 
-### 🚨 Alerts
-- Budget exceeded alerts
-- Bill due alerts
-- Stored & queryable per user
+### Alerts
+- Budget exceeded → alert generated automatically
 
-### 🧾 Bills
-- Bill creation & tracking
-- Due-date reminders
-- Paid/unpaid state handling
+### Integration
+- Progress bars
+- Budget charts
+- Alert indicators
 
-### 🎁 Rewards
-- Manual reward creation
+---
+
+## 🚨 Alerts System
+
+### Alert Types
+- Budget exceeded
+- Bill due
+- (Extensible: low balance, suspicious activity)
+
+### Features
+- Stored in database
+- User-specific
+- Timestamped
+
+### Integration
+- Notification center
+- Admin monitoring
+- Email/SMS (future via background jobs)
+
+---
+
+## 🧾 Bills & Reminders (Week 5)
+
+### Bills
+- CRUD operations
+- Due date tracking
+- Paid / unpaid state
+
+### Reminders
+- Bill due → alert created
+- Bill paid → triggers rewards
+
+### Integration
+- Upcoming bills view
+- Calendar/reminder UI
+
+---
+
+## 🎁 Rewards System (Week 6)
+
+### Features
+- Manual rewards
 - Auto rewards on bill payment
-- Total points calculation
+- Points aggregation
 
-### 📈 Dashboard
-- Aggregated financial summaries
-- Monthly spending trends
-- Budget overview
+### Integration
+- Rewards dashboard
+- Gamification layer
+
+---
+
+## 📈 Insights & Dashboard (Week 6–7)
+
+### Implemented Insights
+- Monthly spending
+- Spending trends
+- Budget summaries
 - Account summaries
+
+### Dashboard API
+Single aggregated response:
+```json
+{
+  "accounts": {...},
+  "monthly_spending": {...},
+  "budgets": [...],
+  "alerts": [...]
+}
+
 
 ---
 
@@ -171,4 +261,5 @@ Tests are runnable independently without API calls.
 ## 📌 Summary
 
 This backend is **production-structured**, **test-covered**, and ready for frontend integration or further system expansion.
+
 
