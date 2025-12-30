@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db, get_current_user
 from app.models.user import User
-
 from app.bills.schemas import BillCreate, BillOut
 from app.bills.service import (
     create_bill,
@@ -23,53 +22,26 @@ def create_new_bill(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Create a new bill for the logged-in user
-    """
-    try:
-        return create_bill(
-            db=db,
-            user_id=current_user.id,
-            bill_in=bill_in,
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+    return create_bill(db, current_user.id, bill_in)
 
 
 @router.get("/", response_model=list[BillOut])
-def list_user_bills(
+def list_bills(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Get all bills for the logged-in user
-    """
-    return get_user_bills(
-        db=db,
-        user_id=current_user.id,
-    )
+    return get_user_bills(db, current_user.id)
 
 
-@router.put("/{bill_id}/pay", response_model=BillOut)
+@router.patch("/{bill_id}/pay")
 def pay_bill(
     bill_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Mark a bill as paid
-    """
-    try:
-        return mark_bill_as_paid(
-            db=db,
-            user_id=current_user.id,
-            bill_id=bill_id,
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
-        )
+    success = mark_bill_as_paid(db, current_user.id, bill_id)
+
+    if not success:
+        raise HTTPException(status_code=404, detail="Bill not found")
+
+    return {"message": "Bill marked as paid"}
