@@ -9,8 +9,7 @@ from sqlalchemy import extract, func
 
 from app.budgets.models import Budget
 
-from datetime import datetime
-
+from datetime import datetime, timedelta
 
 def create_transaction(
     db: Session,
@@ -178,3 +177,50 @@ def get_monthly_spending_by_category(
         }
         for row in results
     ]
+
+
+def get_monthly_spending_trend(
+    db,
+    user_id: int,
+):
+    now = datetime.utcnow()
+
+    # Current month
+    current_total = (
+        db.query(func.coalesce(func.sum(Transaction.amount), 0))
+        .filter(Transaction.user_id == user_id)
+        .filter(Transaction.transaction_type == TransactionType.expense)
+        .filter(extract("year", Transaction.transaction_date) == now.year)
+        .filter(extract("month", Transaction.transaction_date) == now.month)
+        .scalar()
+    )
+
+    # Previous month
+    prev_month_date = now.replace(day=1) - timedelta(days=1)
+
+    previous_total = (
+        db.query(func.coalesce(func.sum(Transaction.amount), 0))
+        .filter(Transaction.user_id == user_id)
+        .filter(Transaction.transaction_type == TransactionType.expense)
+        .filter(extract("year", Transaction.transaction_date) == prev_month_date.year)
+        .filter(extract("month", Transaction.transaction_date) == prev_month_date.month)
+        .scalar()
+    )
+
+    change = float(current_total) - float(previous_total)
+
+    if change > 0:
+        trend = "increase"
+    elif change < 0:
+        trend = "decrease"
+    else:
+        trend = "no_change"
+
+    return {
+        "current_month": now.strftime("%Y-%m"),
+        "current_total": float(current_total),
+        "previous_month": prev_month_date.strftime("%Y-%m"),
+        "previous_total": float(previous_total),
+        "change": change,
+        "trend": trend,
+    }
