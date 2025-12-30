@@ -1,8 +1,9 @@
 from sqlalchemy.orm import Session
-from datetime import date
+from datetime import date, timedelta
 
 from app.bills.models import Bill
-from app.bills.schemas import BillCreate
+from app.bills.schemas import BillCreate 
+from app.alerts.models import Alert, AlertType
 
 
 def create_bill(
@@ -77,3 +78,35 @@ def mark_bill_as_paid(
     db.refresh(bill)
 
     return bill
+
+
+def generate_bill_due_alerts(db: Session, user_id: int):
+    today = date.today()
+    due_limit = today + timedelta(days=3)
+
+    bills = (
+        db.query(Bill)
+        .filter(
+            Bill.user_id == user_id,
+            Bill.is_paid == False,
+            Bill.due_date >= today,
+            Bill.due_date <= due_limit,
+        )
+        .all()
+    )
+
+    created_alerts = []
+
+    for bill in bills:
+        alert = Alert(
+            user_id=user_id,
+            type=AlertType.bill_due,
+            message=f"Bill '{bill.name}' is due on {bill.due_date}",
+        )
+        db.add(alert)
+        created_alerts.append(alert)
+
+    if created_alerts:
+        db.commit()
+
+    return created_alerts
