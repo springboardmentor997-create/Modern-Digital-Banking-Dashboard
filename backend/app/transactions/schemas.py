@@ -10,6 +10,7 @@ class TransactionCreate(BaseModel):
     amount: Decimal = Field(..., gt=0)
     transaction_type: TransactionType
     category: TransactionCategory
+    merchant: Optional[str] = None
     description: str | None = None
     transaction_date: date
 
@@ -20,9 +21,11 @@ class TransactionOut(BaseModel):
     amount: Decimal
     transaction_type: TransactionType
     category: TransactionCategory
+    merchant: Optional[str] = None
     description: str | None
     transaction_date: date
     created_at: datetime
 
     class Config:
         from_attributes = True
+
