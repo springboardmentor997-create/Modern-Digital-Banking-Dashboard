@@ -52,6 +52,8 @@ class Transaction(Base):
         nullable=False,
     )
 
+    merchant = Column(String(100), nullable=True)
+
     description = Column(String, nullable=True)
     transaction_date = Column(Date, nullable=False)
 
@@ -63,3 +65,4 @@ class Transaction(Base):
 
     user = relationship("User", backref="transactions")
     account = relationship("Account", backref="transactions")
+
