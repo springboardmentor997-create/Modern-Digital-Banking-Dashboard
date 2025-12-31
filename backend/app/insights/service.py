@@ -74,14 +74,14 @@ def get_top_merchants(
 
     rows = (
         db.query(
-            Transaction.merchant,
+            Transaction.description.label("merchant"),
             func.sum(Transaction.amount).label("total_spent"),
         )
         .filter(Transaction.user_id == user_id)
         .filter(Transaction.transaction_type == TransactionType.expense)
         .filter(extract("year", Transaction.transaction_date) == now.year)
         .filter(extract("month", Transaction.transaction_date) == now.month)
-        .group_by(Transaction.merchant)
+        .group_by(Transaction.description)
         .order_by(func.sum(Transaction.amount).desc())
         .limit(limit)
         .all()
