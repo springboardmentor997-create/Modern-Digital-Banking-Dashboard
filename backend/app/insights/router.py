@@ -7,6 +7,8 @@ from app.insights.service import get_spending_insights
 
 from app.insights.service import get_cash_flow
 
+from app.insights.service import get_top_merchants
+
 router = APIRouter(
     prefix="/insights",
     tags=["Insights"],
@@ -27,3 +29,11 @@ def cash_flow(
     user=Depends(get_current_user),
 ):
     return get_cash_flow(db, user.id)
+
+
+@router.get("/top-merchants")
+def top_merchants(
+    db=Depends(get_db),
+    user=Depends(get_current_user),
+):
+    return get_top_merchants(db, user.id)
