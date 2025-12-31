@@ -14,3 +14,19 @@ def get_all_accounts(db: Session):
 
 def get_all_transactions(db: Session):
     return db.query(Transaction).order_by(Transaction.transaction_date.desc()).all()
+
+def set_user_active_status(
+    db: Session,
+    user_id: int,
+    is_active: bool,
+):
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        raise ValueError("User not found")
+
+    user.is_active = is_active
+    db.commit()
+    db.refresh(user)
+
+    return user
