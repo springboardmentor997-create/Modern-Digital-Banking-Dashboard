@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from pydantic import BaseModel
 
 
 class AdminUserOut(BaseModel):
@@ -13,3 +14,7 @@ class AdminUserOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class AdminUserStatusUpdate(BaseModel):
+    is_active: bool
