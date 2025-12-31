@@ -1,17 +1,22 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
+from datetime import datetime
 
 from app.transactions.service import (
     get_monthly_spending_trend,
 )
 from app.dashboard.service import get_monthly_spending
 
-from datetime import datetime
-from sqlalchemy import func, extract
-
 from app.transactions.models import Transaction, TransactionType
 from app.insights.schemas import CashFlowOut
 
 from app.insights.schemas import TopMerchantsOut, TopMerchantItem
+
+from app.transactions.models import Transaction, TransactionType
+from app.budgets.service import get_budget_vs_actual
+from app.alerts.models import Alert
+from app.rewards.models import Reward
+
 
 
 def get_spending_insights(db: Session, user_id: int):
@@ -126,4 +131,63 @@ def get_burn_rate(db: Session, user_id: int):
         "total_spent": float(total_spent),
         "daily_burn_rate": round(daily_burn_rate, 2),
         "projected_monthly_spend": round(projected_monthly_spend, 2),
+    }
+
+
+def get_financial_health_score(db: Session, user_id: int):
+    score = 0
+    now = datetime.utcnow()
+
+    # 1️⃣ Income vs Expense (40 pts)
+    income = (
+        db.query(func.coalesce(func.sum(Transaction.amount), 0))
+        .filter(Transaction.user_id == user_id)
+        .filter(Transaction.transaction_type == TransactionType.income)
+        .scalar()
+    )
+
+    expense = (
+        db.query(func.coalesce(func.sum(Transaction.amount), 0))
+        .filter(Transaction.user_id == user_id)
+        .filter(Transaction.transaction_type == TransactionType.expense)
+        .scalar()
+    )
+
+    if income > 0:
+        ratio = float(expense) / float(income)
+        if ratio < 0.6:
+            score += 40
+        elif ratio < 0.8:
+            score += 30
+        elif ratio < 1:
+            score += 20
+        else:
+            score += 10
+
+    # 2️⃣ Budget discipline (30 pts)
+    budgets = get_budget_vs_actual(db=db, user_id=user_id)
+    if budgets:
+        exceeded = sum(1 for b in budgets if b["exceeded"])
+        score += max(0, 30 - (exceeded * 10))
+
+    # 3️⃣ Alerts penalty (-20)
+    alerts_count = db.query(Alert).filter(Alert.user_id == user_id).count()
+    score -= min(alerts_count * 5, 20)
+
+    # 4️⃣ Rewards bonus (+10)
+    rewards_count = db.query(Reward).filter(Reward.user_id == user_id).count()
+    if rewards_count > 0:
+        score += min(rewards_count * 2, 10)
+
+    # Clamp score
+    score = max(0, min(100, score))
+
+    return {
+        "financial_health_score": score,
+        "status": (
+            "excellent" if score >= 80 else
+            "good" if score >= 60 else
+            "warning" if score >= 40 else
+            "critical"
+        )
     }
