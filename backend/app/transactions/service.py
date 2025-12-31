@@ -51,6 +51,7 @@ def create_transaction(
         amount=tx_in.amount,
         transaction_type=tx_in.transaction_type,
         category=tx_in.category,
+        merchant=tx_in.merchant,
         description=tx_in.description,
         transaction_date=tx_in.transaction_date,
     )
@@ -224,3 +225,4 @@ def get_monthly_spending_trend(
         "change": change,
         "trend": trend,
     }
+
