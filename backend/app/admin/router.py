@@ -9,6 +9,9 @@ from app.admin.service import (
 )
 from app.admin.schemas import AdminUserOut
 
+from app.admin.schemas import AdminUserStatusUpdate
+from app.admin.service import set_user_active_status
+
 router = APIRouter(
     prefix="/admin",
     tags=["Admin"],
@@ -37,3 +40,18 @@ def admin_get_transactions(
     current_user=Depends(require_roles("admin")),
 ):
     return get_all_transactions(db)
+
+
+@router.patch("/users/{user_id}/status", response_model=AdminUserOut)
+def admin_update_user_status(
+    user_id: int,
+    payload: AdminUserStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_roles("admin")),
+):
+    return set_user_active_status(
+        db=db,
+        user_id=user_id,
+        is_active=payload.is_active,
+    )
+
