@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from decimal import Decimal
 from datetime import date, datetime
+from typing import Optional
 
 from app.transactions.models import TransactionType, TransactionCategory
 
@@ -28,4 +29,5 @@ class TransactionOut(BaseModel):
 
     class Config:
         from_attributes = True
+
 
