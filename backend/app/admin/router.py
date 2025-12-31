@@ -12,6 +12,8 @@ from app.admin.schemas import AdminUserOut
 from app.admin.schemas import AdminUserStatusUpdate
 from app.admin.service import set_user_active_status
 
+from app.dependencies import get_db, require_admin
+
 router = APIRouter(
     prefix="/admin",
     tags=["Admin"],
@@ -55,3 +57,10 @@ def admin_update_user_status(
         is_active=payload.is_active,
     )
 
+
+@router.get("/users")
+def list_all_users(
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin),
+):
+    return get_all_users(db)
