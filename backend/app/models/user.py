@@ -3,6 +3,7 @@ from sqlalchemy.sql import func
 from .base import Base
 import enum
 from sqlalchemy import Enum
+from sqlalchemy import Boolean
 
 class KycStatus(str, enum.Enum):
     unverified = "unverified"
@@ -22,6 +23,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     password = Column(String(255), nullable=False)
     phone = Column(String(50), nullable=True)
+    is_active = Column(Boolean, default=True)
     kyc_status = Column(
         Enum(KycStatus, name="kyc_status"),
         nullable=False,
@@ -37,4 +39,5 @@ class User(Base):
     nullable=False,
     default=UserRole.user
     )
+
 
