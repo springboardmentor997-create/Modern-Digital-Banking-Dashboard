@@ -64,3 +64,11 @@ def list_all_users(
     admin=Depends(require_admin),
 ):
     return get_all_users(db)
+
+
+@router.get("/accounts")
+def list_all_accounts(
+    db=Depends(get_db),
+    admin=Depends(require_admin),
+):
+    return get_all_accounts(db)
