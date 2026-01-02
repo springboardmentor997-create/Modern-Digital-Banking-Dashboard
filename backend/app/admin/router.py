@@ -80,3 +80,12 @@ def list_all_transactions(
     admin=Depends(require_admin),
 ):
     return get_all_transactions(db)
+
+
+@router.get("/alerts")
+def list_all_alerts(
+    db=Depends(get_db),
+    admin=Depends(require_admin),
+):
+    return get_all_alerts(db)
+
