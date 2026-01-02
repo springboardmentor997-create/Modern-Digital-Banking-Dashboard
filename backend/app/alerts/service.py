@@ -29,3 +29,14 @@ def get_alerts_for_user(db: Session, user_id: int):
         .order_by(Alert.created_at.desc())
         .all()
     )
+
+
+def get_all_alerts(db: Session):
+    """
+    Read-only access to all alerts (Admin / Support)
+    """
+    return (
+        db.query(Alert)
+        .order_by(Alert.created_at.desc())
+        .all()
+    )
