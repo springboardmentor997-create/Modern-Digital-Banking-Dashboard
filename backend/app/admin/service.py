@@ -40,3 +40,12 @@ def set_user_active_status(
     db.refresh(user)
 
     return user
+
+
+def get_system_summary(db: Session):
+    return {
+        "total_users": db.query(User).count(),
+        "total_accounts": db.query(Account).count(),
+        "total_transactions": db.query(Transaction).count(),
+        "total_alerts": db.query(Alert).count(),
+    }
