@@ -38,6 +38,17 @@ def support_view_transactions(
     return get_all_transactions(db)
 
 
+@router.post("/users/{user_id}/reset-request")
+def request_password_reset(
+    user_id: int,
+    user=Depends(require_support_or_admin),
+):
+    return {
+        "message": "Password reset request submitted for admin approval",
+        "user_id": user_id,
+        "requested_by": user.email,
+    }
+
 @router.get("/alerts")
 def support_view_alerts(
     db: Session = Depends(get_db),
