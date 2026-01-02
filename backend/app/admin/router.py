@@ -72,3 +72,11 @@ def list_all_accounts(
     admin=Depends(require_admin),
 ):
     return get_all_accounts(db)
+
+
+@router.get("/transactions")
+def list_all_transactions(
+    db=Depends(get_db),
+    admin=Depends(require_admin),
+):
+    return get_all_transactions(db)
