@@ -14,6 +14,8 @@ from app.admin.service import set_user_active_status
 
 from app.dependencies import get_db, require_admin
 
+from app.admin.service import get_system_summary
+
 router = APIRouter(
     prefix="/admin",
     tags=["Admin"],
@@ -89,3 +91,10 @@ def list_all_alerts(
 ):
     return get_all_alerts(db)
 
+
+@router.get("/summary")
+def system_summary(
+    db=Depends(get_db),
+    admin=Depends(require_admin),
+):
+    return get_system_summary(db)
