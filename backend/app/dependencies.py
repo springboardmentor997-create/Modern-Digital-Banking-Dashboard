@@ -81,6 +81,15 @@ def require_admin(current_user=Depends(get_current_user)):
     return current_user
 
 
+def require_auditor_or_admin(current_user=Depends(get_current_user)):
+    if current_user.role not in ("admin", "auditor"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Auditor or Admin access required",
+        )
+    return current_user
+
+
 # ---------- ROLE GUARD ----------
 def require_roles(*allowed_roles: str):
     def role_checker(current_user: User = Depends(get_current_user)):
@@ -92,5 +101,6 @@ def require_roles(*allowed_roles: str):
         return current_user
 
     return role_checker
+
 
 
