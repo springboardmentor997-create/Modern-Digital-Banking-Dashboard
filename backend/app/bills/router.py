@@ -28,7 +28,20 @@ def list_bills(db: Session = Depends(get_db), current_user: User = Depends(get_c
 		else:
 			bills = bills_service.get_bills_for_user(db, current_user.id)
 		print(f"DEBUG: Found {len(bills)} bills")
-		return bills
+		# Convert ORM instances to plain dicts to avoid session/lazy-load
+		result = []
+		for b in bills:
+			result.append({
+				"id": getattr(b, "id", None),
+				"user_id": getattr(b, "user_id", None),
+				"biller_name": getattr(b, "biller_name", None),
+				"due_date": getattr(b, "due_date", None),
+				"amount_due": getattr(b, "amount_due", None),
+				"status": getattr(b, "status", None),
+				"auto_pay": getattr(b, "auto_pay", False),
+				"created_at": getattr(b, "created_at", None),
+			})
+		return result
 	except Exception as e:
 		print(f"FATAL LIST ERROR: {type(e).__name__}: {str(e)}")
 		print(f"Traceback: {traceback.format_exc()}")
