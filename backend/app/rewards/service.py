@@ -94,3 +94,7 @@ def update_reward(db: Session, reward: Reward, payload: RewardUpdate):
 
 def delete_reward(db: Session, reward: Reward):
     return RewardService.delete_reward(db, reward)
+ 
+
+def get_all_rewards(db: Session):
+    return RewardService.get_all_rewards(db)

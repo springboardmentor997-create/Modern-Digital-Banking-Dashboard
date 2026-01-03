@@ -12,7 +12,7 @@ class Transaction(Base):
     __tablename__ = "transactions"
     
     id = Column(Integer, primary_key=True, index=True)
-    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
+    account_id = Column(Integer, ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False)
     description = Column(String(255))
     category = Column(String(100))
     amount = Column(NUMERIC(15, 2), nullable=False)

@@ -3,11 +3,11 @@ from typing import Optional, Dict, Any
 
 
 class UpdateProfile(BaseModel):
-    name: Optional[str]
+    name: Optional[str] = None
     # accept raw string here; router will validate non-empty emails
-    email: Optional[str]
-    phone: Optional[str]
-    location: Optional[str]
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    location: Optional[str] = None
 
 
 class UserSettings(BaseModel):

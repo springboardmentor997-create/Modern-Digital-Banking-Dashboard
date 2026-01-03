@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
@@ -119,11 +120,10 @@ async def import_csv(
     csv_content = content.decode('utf-8')
     
     try:
-        transactions = TransactionService.import_csv(db, account_id, csv_content)
-        return {
-            "message": f"Successfully imported {len(transactions)} transactions",
-            "count": len(transactions)
-        }
+        summary = TransactionService.import_csv(db, account_id, csv_content)
+        return JSONResponse(status_code=status.HTTP_201_CREATED, content=summary)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

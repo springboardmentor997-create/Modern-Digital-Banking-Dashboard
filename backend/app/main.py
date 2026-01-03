@@ -10,6 +10,8 @@ from app.budgets.router import router as budgets_router
 from app.users.router import router as users_router
 from app.bills.router import router as bills_router
 from app.rewards.router import router as rewards_router
+from app.notifications.router import router as notifications_router
+from app.notifications import scheduler as notifications_scheduler
 from app.dependencies import require_admin_only
 from app.models.user import User
 
@@ -58,6 +60,16 @@ app.include_router(budgets_router, prefix="/api/budgets", tags=["budgets"])
 app.include_router(users_router, prefix="/api/user", tags=["user"])
 app.include_router(bills_router, prefix="/api/bills", tags=["bills"])
 app.include_router(rewards_router, prefix="/api/rewards", tags=["rewards"])
+app.include_router(notifications_router, prefix="/api/notifications", tags=["notifications"])
+
+
+@app.on_event("startup")
+def start_notifications_scheduler():
+    try:
+        # start background scheduler (runs daily by default)
+        notifications_scheduler.start_scheduler()
+    except Exception as e:
+        print("Warning: could not start notifications scheduler:", e)
 
 @app.get("/")
 def read_root():

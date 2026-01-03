@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 import re
 from sqlalchemy.orm import Session
 from typing import List, Dict
-from app.dependencies import get_current_user, RoleChecker, require_admin, require_auditor_or_admin
+from app.dependencies import get_current_user, RoleChecker, require_admin
 from app.models.user import User
 from app.database import get_db
 from app.auth.schemas import UserResponse
 from app.users.schemas import UpdateProfile, UserSettings, ChangePasswordRequest
+from pydantic import ValidationError
 from app.users.service import UserService
 from fastapi import Body
 
@@ -19,9 +20,10 @@ async def get_profile(db: Session = Depends(get_db), current_user=Depends(get_cu
     return UserService.get_profile(db, current_user)
 
 
+
 @router.get("/", response_model=List[UserResponse])
-async def list_users(db: Session = Depends(get_db), current_user: User = Depends(require_auditor_or_admin)):
-    # Admin/auditor endpoint to list all users (read-only for auditors)
+async def list_users(db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
+    # Admin endpoint to list all users
     # Return only non-sensitive user fields plus a limited `accounts` list per user.
     users = db.query(type(current_user)).all()
 
@@ -34,28 +36,10 @@ async def list_users(db: Session = Depends(get_db), current_user: User = Depends
 
 
 
-@router.get("/{user_id}", response_model=UserResponse)
-async def get_user_by_id(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    # Admins can fetch any user; normal users can fetch only their own record.
-    if getattr(current_user, "role", None) != "admin" and current_user.id != user_id:
-        # Not permitted
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
-
-    # Fetch target user
-    target = db.query(User).filter(User.id == user_id).first()
-    if not target:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-    # Attach limited account summaries (only id, bank_name, account_type, balance, currency)
-    acct_list = UserService.get_account_summaries(db, target.id)
-    setattr(target, "accounts", acct_list)
-    return target
-
-
 @router.put("/profile", response_model=UserResponse)
 async def update_profile(profile_data: UpdateProfile = Body({}), db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    # Normalize payload: exclude empty strings so they are not treated as provided
-    raw = profile_data.dict()
+    # Normalize payload: only include fields actually provided by client
+    raw = profile_data.model_dump(exclude_unset=True)
     payload = {}
     for k, v in raw.items():
         if v is None:
@@ -78,13 +62,20 @@ async def update_profile(profile_data: UpdateProfile = Body({}), db: Session = D
     return updated_user
 
 
+
 @router.get("/settings", response_model=UserSettings)
 async def get_settings(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     settings = UserService.get_settings(current_user.id)
-    # return defaults merged with stored
+    # return defaults merged with stored; validate persisted settings and
+    # fall back to defaults if persisted data is malformed.
     defaults = UserSettings().dict()
-    defaults.update(settings or {})
-    return defaults
+    merged = {**defaults, **(settings or {})}
+    try:
+        validated = UserSettings(**merged)
+        return validated
+    except ValidationError:
+        # If stored settings are invalid, return safe defaults
+        return UserSettings()
 
 
 @router.put("/settings", response_model=UserSettings)
@@ -152,4 +143,41 @@ async def delete_profile(db: Session = Depends(get_db), current_user=Depends(get
     db.query(User).filter(User.id == user_id).delete(synchronize_session=False)
 
     db.commit()
+    return {"message": f"User {user_id} and all data deleted"}
+
+
+@router.get("/{user_id}", response_model=UserResponse)
+async def get_user_by_id(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # Admins can fetch any user; normal users can fetch only their own record.
+    if getattr(current_user, "role", None) != "admin" and current_user.id != user_id:
+        # Not permitted
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    # Fetch target user
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Attach limited account summaries (only id, bank_name, account_type, balance, currency)
+    acct_list = UserService.get_account_summaries(db, target.id)
+    setattr(target, "accounts", acct_list)
+    return target
+
+
+@router.delete("/{user_id}")
+async def delete_user_by_id(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
+    """Admin-only: delete any user and cascade their data."""
+    # Admin access enforced by dependency `require_admin`
+    target = db.query(type(current_user)).filter(type(current_user).id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Reuse UserService.delete_account which takes a User object and performs cascade cleanup
+    from app.users.service import UserService as _UserService
+    try:
+        _UserService.delete_account(db, target)
+    except Exception:
+        db.rollback()
+        raise
+
     return {"message": f"User {user_id} and all data deleted"}

@@ -7,9 +7,10 @@ from fastapi import HTTPException, status
 
 class BillService:
     @staticmethod
-    def create_bill(db: Session, user_id: int, payload: BillCreate):
+    def create_bill(db: Session, user_id: int, payload: BillCreate, account_id: int = None):
         bill = Bill(
             user_id=user_id,
+            account_id=account_id,
             biller_name=payload.biller_name,
             due_date=payload.due_date,
             amount_due=payload.amount_due,
@@ -100,8 +101,8 @@ class BillService:
 
 
 # small compatibility layer to match router imports
-def create_bill(db: Session, user_id: int, payload: BillCreate):
-    return BillService.create_bill(db, user_id, payload)
+def create_bill(db: Session, user_id: int, payload: BillCreate, account_id: int = None):
+    return BillService.create_bill(db, user_id, payload, account_id)
 
 def get_bills_for_user(db: Session, user_id: int):
     return BillService.get_bills_for_user(db, user_id)
@@ -120,3 +121,7 @@ def update_bill(db: Session, bill: Bill, payload: BillUpdate):
 
 def delete_bill(db: Session, bill: Bill):
     return BillService.delete_bill(db, bill)
+
+
+def get_all_bills(db: Session):
+    return BillService.get_all_bills(db)
