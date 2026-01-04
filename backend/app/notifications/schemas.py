@@ -1,6 +1,17 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
+
+
+class NotificationBase(BaseModel):
+    type: str = Field(..., max_length=50)
+    title: str = Field(..., max_length=200)
+    message: str
+    scheduled_date: Optional[datetime] = None
+
+
+class NotificationCreate(NotificationBase):
+    pass
 
 
 class NotificationResponse(BaseModel):

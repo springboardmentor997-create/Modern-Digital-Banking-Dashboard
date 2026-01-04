@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_current_user, RoleChecker, require_admin, require_write_access
 from app.models.user import User
 from app.models.account import Account
+from app.models.bill import Bill
 from app.database import get_db
 from app.bills import service as bills_service
 from app.bills.schemas import BillCreate, BillUpdate, BillResponse
@@ -18,15 +19,28 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[BillResponse])
-def list_bills(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-	# Admins can list all bills; regular users only their own.
-	print(f"DEBUG: Fetching bills for user_id={getattr(current_user, 'id', None)}")
+
+def list_bills(account_id: Optional[int] = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+	"""List bills. If `account_id` query param is provided, returns bills for that account
+	(owners and admins only). Otherwise returns all bills (admin) or user's bills."""
+	print(f"DEBUG: Fetching bills for user_id={getattr(current_user, 'id', None)} account_id={account_id}")
 	try:
-		user_role = getattr(current_user, "role", "user")
-		if user_role == "admin":
-			bills = bills_service.get_all_bills(db)
+		# If account_id filter provided, validate account and RBAC then return filtered bills
+		if account_id is not None:
+			acct = db.query(Account).filter(Account.id == account_id).first()
+			if not acct:
+				raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+			# Non-admins may only query their own accounts
+			if getattr(current_user, "role", None) != "admin" and acct.user_id != current_user.id:
+				raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+			bills = db.query(Bill).filter(Bill.account_id == account_id).all()
 		else:
-			bills = bills_service.get_bills_for_user(db, current_user.id)
+			user_role = getattr(current_user, "role", "user")
+			if user_role == "admin":
+				bills = bills_service.get_all_bills(db)
+			else:
+				bills = bills_service.get_bills_for_user(db, current_user.id)
+
 		print(f"DEBUG: Found {len(bills)} bills")
 		# Convert ORM instances to plain dicts to avoid session/lazy-load
 		result = []
@@ -34,6 +48,7 @@ def list_bills(db: Session = Depends(get_db), current_user: User = Depends(get_c
 			result.append({
 				"id": getattr(b, "id", None),
 				"user_id": getattr(b, "user_id", None),
+				"account_id": getattr(b, "account_id", None),
 				"biller_name": getattr(b, "biller_name", None),
 				"due_date": getattr(b, "due_date", None),
 				"amount_due": getattr(b, "amount_due", None),
@@ -42,6 +57,8 @@ def list_bills(db: Session = Depends(get_db), current_user: User = Depends(get_c
 				"created_at": getattr(b, "created_at", None),
 			})
 		return result
+	except HTTPException:
+		raise
 	except Exception as e:
 		print(f"FATAL LIST ERROR: {type(e).__name__}: {str(e)}")
 		print(f"Traceback: {traceback.format_exc()}")
@@ -68,10 +85,41 @@ def create_bill(account_id: int, payload: BillCreate, db: Session = Depends(get_
 		except Exception:
 			pass
 		return created
+
+	# close create_bill try/except
 	except Exception as e:
 		print(f"FATAL CREATE ERROR: {type(e).__name__}: {str(e)}")
 		print(f"Traceback: {traceback.format_exc()}")
 		raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Create error: {str(e)}")
+
+
+@router.get("/accounts/{account_id}", response_model=List[BillResponse])
+def list_bills_for_account(account_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+	"""List bills for a specific account. Admins see all; regular users only if they own the account."""
+	# Verify account exists
+	acct = db.query(Account).filter(Account.id == account_id).first()
+	if not acct:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+
+	# RBAC: non-admins may only list bills for their own accounts
+	if getattr(current_user, "role", None) != "admin" and acct.user_id != current_user.id:
+		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+	bills = db.query(Bill).filter(Bill.account_id == account_id).all()
+	result = []
+	for b in bills:
+		result.append({
+			"id": getattr(b, "id", None),
+			"user_id": getattr(b, "user_id", None),
+			"account_id": getattr(b, "account_id", None),
+			"biller_name": getattr(b, "biller_name", None),
+			"due_date": getattr(b, "due_date", None),
+			"amount_due": getattr(b, "amount_due", None),
+			"status": getattr(b, "status", None),
+			"auto_pay": getattr(b, "auto_pay", False),
+			"created_at": getattr(b, "created_at", None),
+		})
+	return result
 
 
 @router.put("/{bill_id}", response_model=BillResponse)

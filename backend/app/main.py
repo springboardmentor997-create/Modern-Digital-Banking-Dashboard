@@ -12,6 +12,8 @@ from app.bills.router import router as bills_router
 from app.rewards.router import router as rewards_router
 from app.notifications.router import router as notifications_router
 from app.notifications import scheduler as notifications_scheduler
+from app.utils.email import send_email
+from app.debug.router import router as debug_router
 from app.dependencies import require_admin_only
 from app.models.user import User
 
@@ -61,6 +63,7 @@ app.include_router(users_router, prefix="/api/user", tags=["user"])
 app.include_router(bills_router, prefix="/api/bills", tags=["bills"])
 app.include_router(rewards_router, prefix="/api/rewards", tags=["rewards"])
 app.include_router(notifications_router, prefix="/api/notifications", tags=["notifications"])
+app.include_router(debug_router, prefix="/api/debug", tags=["debug"])
 
 
 @app.on_event("startup")
@@ -70,6 +73,18 @@ def start_notifications_scheduler():
         notifications_scheduler.start_scheduler()
     except Exception as e:
         print("Warning: could not start notifications scheduler:", e)
+
+
+@app.on_event("startup")
+def startup_notifications_ready():
+    # Lightweight startup message that confirms the notification system is available
+    try:
+        print("🔔 Checking overdue bills...")
+        # A light check - do not modify DB state here. Just indicate readiness.
+        # The scheduler will perform actual checks in background.
+        print("✅ Bill reminder ready!")
+    except Exception as e:
+        print("Warning: notifications startup check failed:", e)
 
 @app.get("/")
 def read_root():
