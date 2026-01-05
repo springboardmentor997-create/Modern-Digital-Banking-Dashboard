@@ -13,6 +13,7 @@ from app.transactions.schemas import TransactionCreate
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
+from decimal import Decimal
 import traceback
 
 router = APIRouter()
@@ -160,24 +161,31 @@ def update_bill(bill_id: int, payload: BillUpdate, db: Session = Depends(get_db)
 	# Delegate update logic to service (handles balance adjustments)
 	updated = bills_service.update_bill(db, bill, new_payload)
 
-	# If transitioned to paid and an account_id is present, create transaction
-	try:
-		new_status = getattr(updated, "status", None)
-		acct_id_after = getattr(new_payload, "account_id", None) or getattr(updated, "account_id", None)
-		if prev_status != "paid" and new_status == "paid" and acct_id_after:
+	# If transitioned to paid, require an account to create a transaction
+	new_status = getattr(updated, "status", None)
+	acct_id_after = getattr(new_payload, "account_id", None) or getattr(updated, "account_id", None)
+	if prev_status != "paid" and new_status == "paid":
+		if not acct_id_after:
+			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="account_id is required to mark a bill as paid and create a transaction")
+
+		try:
+			from decimal import Decimal
+
+			amt = Decimal(str(getattr(updated, "amount_due", 0)))
 			tx_payload = TransactionCreate(
 				description=f"Bill payment: {updated.biller_name}",
 				merchant=updated.biller_name,
-				amount=updated.amount_due,
+				amount=amt,
 				category="Bills",
 				txn_type="debit",
 				currency="INR",
 				txn_date=datetime.utcnow()
 			)
 			TransactionService.create_transaction(db, acct_id_after, tx_payload)
-	except Exception:
-		# don't fail the update if transaction creation fails
-		pass
+		except Exception as e:
+			# Surface as server error so client knows transaction failed
+			print(f"ERROR creating transaction after bill update: {e}")
+			raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create transaction: {e}")
 
 	return updated
 
@@ -225,31 +233,41 @@ def mark_bill_paid(id: int, payload: MarkPaidPayload = Body(None), current_user:
 	elif getattr(bill, "account_id", None):
 		acct_id = bill.account_id
 
-	if getattr(bill, "status", None) != "paid" and acct_id:
+	# Require an account id to create a transaction and deduct balance
+	if getattr(bill, "status", None) != "paid":
+		if not acct_id:
+			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="account_id is required to mark a bill as paid and create a transaction")
+
 		acct = db.query(Account).filter(Account.id == acct_id).first()
 		if acct:
 			try:
-				acct.balance = float(acct.balance or 0) - float(bill.amount_due or 0)
+				from decimal import Decimal
+
+				amt = Decimal(str(bill.amount_due or 0))
+				curr = Decimal(str(acct.balance or 0))
+				acct.balance = curr - amt
 				db.add(acct)
 				print(f"💰 DEDUCTED: Bill {id} → Account {acct_id}: {acct.balance}")
-				# Create transaction record for the deduction
+
+				# Create transaction record for the deduction (fail loudly so client knows)
+				tx_payload = TransactionCreate(
+					description=f"Bill payment: {bill.biller_name}",
+					merchant=bill.biller_name,
+					amount=amt,
+					category="Bills",
+					txn_type="debit",
+					currency="INR",
+					txn_date=datetime.utcnow()
+				)
+				TransactionService.create_transaction(db, acct_id, tx_payload)
+			except Exception as e:
+				# If transaction creation or balance update fails, rollback and surface error
 				try:
-					tx_payload = TransactionCreate(
-						description=f"Bill payment: {bill.biller_name}",
-						merchant=bill.biller_name,
-						amount=bill.amount_due,
-						category="Bills",
-						txn_type="debit",
-						currency="INR",
-						txn_date=datetime.utcnow()
-					)
-					TransactionService.create_transaction(db, acct_id, tx_payload)
+					db.rollback()
 				except Exception:
-					# don't fail the mark-paid if transaction creation fails
 					pass
-			except Exception:
-				# Don't fail the operation if deduction fails
-				pass
+				print(f"ERROR creating transaction for bill mark-paid: {e}")
+				raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create transaction: {e}")
 
 	# Mark as paid
 	bill.status = "paid"
