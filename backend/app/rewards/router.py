@@ -6,6 +6,7 @@ from app.rewards.schemas import RewardBulkAssign, RewardResponse, RewardCreate, 
 from app.models.reward import Reward
 from app.models.user import User
 from app.dependencies import require_admin, get_current_user
+from app.utils.validation import validate_user_ids
 from app.rewards import service as rewards_service
 
 router = APIRouter()
@@ -50,8 +51,18 @@ def update_reward(reward_id: int, payload: RewardUpdate, db: Session = Depends(g
 	r = rewards_service.get_reward_by_id(db, reward_id)
 	if not r:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reward not found")
+	# If the payload tries to change the assigned user, validate and require admin
+	new_user_id = getattr(payload, "user_id", None)
+	if new_user_id is not None and new_user_id != r.user_id:
+		# only admins may reassign rewards
+		if getattr(current_user, "role", "user") != "admin":
+			raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admin can reassign rewards")
+		# ensure the new user exists
+		validate_user_ids(db, [new_user_id])
+
 	if getattr(current_user, "role", "user") != "admin" and r.user_id != current_user.id:
 		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
 	updated = rewards_service.update_reward(db, r, payload)
 	return updated
 

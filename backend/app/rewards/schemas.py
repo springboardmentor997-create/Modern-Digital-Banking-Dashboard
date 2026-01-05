@@ -40,6 +40,8 @@ class RewardBulkAssign(BaseModel):
 class RewardUpdate(BaseModel):
     program_name: Optional[str]
     points_balance: Optional[int]
+    # Optional: allow reassigning reward to a different user (admin only)
+    user_id: Optional[int]
 
 
 class RewardResponse(BaseModel):
