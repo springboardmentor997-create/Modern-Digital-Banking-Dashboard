@@ -73,9 +73,9 @@ class BillService:
             if acct_lookup_id is not None:
                 acct = db.query(Account).filter(Account.id == acct_lookup_id).first()
                 if acct:
-                    # Treat bill payment as a debit on the account balance (subtract amount_due)
-                    acct.balance = (acct.balance or Decimal("0")) - (bill.amount_due or Decimal("0"))
-                    db.add(acct)
+                    # Account exists. Do NOT modify the balance here —
+                    # transaction creation will handle balance updates atomically.
+                    pass
 
         db.add(bill)
         # Commit once and refresh updated objects to keep transaction consistent

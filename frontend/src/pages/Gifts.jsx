@@ -2,10 +2,12 @@ import React,{ useEffect, useState } from 'react';
 import { fetchRewards } from '../api/rewards';
 import { Gift } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Load from '../components/Loader';
 
 export default function Gifts() {
   const [rewards, setRewards] = useState([]);
   const [currentReward, setCurrentReward] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadRewards();
@@ -13,19 +15,27 @@ export default function Gifts() {
 
   async function loadRewards() {
     try {
+      setLoading(true);
       const data = await fetchRewards();
       setRewards(data);
     } catch (err) {
       toast.error(err.message);
     }
+    finally{
+      setLoading(false);
+    }
   }
 
+  if (loading) {
+    return <Load/>
+  }
+  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50">
   <div className="mx-auto max-w-6xl">
     <div className="mb-10">
       <h1 className="text-4xl font-bold text-gray-900 mb-2">Rewards</h1>
-      <p className="text-gray-600">Manage and track your reward points</p>
+      <p className="text-gray-600">Track your reward points</p>
     </div>
 
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -56,12 +66,6 @@ export default function Gifts() {
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
               Updated: {new Date(reward.last_updated).toLocaleString()}
             </p>
-          </div>
-
-          <div className="bg-gradient-to-r from-blue-50 to-transparent px-8 py-3 border-t border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <button className="text-sm font-semibold text-blue-600 hover:text-blue-700">
-              View Details →
-            </button>
           </div>
         </div>
       ))}

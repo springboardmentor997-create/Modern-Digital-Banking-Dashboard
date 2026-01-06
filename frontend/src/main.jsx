@@ -8,12 +8,11 @@ import { AuthProvider } from "./context/AuthContext";
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+
     <BrowserRouter>
         <AuthProvider>
           <Toaster position="top-center" reverseOrder={false} />
           <App />
         </AuthProvider>
     </BrowserRouter>
-  </React.StrictMode>
 )

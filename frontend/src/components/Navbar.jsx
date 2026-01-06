@@ -9,19 +9,15 @@ export default function Navbar() {
   const navigate = useNavigate();
   
   const { isLoggedIn } = useAuth();
+  const user = JSON.parse(localStorage.getItem("user"));
 
   const handleAccountClick = () => {
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
-
       if (!user) return navigate("/login");
 
       switch (user.role) {
         case "admin":
           navigate("/AdminDashboard");
-          break;
-        case "Auditor":
-          navigate("/AuditorDashboard");
           break;
         default:
           navigate("/Dashboard");
@@ -29,7 +25,6 @@ export default function Navbar() {
 
       setOpen(false);
     } catch (err) {
-      console.error("Invalid user data", err);
       navigate("/login");
     }
   };
@@ -46,7 +41,7 @@ export default function Navbar() {
         <ul className="hidden md:flex gap-12 text-gray-700 font-medium">
           <a href = '/' className="hover:text-blue-600 transition">Home</a>
           <a href = '/Services' className="hover:text-blue-600 transition">Services</a>
-          <a href = '/Analytics' className="hover:text-blue-600 transition">Analytics</a>
+          {user?.role === 'user' && (<a href = '/Analytics' className="hover:text-blue-600 transition">Analytics</a>)}
           <a href = '/Support' className="hover:text-blue-600 transition">Support</a>
         </ul>
 
@@ -73,7 +68,7 @@ export default function Navbar() {
         <div className="md:hidden bg-white/80 backdrop-blur-lg px-6 py-4 flex flex-col gap-4 text-gray-800 font-medium border-b border-gray-200">
           <a href = '/' className="hover:text-blue-600 transition">Home</a>
           <a href = '/Services' className="hover:text-blue-600 transition">Services</a>
-          <a href = '/Analytics' className="hover:text-blue-600 transition">Analytics</a>
+          {user?.role === 'user' && (<a href = '/Analytics' className="hover:text-blue-600 transition">Analytics</a>)}
           <a href = '/Support' className="hover:text-blue-600 transition">Support</a>
           <button
             onClick={handleAccountClick}

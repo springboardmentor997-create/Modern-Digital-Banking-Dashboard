@@ -240,16 +240,12 @@ def mark_bill_paid(id: int, payload: MarkPaidPayload = Body(None), current_user:
 
 		acct = db.query(Account).filter(Account.id == acct_id).first()
 		if acct:
+			# Create transaction record for the deduction. Let TransactionService
+			# perform the account balance update so it's done in one place.
 			try:
 				from decimal import Decimal
 
 				amt = Decimal(str(bill.amount_due or 0))
-				curr = Decimal(str(acct.balance or 0))
-				acct.balance = curr - amt
-				db.add(acct)
-				print(f"💰 DEDUCTED: Bill {id} → Account {acct_id}: {acct.balance}")
-
-				# Create transaction record for the deduction (fail loudly so client knows)
 				tx_payload = TransactionCreate(
 					description=f"Bill payment: {bill.biller_name}",
 					merchant=bill.biller_name,
@@ -261,7 +257,6 @@ def mark_bill_paid(id: int, payload: MarkPaidPayload = Body(None), current_user:
 				)
 				TransactionService.create_transaction(db, acct_id, tx_payload)
 			except Exception as e:
-				# If transaction creation or balance update fails, rollback and surface error
 				try:
 					db.rollback()
 				except Exception:
