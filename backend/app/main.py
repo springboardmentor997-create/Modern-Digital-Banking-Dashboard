@@ -33,11 +33,14 @@ app = FastAPI(
 # wildcard during development to avoid Swagger "Failed to fetch" errors caused by
 # origin mismatches. In production you should lock this down to your frontend host.
 
+app = FastAPI(...)
+
 origins = [
     "http://localhost:5173",
     "http://localhost:4173",
+    "http://localhost:4174",
     "https://modern-digital-banking-dashboard-pe-lemon.vercel.app",
-    "https://modern-digital-banking-dashboard-personal-so6b-aib6scmuw.vercel.app",
+    "https://modern-digital-banking-dashboard-personal-so6b-cukb07hi0.vercel.app",
 ]
 
 app.add_middleware(
@@ -47,7 +50,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # Include routers
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(accounts_router, prefix="/api/accounts", tags=["accounts"])
