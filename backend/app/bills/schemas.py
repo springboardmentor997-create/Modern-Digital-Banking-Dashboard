@@ -51,7 +51,6 @@ class BillUpdate(BaseModel):
 class BillResponse(BaseModel):
     id: int
     user_id: int
-    account_id: Optional[int] = None
     biller_name: str
     due_date: date
     amount_due: Decimal

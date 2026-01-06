@@ -1,7 +1,8 @@
-import React from 'react';
-import { Zap, PieChart, Bell, Gift, DollarSign, ArrowRight, Star, TrendingUp, Wallet } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Building2, Zap, IndianRupee, PieChart, Bell, Gift, DollarSign, ArrowRight, Star, TrendingUp, Wallet, User, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Carousel from '../components/Carousel';
+import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext'; 
 
 export default function Home() {
@@ -67,22 +68,13 @@ export default function Home() {
       rating: 5
     }
   ];
-  const user = JSON.parse(localStorage.getItem("user"));
-
     const handleClick = () => {
-    if (!user) return navigate("/login");
-      switch (user.role) {
-        case "admin":
-          navigate("/AdminDashboard");
-          break;
-        case "user":
-          navigate("/Dashboard");
-          break;
-        default:
-          navigate("/login");
-      }
+    if (isLoggedIn) {
+      navigate("/Dashboard");
+    } else {
+      navigate("/login");
+    }
   };
-
   return (
     <div className="min-h-screen bg-white">
       <section className="bg-gradient-to-br from-blue-50 via-cyan-50 to-purple-50 py-20 px-4">
@@ -152,6 +144,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* How It Works Section */}
       <section id="how-it-works" className="py-20 px-4 bg-gradient-to-br from-blue-50 to-cyan-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -189,6 +182,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
       <section id="Feedback" className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -227,10 +221,15 @@ export default function Home() {
           <p className="text-xl mb-8 text-blue-100">
             Open your free Tivra Bank account today and experience smarter banking
           </p>
-          <div className=" sm:flex-row gap-4 justify-center">
-            <button onClick={handleClick}
-            className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-lg font-medium hover:bg-white hover:text-blue-600 text-lg transition-colors">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button 
+              onClick={handleClick}
+              className="px-8 py-4 bg-white text-blue-600 rounded-lg font-medium hover:bg-gray-100 text-lg transition-colors"
+            >
               Create Free Account
+            </button>
+            <button className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-lg font-medium hover:bg-white hover:text-blue-600 text-lg transition-colors">
+              Schedule Demo
             </button>
           </div>
         </div>
@@ -246,6 +245,10 @@ export default function Home() {
             <div className="p-6 bg-white border-2 border-gray-100 rounded-xl">
               <h3 className="text-lg font-bold text-gray-900 mb-2">Is Tivra Bank really free?</h3>
               <p className="text-gray-600">Yes! Opening an account and using basic features is completely free with no monthly fees.</p>
+            </div>
+            <div className="p-6 bg-white border-2 border-gray-100 rounded-xl">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">How secure is my money?</h3>
+              <p className="text-gray-600">We use bank-level 256-bit encryption and multi-factor authentication to protect your accounts.</p>
             </div>
             <div className="p-6 bg-white border-2 border-gray-100 rounded-xl">
               <h3 className="text-lg font-bold text-gray-900 mb-2">Can I link multiple accounts?</h3>

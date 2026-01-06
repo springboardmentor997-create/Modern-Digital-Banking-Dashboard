@@ -1,20 +1,13 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Footer() {
   const navigate = useNavigate();
 
-
   const goToSignup = (role) => {
-      const user = localStorage.getItem('user');
-      if (user) {
-        if (user.role === 'user') navigate('/DashBoard');
-        else navigate('/AdminDashboard');
-      } else {
-        navigate("/login", { state: { role } });
-      }
-    }
+    navigate("/login", { state: { role } });
+  };
 
     return(
       <footer className="py-12 px-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white">
@@ -32,22 +25,27 @@ export default function Footer() {
             <div className="flex-col items-center justify-center text-center"> 
               <h4 className="text-white font-bold mb-3">Product</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="/Services" className="hover:text-white">Features</a></li>
-                <li><button onClick={() => goToSignup("user")}>Don't have an account</button></li>
+                <li><a href="#" className="hover:text-white">Features</a></li>
+                <li><a href="#" className="hover:text-white">Security</a></li>
+                <li><a href="#" className="hover:text-white">Pricing</a></li>
               </ul>
             </div>
             <div className="flex-col items-center justify-center text-center">
               <h4 className="text-white font-bold mb-3">Company</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="/Serives" className="hover:text-white">About Us</a></li>
+                <li><a href="#" className="hover:text-white">About Us</a></li>
+                <li><a href="#" className="hover:text-white">Contact</a></li>
+                <li><button onClick={() => goToSignup("user")}>Don't have an account</button></li>
                 <li><button onClick={() => goToSignup("admin")}>Admin here</button></li>
+                <li><button onClick={() => goToSignup("Auditor")}>Auditor here</button></li>
               </ul>
             </div>
             <div className="flex-col items-center justify-center text-center">
               <h4 className="text-white font-bold mb-3">Support</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="/Support" className="hover:text-white">Help Center</a></li>
-                <li><a href="/Services" className="hover:text-white">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-white">Help Center</a></li>
+                <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-white">Terms of Service</a></li>
               </ul>
             </div>
           </div>

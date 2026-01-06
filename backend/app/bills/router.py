@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_current_user, RoleChecker, require_admin, require_write_access
 from app.models.user import User
 from app.models.account import Account
-from app.models.bill import Bill
 from app.database import get_db
 from app.bills import service as bills_service
 from app.bills.schemas import BillCreate, BillUpdate, BillResponse
@@ -13,35 +12,21 @@ from app.transactions.schemas import TransactionCreate
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
-from decimal import Decimal
 import traceback
 
 router = APIRouter()
 
 
 @router.get("/", response_model=List[BillResponse])
-
-def list_bills(account_id: Optional[int] = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-	"""List bills. If `account_id` query param is provided, returns bills for that account
-	(owners and admins only). Otherwise returns all bills (admin) or user's bills."""
-	print(f"DEBUG: Fetching bills for user_id={getattr(current_user, 'id', None)} account_id={account_id}")
+def list_bills(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+	# Admins can list all bills; regular users only their own.
+	print(f"DEBUG: Fetching bills for user_id={getattr(current_user, 'id', None)}")
 	try:
-		# If account_id filter provided, validate account and RBAC then return filtered bills
-		if account_id is not None:
-			acct = db.query(Account).filter(Account.id == account_id).first()
-			if not acct:
-				raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
-			# Non-admins may only query their own accounts
-			if getattr(current_user, "role", None) != "admin" and acct.user_id != current_user.id:
-				raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-			bills = db.query(Bill).filter(Bill.account_id == account_id).all()
+		user_role = getattr(current_user, "role", "user")
+		if user_role == "admin":
+			bills = bills_service.get_all_bills(db)
 		else:
-			user_role = getattr(current_user, "role", "user")
-			if user_role == "admin":
-				bills = bills_service.get_all_bills(db)
-			else:
-				bills = bills_service.get_bills_for_user(db, current_user.id)
-
+			bills = bills_service.get_bills_for_user(db, current_user.id)
 		print(f"DEBUG: Found {len(bills)} bills")
 		# Convert ORM instances to plain dicts to avoid session/lazy-load
 		result = []
@@ -49,7 +34,6 @@ def list_bills(account_id: Optional[int] = None, db: Session = Depends(get_db), 
 			result.append({
 				"id": getattr(b, "id", None),
 				"user_id": getattr(b, "user_id", None),
-				"account_id": getattr(b, "account_id", None),
 				"biller_name": getattr(b, "biller_name", None),
 				"due_date": getattr(b, "due_date", None),
 				"amount_due": getattr(b, "amount_due", None),
@@ -58,8 +42,6 @@ def list_bills(account_id: Optional[int] = None, db: Session = Depends(get_db), 
 				"created_at": getattr(b, "created_at", None),
 			})
 		return result
-	except HTTPException:
-		raise
 	except Exception as e:
 		print(f"FATAL LIST ERROR: {type(e).__name__}: {str(e)}")
 		print(f"Traceback: {traceback.format_exc()}")
@@ -86,41 +68,10 @@ def create_bill(account_id: int, payload: BillCreate, db: Session = Depends(get_
 		except Exception:
 			pass
 		return created
-
-	# close create_bill try/except
 	except Exception as e:
 		print(f"FATAL CREATE ERROR: {type(e).__name__}: {str(e)}")
 		print(f"Traceback: {traceback.format_exc()}")
 		raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Create error: {str(e)}")
-
-
-@router.get("/accounts/{account_id}", response_model=List[BillResponse])
-def list_bills_for_account(account_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-	"""List bills for a specific account. Admins see all; regular users only if they own the account."""
-	# Verify account exists
-	acct = db.query(Account).filter(Account.id == account_id).first()
-	if not acct:
-		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
-
-	# RBAC: non-admins may only list bills for their own accounts
-	if getattr(current_user, "role", None) != "admin" and acct.user_id != current_user.id:
-		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-
-	bills = db.query(Bill).filter(Bill.account_id == account_id).all()
-	result = []
-	for b in bills:
-		result.append({
-			"id": getattr(b, "id", None),
-			"user_id": getattr(b, "user_id", None),
-			"account_id": getattr(b, "account_id", None),
-			"biller_name": getattr(b, "biller_name", None),
-			"due_date": getattr(b, "due_date", None),
-			"amount_due": getattr(b, "amount_due", None),
-			"status": getattr(b, "status", None),
-			"auto_pay": getattr(b, "auto_pay", False),
-			"created_at": getattr(b, "created_at", None),
-		})
-	return result
 
 
 @router.put("/{bill_id}", response_model=BillResponse)
@@ -161,31 +112,24 @@ def update_bill(bill_id: int, payload: BillUpdate, db: Session = Depends(get_db)
 	# Delegate update logic to service (handles balance adjustments)
 	updated = bills_service.update_bill(db, bill, new_payload)
 
-	# If transitioned to paid, require an account to create a transaction
-	new_status = getattr(updated, "status", None)
-	acct_id_after = getattr(new_payload, "account_id", None) or getattr(updated, "account_id", None)
-	if prev_status != "paid" and new_status == "paid":
-		if not acct_id_after:
-			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="account_id is required to mark a bill as paid and create a transaction")
-
-		try:
-			from decimal import Decimal
-
-			amt = Decimal(str(getattr(updated, "amount_due", 0)))
+	# If transitioned to paid and an account_id is present, create transaction
+	try:
+		new_status = getattr(updated, "status", None)
+		acct_id_after = getattr(new_payload, "account_id", None) or getattr(updated, "account_id", None)
+		if prev_status != "paid" and new_status == "paid" and acct_id_after:
 			tx_payload = TransactionCreate(
 				description=f"Bill payment: {updated.biller_name}",
 				merchant=updated.biller_name,
-				amount=amt,
+				amount=updated.amount_due,
 				category="Bills",
 				txn_type="debit",
 				currency="INR",
 				txn_date=datetime.utcnow()
 			)
 			TransactionService.create_transaction(db, acct_id_after, tx_payload)
-		except Exception as e:
-			# Surface as server error so client knows transaction failed
-			print(f"ERROR creating transaction after bill update: {e}")
-			raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create transaction: {e}")
+	except Exception:
+		# don't fail the update if transaction creation fails
+		pass
 
 	return updated
 
@@ -233,36 +177,31 @@ def mark_bill_paid(id: int, payload: MarkPaidPayload = Body(None), current_user:
 	elif getattr(bill, "account_id", None):
 		acct_id = bill.account_id
 
-	# Require an account id to create a transaction and deduct balance
-	if getattr(bill, "status", None) != "paid":
-		if not acct_id:
-			raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="account_id is required to mark a bill as paid and create a transaction")
-
+	if getattr(bill, "status", None) != "paid" and acct_id:
 		acct = db.query(Account).filter(Account.id == acct_id).first()
 		if acct:
-			# Create transaction record for the deduction. Let TransactionService
-			# perform the account balance update so it's done in one place.
 			try:
-				from decimal import Decimal
-
-				amt = Decimal(str(bill.amount_due or 0))
-				tx_payload = TransactionCreate(
-					description=f"Bill payment: {bill.biller_name}",
-					merchant=bill.biller_name,
-					amount=amt,
-					category="Bills",
-					txn_type="debit",
-					currency="INR",
-					txn_date=datetime.utcnow()
-				)
-				TransactionService.create_transaction(db, acct_id, tx_payload)
-			except Exception as e:
+				acct.balance = float(acct.balance or 0) - float(bill.amount_due or 0)
+				db.add(acct)
+				print(f"💰 DEDUCTED: Bill {id} → Account {acct_id}: {acct.balance}")
+				# Create transaction record for the deduction
 				try:
-					db.rollback()
+					tx_payload = TransactionCreate(
+						description=f"Bill payment: {bill.biller_name}",
+						merchant=bill.biller_name,
+						amount=bill.amount_due,
+						category="Bills",
+						txn_type="debit",
+						currency="INR",
+						txn_date=datetime.utcnow()
+					)
+					TransactionService.create_transaction(db, acct_id, tx_payload)
 				except Exception:
+					# don't fail the mark-paid if transaction creation fails
 					pass
-				print(f"ERROR creating transaction for bill mark-paid: {e}")
-				raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create transaction: {e}")
+			except Exception:
+				# Don't fail the operation if deduction fails
+				pass
 
 	# Mark as paid
 	bill.status = "paid"

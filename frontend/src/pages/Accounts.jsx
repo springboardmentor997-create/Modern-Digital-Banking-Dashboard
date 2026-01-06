@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Building2, CreditCard, DollarSign, X, Save } from 'lucide-react';
 import { getAccounts, createAccount, updateAccount, deleteAccount } from '../api/accounts';
 import toast from 'react-hot-toast';
-import Load from '../components/Loader';
 
 export default function Accounts() {
   const [accounts, setAccounts] = useState([]);
@@ -34,6 +33,7 @@ export default function Accounts() {
       const data = await getAccounts();
       setAccounts(data);
     } catch (error) {
+      console.error('Error fetching accounts:', error);
       toast.error('Failed to load accounts');
     } finally {
       setLoading(false);
@@ -96,6 +96,7 @@ export default function Accounts() {
       await fetchAccounts();
       closeModal();
     } catch (error) {
+      console.error('Error saving account:', error);
       const errorMessage = typeof error === 'string' ? error : error?.detail || 'Failed to save account';
       toast.error(errorMessage);
     } finally {
@@ -140,6 +141,7 @@ export default function Accounts() {
       toast.success("Account deleted successfully!");
       await fetchAccounts();
     } catch (error) {
+      console.error("Error deleting account:", error);
       toast.error("Failed to delete account");
     } finally {
       setLoading(false);
@@ -204,31 +206,26 @@ export default function Accounts() {
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col gap-4 mb-8 sm:flex-row sm:justify-between sm:items-center">
+        <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">
-              My Accounts
-            </h1>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">
-              Manage your bank accounts
-            </p>
+            <h1 className="text-4xl font-bold text-gray-900">My Accounts</h1>
+            <p className="text-gray-600 mt-1">Manage your bank accounts</p>
           </div>
-
           <button
             onClick={openAddModal}
             disabled={loading}
-            className="w-full sm:w-auto px-5 py-3 bg-blue-600 text-white rounded-xl font-medium
-                      flex items-center justify-center gap-2
-                      hover:bg-blue-700 transition-all
-                      disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium flex items-center gap-2 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-5 h-5" />
-            <span>Add Account</span>
+            Add Account
           </button>
         </div>
 
         {loading && accounts.length === 0 ? (
-          <Load/>
+          <div className="bg-white rounded-2xl p-12 text-center shadow-lg">
+            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading accounts...</p>
+          </div>
         ) : accounts.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 text-center shadow-lg">
             <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />

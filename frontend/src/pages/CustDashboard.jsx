@@ -19,32 +19,23 @@ export default function Dashboard() {
 
   function useIsMdUp() {
     const [isMdUp, setIsMdUp] = useState(
-      window.matchMedia("(min-width: 900px)").matches  
+      window.matchMedia("(max-width: 768px)").matches
     );
 
     useEffect(() => {
-      const media = window.matchMedia("(min-width: 900px)");
-      
-      const handleChange = (e) => {
-        setIsMdUp(e.matches);
-      };
-
+      const media = window.matchMedia("(max-width: 768px)");
       setIsMdUp(media.matches);
-      media.addListener(handleChange); 
-
-      return () => media.removeListener(handleChange);  
-    }, []);
+      }, []);
 
     return isMdUp;
   }
-
-  const isMobile = !useIsMdUp(); 
+  const isMobile = useIsMdUp();
 
   useEffect(() => {
     if (isMobile) {
       setSidebarOpen(false);
     }
-  }, [isMobile, setSidebarOpen]);
+  }, [isMobile]);
 
   const handleLogout = () => {
     logoutUser();
@@ -64,29 +55,8 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 ">
-
-        <nav className="flex items-center gap-3 px-6 py-4 overflow-x-auto scrollbar-hide md:hidden">
-
-          <MenuItem icon={Home} label="Home" page="Home" />
-          <MenuItem icon={CreditCard} label="Accounts" page="accounts" />
-          <MenuItem icon={RefreshCcw} label="Transactions" page="transactions" />
-          <MenuItem icon={PieChart} label="Budget" page="budget" />
-          <MenuItem icon={ReceiptIndianRupee} label="Bills" page="bills" />
-          <MenuItem icon={Gift} label="Rewards" page="rewards" />
-          <MenuItem icon={Settings} label="Settings" page="settings" />
-
-          <button
-            onClick={handleLogout}
-            className="ml-auto flex items-center gap-2 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg transition whitespace-nowrap"
-          >
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium">Logout</span>
-          </button>
-
-        </nav>
-      <div className="flex min-h-screen">
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-30'} hidden md:block bg-white/60 backdrop-blur-xl shadow-xl border-r border-white/40 transition-all`}>
+    <div className="flex h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 ">
+      <aside className={`${sidebarOpen ? 'w-64' : 'w-30'} bg-white/60 backdrop-blur-xl shadow-xl border-r border-white/40 transition-all`}>
         <div className="p-6">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="absolute right-0 -translate-y-1/2 translate-x-1/2 z-50 
               bg-blue-700 shadow-lg rounded-full  hover:scale-105 transition">
@@ -127,7 +97,6 @@ export default function Dashboard() {
           {activePage === 'settings' && <Setting/>}
         </div>
       </main>
-      </div>
     </div>
   );
 }

@@ -3,7 +3,6 @@ import { Plus, Trash2, Calendar, Bell, CheckCircle, Clock, X, Save,AlertTriangle
 import { getBills, addBill, updateBill, deleteBill, markPaid } from '../api/bills.js';
 import toast from 'react-hot-toast';
 import { getAccounts } from '../api/accounts.js';
-import Load from '../components/Loader.jsx';
 
 export default function Bills() {
   const [bills, setBills] = useState([]);
@@ -12,23 +11,19 @@ export default function Bills() {
   const [currentBill, setCurrentBill] = useState(null);
   const [errors, setErrors] = useState({});
   const [accounts,setAccounts] = useState([]);
-  const [SelectedAccount,setSelectedAccount] = useState(localStorage.getItem("selected_account_id"));
-  const [loading, setLoading] = useState(false);
+  const [SelectedAccount,setSelectedAccount] = useState(1);
 
   const loadAccounts = async () => {
-    try {
-      setLoading(true);
-      const data = await getAccounts();
-      setAccounts(data);
-      if (data.length > 0) {
-        setSelectedAccount(data[0].id);
-      }
-    } catch (e) {
-      toast.error(e.message || 'Failed to load accounts');
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        const data = await getAccounts();
+        setAccounts(data);
+        if (data.length > 0) {
+          setSelectedAccount(data[0].id);
+        }
+      } catch (e) {
+        toast.error(e.message || 'Failed to load accounts');
+      } 
+    };
 
   useEffect(() => {
     loadAccounts();
@@ -51,13 +46,10 @@ export default function Bills() {
 
   async function loadBills() {
     try {
-      setLoading(true);
       const data = await getBills();
       setBills(data);
     } catch (err) {
-      toast.error(err);
-    } finally {
-      setLoading(false);
+      console.error(err);
     }
   }
 
@@ -91,8 +83,6 @@ export default function Bills() {
     };
 
     try {
-      setLoading(true);
-
       editMode
         ? await updateBill(currentBill.id, payload)
         : await addBill(payload);
@@ -102,63 +92,27 @@ export default function Bills() {
       toast.success(editMode ? 'Bill updated!' : 'Bill added!');
     } catch (err) {
       toast.error(err.message);
-    } finally {
-      setLoading(false);
     }
   }
 
-  function confirmDelete(onConfirm) {
-    toast.custom((t) => (
-      <div className="bg-white rounded-xl shadow-lg p-4 w-80">
-        <p className="text-gray-800 font-medium mb-4">
-          Are you sure you want to delete this Bill?
-        </p>
-
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100"
-          >
-            Cancel
-          </button>
-
-          <button
-            onClick={() => {
-              toast.dismiss(t.id);
-              onConfirm();
-            }}
-            className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    ));
-  }
-
   async function handleDelete(id) {
+    if (!confirm('Delete this bill?')) return;
     try {
-      setLoading(true);
       await deleteBill(id);
       await loadBills();
-      toast.success("Bill deleted!");
+      toast.success('Bill deleted!');
     } catch (err) {
-      toast.error(err.message || "Failed to delete bill");
-    } finally {
-      setLoading(false);
+      toast.error(err.message);
     }
   }
 
   async function markAsPaid(id) {
     try {
-      setLoading(true);
       await markPaid(id);
       await loadBills();
       toast.success('Bill marked as paid!');
     } catch (err) {
       toast.error(err.message);
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -223,32 +177,21 @@ export default function Bills() {
 
   const upcomingBills = bills.filter(b => b.status === 'upcoming');
   const totalDue = upcomingBills.reduce((sum, b) => sum + parseFloat(b.amount_due), 0);
-  
-  if (loading) {
-      return <Load/>
-  }
-
+  console.log(bills);
   return (
     <div>
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:justify-between sm:items-center">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              Bills & Payments
-            </h1>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">
-              Track and manage your recurring payments
-            </p>
+            <h1 className="text-3xl font-bold text-gray-900">Bills & Payments</h1>
+            <p className="text-gray-600 mt-1">Track and manage your recurring payments</p>
           </div>
-
           <button
             onClick={openAddModal}
-            className="w-full sm:w-auto px-5 py-3 bg-orange-600 text-white 
-                        rounded-lg font-medium flex items-center gap-2 
-                        justify-center hover:bg-orange-700 transition"
+            className="px-5 py-2 bg-orange-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-orange-700"
           >
             <Plus className="w-5 h-5" />
-            <span>Add Bill</span>
+            Add Bill
           </button>
         </div>
 
@@ -326,7 +269,7 @@ export default function Bills() {
                     Edit
                   </button>
                   <button
-                    onClick={() => confirmDelete(() => handleDelete(bill.id))}
+                    onClick={() => handleDelete(bill.id)}
                     className="px-3 py-2 border-2 border-red-600 text-red-600 rounded-lg hover:bg-red-50"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -392,7 +335,7 @@ export default function Bills() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Account</label>
                     <select
                       value={SelectedAccount || ""}
-                      onChange={(e) => setSelectedAccount(parseInt(e.target.value))}
+                      onChange={(e) => setSelectedAccount(Number(e.target.value))}
                       className="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-blue-500"
                     >
                       {accounts.map(acc => (

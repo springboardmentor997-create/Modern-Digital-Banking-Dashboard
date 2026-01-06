@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://modern-digital-banking-dashboard-d8iu.onrender.com/api";
+// Use Vite environment variable `VITE_API_URL` if provided, otherwise fall back to localhost
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
@@ -28,10 +29,11 @@ const refreshAccessToken = async () => {
 
   const response = await axios.post(
     `${API_BASE_URL}/auth/refresh`,
-    { refresh_token: refresh }
+    { refresh }
   );
 
   const newAccess = response.data.access_token;
+  console.log(response.data,response)
   localStorage.setItem("access_token", newAccess);
   localStorage.setItem("refresh_token",response.data.refresh_token)
   return newAccess;
@@ -55,6 +57,8 @@ axiosClient.interceptors.response.use(
         return axiosClient(originalRequest);
 
       } catch (refreshError) {
+        console.warn("Refresh token failed, logging out");
+
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
 
