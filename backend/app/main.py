@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Depends
+import fastapi
+from fastapi import Depends
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
@@ -22,7 +23,7 @@ except Exception as e:
     print(f"Warning: Could not create database tables: {e}")
     print("Make sure PostgreSQL is running with correct credentials")
 
-app = FastAPI(
+app = fastapi.FastAPI(
     title="Modern Digital Banking Dashboard",
     description="Unified personal banking hub",
     version="1.0.0"
@@ -32,8 +33,6 @@ app = FastAPI(
 # Apply CORS middleware. Use configured origins when provided; fall back to permissive
 # wildcard during development to avoid Swagger "Failed to fetch" errors caused by
 # origin mismatches. In production you should lock this down to your frontend host.
-
-app = FastAPI(...)
 
 origins = [
     "http://localhost:5173",
