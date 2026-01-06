@@ -209,11 +209,11 @@ export default function AdminAnalytics({users}) {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-gradient-to-br from-blue-50 to-indigo-100">
-        <p className="text-red-600 font-semibold">{error}</p>
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <p className="text-red-600 font-semibold text-sm sm:text-base text-center">{error}</p>
         <button 
           onClick={fetchAnalyticsData}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm sm:text-base"
         >
           Retry
         </button>
@@ -228,60 +228,62 @@ export default function AdminAnalytics({users}) {
   const transactionVolumeByAccount = getTransactionVolumeByAccount();
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900">Analytics</h1>
-          <p className="text-gray-600 mt-2">Comprehensive platform insights and metrics</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Analytics</h1>
+          <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Comprehensive platform insights and metrics</p>
         </div>
-        <button  onClick={exportAnalyticsReport}
-        className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          <Download className="w-5 h-5" />
+        <button 
+          onClick={exportAnalyticsReport}
+          className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm sm:text-base w-full sm:w-auto"
+        >
+          <Download className="w-4 h-4 sm:w-5 sm:h-5" />
           Export Report
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-6 border border-white/40">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">Transaction Trend (Last 7 Days)</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-4 sm:p-6 border border-white/40">
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 sm:mb-6">Transaction Trend (Last 7 Days)</h3>
           {transactionTrend.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250}>
               <LineChart data={transactionTrend}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
+                <XAxis dataKey="date" style={{ fontSize: '12px' }} />
+                <YAxis style={{ fontSize: '12px' }} />
                 <Tooltip />
-                <Legend />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
                 <Line type="monotone" dataKey="income" stroke="#10b981" name="Income" strokeWidth={2} />
                 <Line type="monotone" dataKey="expense" stroke="#ef4444" name="Expense" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-64 flex items-center justify-center text-gray-400">No transaction data</div>
+            <div className="h-48 sm:h-64 flex items-center justify-center text-gray-400 text-sm">No transaction data</div>
           )}
         </div>
 
-        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-6 border border-white/40">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">User Signups (Last 7 Days)</h3>
+        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-4 sm:p-6 border border-white/40">
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 sm:mb-6">User Signups (Last 7 Days)</h3>
           {userSignupTrend.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250}>
               <BarChart data={userSignupTrend}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
+                <XAxis dataKey="date" style={{ fontSize: '12px' }} />
+                <YAxis style={{ fontSize: '12px' }} />
                 <Tooltip />
                 <Bar dataKey="users" fill="#3b82f6" name="New Users" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-64 flex items-center justify-center text-gray-400">No signup data</div>
+            <div className="h-48 sm:h-64 flex items-center justify-center text-gray-400 text-sm">No signup data</div>
           )}
         </div>
 
-        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-6 border border-white/40">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">Spending by Category</h3>
+        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-4 sm:p-6 border border-white/40">
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 sm:mb-6">Spending by Category</h3>
           {spendingByCategory.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
                   data={spendingByCategory}
@@ -292,6 +294,7 @@ export default function AdminAnalytics({users}) {
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
+                  style={{ fontSize: '11px' }}
                 >
                   {spendingByCategory.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -301,63 +304,61 @@ export default function AdminAnalytics({users}) {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-64 flex items-center justify-center text-gray-400">No spending data</div>
+            <div className="h-48 sm:h-64 flex items-center justify-center text-gray-400 text-sm">No spending data</div>
           )}
         </div>
 
-        {/* Account Type Distribution */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-6 border border-white/40">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">Account Type Distribution</h3>
+        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-4 sm:p-6 border border-white/40">
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 sm:mb-6">Account Type Distribution</h3>
           {accountDistribution.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250}>
               <BarChart data={accountDistribution}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
+                <XAxis dataKey="name" style={{ fontSize: '12px' }} />
+                <YAxis style={{ fontSize: '12px' }} />
                 <Tooltip />
                 <Bar dataKey="value" fill="#8b5cf6" name="Count" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-64 flex items-center justify-center text-gray-400">No account data</div>
+            <div className="h-48 sm:h-64 flex items-center justify-center text-gray-400 text-sm">No account data</div>
           )}
         </div>
 
-        {/* Transaction Volume by Account */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-6 border border-white/40 lg:col-span-2">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">Top Transaction Volume by Account</h3>
+        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-4 sm:p-6 border border-white/40 lg:col-span-2">
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 sm:mb-6">Top Transaction Volume by Account</h3>
           {transactionVolumeByAccount.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250}>
               <BarChart data={transactionVolumeByAccount} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={150} />
+                <XAxis type="number" style={{ fontSize: '12px' }} />
+                <YAxis dataKey="name" type="category" width={100} style={{ fontSize: '11px' }} />
                 <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
                 <Bar dataKey="value" fill="#f59e0b" name="Amount" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-64 flex items-center justify-center text-gray-400">No transaction data</div>
+            <div className="h-48 sm:h-64 flex items-center justify-center text-gray-400 text-sm">No transaction data</div>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-6 border border-white/40">
-          <p className="text-gray-600 text-sm font-medium">Total Income</p>
-          <p className="text-3xl font-bold text-green-600 mt-2">₹{totalIncome.toLocaleString()}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-4 sm:p-6 border border-white/40">
+          <p className="text-gray-600 text-xs sm:text-sm font-medium">Total Income</p>
+          <p className="text-2xl sm:text-3xl font-bold text-green-600 mt-2">₹{totalIncome.toLocaleString()}</p>
           <p className="text-xs text-gray-500 mt-2">From all transactions</p>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-6 border border-white/40">
-          <p className="text-gray-600 text-sm font-medium">Total Expense</p>
-          <p className="text-3xl font-bold text-red-600 mt-2">₹{totalExpense.toLocaleString()}</p>
+        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-4 sm:p-6 border border-white/40">
+          <p className="text-gray-600 text-xs sm:text-sm font-medium">Total Expense</p>
+          <p className="text-2xl sm:text-3xl font-bold text-red-600 mt-2">₹{totalExpense.toLocaleString()}</p>
           <p className="text-xs text-gray-500 mt-2">From all transactions</p>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-6 border border-white/40">
-          <p className="text-gray-600 text-sm font-medium">Avg Transaction</p>
-          <p className="text-3xl font-bold text-blue-600 mt-2">₹{avgTransactionAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
+        <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-lg p-4 sm:p-6 border border-white/40 sm:col-span-2 lg:col-span-1">
+          <p className="text-gray-600 text-xs sm:text-sm font-medium">Avg Transaction</p>
+          <p className="text-2xl sm:text-3xl font-bold text-blue-600 mt-2">₹{avgTransactionAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
           <p className="text-xs text-gray-500 mt-2">Per transaction</p>
         </div>
       </div>

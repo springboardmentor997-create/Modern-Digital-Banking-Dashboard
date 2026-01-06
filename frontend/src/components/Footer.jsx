@@ -48,7 +48,6 @@ export default function Footer() {
               <ul className="space-y-2 text-sm">
                 <li><a href="/Support" className="hover:text-white">Help Center</a></li>
                 <li><a href="/Services" className="hover:text-white">Privacy Policy</a></li>
-                <li><a href="/Support" className="hover:text-white">Contact</a></li>
               </ul>
             </div>
           </div>
