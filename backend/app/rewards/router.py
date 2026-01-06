@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.rewards.schemas import RewardBulkAssign, RewardResponse, RewardCreate, RewardUpdate
+from app.rewards.schemas import RewardBulkAssign, RewardResponse, RewardCreate, RewardUpdate, RewardGroupUpdate
 from app.models.reward import Reward
 from app.models.user import User
-from app.dependencies import require_admin, get_current_user
+from app.dependencies import require_admin, get_current_user, get_current_admin
 from app.utils.validation import validate_user_ids
 from app.rewards import service as rewards_service
 
@@ -13,18 +13,43 @@ router = APIRouter()
 
 
 @router.post("/assign", response_model=List[RewardResponse])
-def assign_rewards_bulk(payload: RewardBulkAssign, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
-	"""Simple admin-only bulk assign: create one Reward per user_id.
+def assign_rewards_bulk(payload: RewardBulkAssign, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin)):
+	"""Admin-only bulk assign: create one Reward per `user_id`.
 
-	No validation, no try/catch, no account association.
+	- Validate provided user IDs.
+	- Add all Reward objects to the session.
+	- Commit once, then refresh and return created rewards.
 	"""
+	# validate user ids exist
+	payload.check_ids_exist(db)
+
 	created: List[Reward] = []
-	for uid in payload.user_ids:
-		r = Reward(user_id=uid, program_name=payload.program_name, points_balance=payload.points_balance)
+	uids = payload.user_ids
+	pts = payload.points_balance
+
+	# Create first reward and flush to obtain an id which we'll use as group_id
+	first_uid = uids[0]
+	r0 = Reward(user_id=first_uid, program_name=payload.program_name, points_balance=int(pts))
+	db.add(r0)
+	db.flush()  # assigns r0.id without committing
+
+	group_id = r0.id
+	r0.group_id = group_id
+	created.append(r0)
+
+	# create remaining rewards referencing the same group_id
+	for uid in uids[1:]:
+		r = Reward(user_id=uid, program_name=payload.program_name, points_balance=int(pts), group_id=group_id)
 		db.add(r)
-		db.commit()
-		db.refresh(r)
 		created.append(r)
+
+	# commit once for all inserts
+	db.commit()
+
+	# refresh instances to populate any DB-side defaults (timestamps, etc.)
+	for r in created:
+		db.refresh(r)
+
 	return created
 
 
@@ -46,24 +71,91 @@ def get_reward(reward_id: int, db: Session = Depends(get_db), current_user: User
 	return r
 
 
-@router.put("/{reward_id}", response_model=RewardResponse)
+@router.put("/{reward_id}", response_model=List[RewardResponse])
 def update_reward(reward_id: int, payload: RewardUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
 	r = rewards_service.get_reward_by_id(db, reward_id)
 	if not r:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reward not found")
-	# If the payload tries to change the assigned user, validate and require admin
-	new_user_id = getattr(payload, "user_id", None)
-	if new_user_id is not None and new_user_id != r.user_id:
-		# only admins may reassign rewards
-		if getattr(current_user, "role", "user") != "admin":
-			raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admin can reassign rewards")
-		# ensure the new user exists
-		validate_user_ids(db, [new_user_id])
 
+	# Only admins can update rewards that don't belong to them
 	if getattr(current_user, "role", "user") != "admin" and r.user_id != current_user.id:
 		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-	updated = rewards_service.update_reward(db, r, payload)
+	# Apply other updates (program_name, points_balance)
+	for k, v in payload.dict(exclude_unset=True).items():
+		if k in ("user_id", "user_ids"):
+			continue
+		setattr(r, k, v)
+
+	db.add(r)
+	db.commit()
+	db.refresh(r)
+	return [r]
+
+
+
+@router.put("/group/{group_id}", response_model=List[RewardResponse])
+def update_reward_group(group_id: int, payload: RewardGroupUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin)):
+	"""Update a reward group by `group_id` — replace or update assignments while preserving the master id.
+
+	Behavior:
+	- Validates provided `user_ids`.
+	- Reuses the master reward (id == group_id) for the first user in the new list.
+	- Reuses existing child rows where possible, creates new ones if needed, deletes extras.
+	- Applies `program_name` and `points_balance` updates to all group members if provided.
+	"""
+	validate_user_ids(db, payload.user_ids)
+
+	master = db.query(Reward).filter(Reward.id == group_id).first()
+	if not master:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group master reward not found")
+
+	# determine new values (fall back to master's existing values)
+	new_program = payload.program_name if getattr(payload, "program_name", None) is not None else master.program_name
+	new_points = payload.points_balance if getattr(payload, "points_balance", None) is not None else master.points_balance
+
+	# gather existing group members (exclude master record itself)
+	existing_children = db.query(Reward).filter(Reward.group_id == group_id, Reward.id != group_id).order_by(Reward.id).all()
+
+	new_uids = payload.user_ids
+
+	updated: List[Reward] = []
+
+	# Update master to first new uid
+	master.user_id = new_uids[0]
+	master.program_name = new_program
+	master.points_balance = int(new_points)
+	master.group_id = group_id
+	db.add(master)
+	updated.append(master)
+
+	# Reuse/update children rows where possible
+	for idx, uid in enumerate(new_uids[1:]):
+		if idx < len(existing_children):
+			child = existing_children[idx]
+			child.user_id = uid
+			child.program_name = new_program
+			child.points_balance = int(new_points)
+			child.group_id = group_id
+			db.add(child)
+			updated.append(child)
+		else:
+			# create new child
+			c = Reward(user_id=uid, program_name=new_program, points_balance=int(new_points), group_id=group_id)
+			db.add(c)
+			updated.append(c)
+
+	# If there are extra existing children beyond the new list, delete them
+	if len(existing_children) > max(0, len(new_uids) - 1):
+		for extra in existing_children[len(new_uids) - 1:]:
+			db.delete(extra)
+
+	db.commit()
+
+	# Refresh all updated/created rows
+	for obj in updated:
+		db.refresh(obj)
+
 	return updated
 
 

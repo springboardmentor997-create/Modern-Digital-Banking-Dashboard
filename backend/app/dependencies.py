@@ -72,6 +72,17 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
+def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Backward-compatible alias expected by some routers: admin-only dependency.
+
+    Use as `current_user: User = Depends(get_current_admin)`.
+    """
+    user_role = getattr(current_user, "role", "user")
+    if user_role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required")
+    return current_user
+
+
 def require_user_or_admin(current_user: User = Depends(get_current_user)) -> User:
     """Require the current user to be either a regular user or an admin.
 

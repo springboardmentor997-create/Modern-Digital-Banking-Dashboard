@@ -40,13 +40,27 @@ class RewardBulkAssign(BaseModel):
 class RewardUpdate(BaseModel):
     program_name: Optional[str]
     points_balance: Optional[int]
-    # Optional: allow reassigning reward to a different user (admin only)
-    user_id: Optional[int]
+    # Single-reward updates do not allow changing `user_id` here; use group or admin endpoints
+    class Config:
+        extra = 'forbid'
+
+
+class RewardGroupUpdate(BaseModel):
+    user_ids: List[int] = Field(..., min_items=1)
+    program_name: Optional[str]
+    points_balance: Optional[float]
+
+    @validator('user_ids')
+    def ensure_ids_non_empty(cls, v):
+        if not v:
+            raise ValueError('user_ids must contain at least one id')
+        return v
 
 
 class RewardResponse(BaseModel):
     id: int
     user_id: int
+    group_id: Optional[int]
     program_name: str
     points_balance: float
     last_updated: datetime

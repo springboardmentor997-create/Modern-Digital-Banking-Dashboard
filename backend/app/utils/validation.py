@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from typing import List
+from app.models.user import User
 
 
 def validate_user_ids(db: Session, user_ids: List[int]) -> List[int]:
@@ -11,7 +12,8 @@ def validate_user_ids(db: Session, user_ids: List[int]) -> List[int]:
     if not user_ids:
         raise HTTPException(status_code=422, detail="user_ids must not be empty")
 
-    rows = db.execute("SELECT id FROM users WHERE id = ANY(:ids)", {"ids": user_ids}).fetchall()
+    # Use ORM query to avoid textual SQL coercion issues across SQLAlchemy versions
+    rows = db.query(User.id).filter(User.id.in_(user_ids)).all()
     found = {r[0] for r in rows}
     invalid = [uid for uid in user_ids if uid not in found]
     if invalid:
