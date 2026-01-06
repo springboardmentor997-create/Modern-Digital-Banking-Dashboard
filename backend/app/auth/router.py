@@ -1,8 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.auth.schemas import UserRegister, UserLogin, AuthResponse, UserResponse
+from app.auth.schemas import UserRegister, UserLogin, AuthResponse, UserResponse, RefreshRequest, TokenResponse
 from app.auth.service import AuthService
+from app.dependencies import get_current_user
+from app.models.user import User
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.users.service import UserService
 
 router = APIRouter()
 
@@ -16,7 +21,7 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
             detail=error
         )
     
-    access_token, refresh_token = AuthService.create_tokens(user.id)
+    access_token, refresh_token = AuthService.create_tokens(user.id, getattr(user, "role", "user"))
     
     return {
         "user": UserResponse.from_orm(user),
@@ -24,6 +29,13 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
         "refresh_token": refresh_token,
         "token_type": "bearer"
     }
+
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_current_user_profile(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # Return profile augmented with account summaries
+    return UserService.get_profile(db, current_user)
 
 @router.post("/login", response_model=AuthResponse)
 async def login(login_data: UserLogin, db: Session = Depends(get_db)):
@@ -35,10 +47,29 @@ async def login(login_data: UserLogin, db: Session = Depends(get_db)):
             detail=error
         )
     
-    access_token, refresh_token = AuthService.create_tokens(user.id)
+    access_token, refresh_token = AuthService.create_tokens(user.id, getattr(user, "role", "user"))
     
     return {
         "user": UserResponse.from_orm(user),
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
+
+
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh_tokens(data: RefreshRequest, db: Session = Depends(get_db)):
+    tokens, error = AuthService.refresh_tokens(db, data.refresh_token)
+
+    if error:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=error
+        )
+
+    access_token, refresh_token = tokens
+
+    return {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer"
