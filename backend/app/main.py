@@ -32,23 +32,13 @@ app = FastAPI(
 # Apply CORS middleware. Use configured origins when provided; fall back to permissive
 # wildcard during development to avoid Swagger "Failed to fetch" errors caused by
 # origin mismatches. In production you should lock this down to your frontend host.
-origins = settings.CORS_ORIGINS or []
-# Ensure wildcard is allowed in development or when explicitly configured via env.
-# If an environment variable `ALLOW_ALL_CORS` is set, or if running locally,
-# include the wildcard origin to avoid Swagger "Failed to fetch" issues.
-allow_all = os.getenv("ALLOW_ALL_CORS") or os.getenv("ENV", "").lower() in ("dev", "development")
-if allow_all:
-    if "*" not in origins:
-        origins = list(origins) + ["*"]
-elif not origins:
-    # Fallback permissive for convenience when CORS_ORIGINS not provided
-    origins = ["*"]
 
-# Ensure the known Vercel production frontend origin is allowed in production
-VERCEL_FRONTEND = "https://modern-digital-banking-dashboard-personal-so6b.vercel.app"
-# Only add the Vercel origin when we are not already allowing all origins
-if "*" not in origins and VERCEL_FRONTEND not in origins:
-    origins = list(origins) + [VERCEL_FRONTEND]
+origins = [
+    "http://localhost:5173",
+    "http://localhost:4173",
+    "https://modern-digital-banking-dashboard-pe-lemon.vercel.app",
+    "https://modern-digital-banking-dashboard-personal-so6b-aib6scmuw.vercel.app",
+]
 
 app.add_middleware(
     CORSMiddleware,
