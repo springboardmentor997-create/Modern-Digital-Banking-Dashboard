@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: banking_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Urmila@258619
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - banking_network
+    restart: unless-stopped
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:Urmila@258619@postgres:5432/banking_db
+      JWT_SECRET_KEY: a6f0b409d0199def6a88c3e4227e3d05c7e1a958da823cb2285195e1c7af1be8
+      SECRET_KEY: 09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 1440
+      SMTP_SERVER: smtp.gmail.com
+      SMTP_PORT: 587
+      SENDER_EMAIL: urmilakshirsagar1945@gmail.com
+      SENDER_PASSWORD: fotb nqqx hupx abap
+      OTP_EXPIRY_MINUTES: 15
+    depends_on:
+      - postgres
+    networks:
+      - banking_network
+    restart: unless-stopped
+    volumes:
+      - backend_uploads:/app/uploads
+
+volumes:
+  postgres_data:
+  backend_uploads:
+
+networks:
+  banking_network:
+    driver: bridge
