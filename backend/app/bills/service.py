@@ -63,19 +63,37 @@ class BillService:
         for k, v in data.items():
             setattr(bill, k, v)
 
-        # Auto-deduction: only when transitioning to paid for the first time
+        # Auto-deduction + transaction creation: only when transitioning to paid for the first time
         if will_mark_paid and previous_status != "paid":
-            # perform balance adjustment using account model
-            from app.models.account import Account
-
             # Prefer an account recorded on the bill if present, otherwise use the provided account_id
             acct_lookup_id = getattr(bill, "account_id", None) or account_id
             if acct_lookup_id is not None:
-                acct = db.query(Account).filter(Account.id == acct_lookup_id).first()
-                if acct:
-                    # Treat bill payment as a debit on the account balance (subtract amount_due)
-                    acct.balance = (acct.balance or Decimal("0")) - (bill.amount_due or Decimal("0"))
-                    db.add(acct)
+                # Create a transaction record for this bill payment so it appears in history
+                try:
+                    from datetime import datetime
+                    from app.transactions.schemas import TransactionCreate
+                    from app.transactions.service import TransactionService
+
+                    amt = bill.amount_due if bill.amount_due is not None else Decimal("0")
+                    # Ensure amt is a Decimal
+                    if not isinstance(amt, Decimal):
+                        amt = Decimal(str(amt))
+
+                    tx_payload = TransactionCreate(
+                        description=f"Bill payment: {getattr(bill, 'biller_name', None)}",
+                        category="bills",
+                        amount=amt,
+                        currency="USD",
+                        txn_type="debit",
+                        merchant=getattr(bill, 'biller_name', None),
+                        txn_date=datetime.utcnow()
+                    )
+
+                    # Delegate balance update + transaction insertion to TransactionService
+                    TransactionService.create_transaction(db, acct_lookup_id, tx_payload)
+                except Exception:
+                    # If transaction creation fails, raise HTTPException to signal failure
+                    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not record bill payment transaction")
 
         db.add(bill)
         # Commit once and refresh updated objects to keep transaction consistent

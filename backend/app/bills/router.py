@@ -106,31 +106,9 @@ def update_bill(bill_id: int, payload: BillUpdate, db: Session = Depends(get_db)
 	except Exception as e:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-	# Keep previous status to detect transition to 'paid'
-	prev_status = getattr(bill, "status", None)
-
-	# Delegate update logic to service (handles balance adjustments)
+	# Delegate update logic to service (service will create transaction when
+	# transitioning to 'paid'). Return the updated bill.
 	updated = bills_service.update_bill(db, bill, new_payload)
-
-	# If transitioned to paid and an account_id is present, create transaction
-	try:
-		new_status = getattr(updated, "status", None)
-		acct_id_after = getattr(new_payload, "account_id", None) or getattr(updated, "account_id", None)
-		if prev_status != "paid" and new_status == "paid" and acct_id_after:
-			tx_payload = TransactionCreate(
-				description=f"Bill payment: {updated.biller_name}",
-				merchant=updated.biller_name,
-				amount=updated.amount_due,
-				category="Bills",
-				txn_type="debit",
-				currency="INR",
-				txn_date=datetime.utcnow()
-			)
-			TransactionService.create_transaction(db, acct_id_after, tx_payload)
-	except Exception:
-		# don't fail the update if transaction creation fails
-		pass
-
 	return updated
 
 
@@ -170,45 +148,28 @@ def mark_bill_paid(id: int, payload: MarkPaidPayload = Body(None), current_user:
 	if getattr(current_user, "role", None) != "admin" and bill.user_id != current_user.id:
 		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Own bill only")
 
-	# Auto-deduct balance: prefer provided payload.account_id, otherwise use bill.account_id
+	# Prefer provided payload.account_id, otherwise use bill.account_id
 	acct_id = None
 	if payload and getattr(payload, "account_id", None):
 		acct_id = payload.account_id
 	elif getattr(bill, "account_id", None):
 		acct_id = bill.account_id
 
-	if getattr(bill, "status", None) != "paid" and acct_id:
-		acct = db.query(Account).filter(Account.id == acct_id).first()
-		if acct:
-			try:
-				acct.balance = float(acct.balance or 0) - float(bill.amount_due or 0)
-				db.add(acct)
-				print(f"💰 DEDUCTED: Bill {id} → Account {acct_id}: {acct.balance}")
-				# Create transaction record for the deduction
-				try:
-					tx_payload = TransactionCreate(
-						description=f"Bill payment: {bill.biller_name}",
-						merchant=bill.biller_name,
-						amount=bill.amount_due,
-						category="Bills",
-						txn_type="debit",
-						currency="INR",
-						txn_date=datetime.utcnow()
-					)
-					TransactionService.create_transaction(db, acct_id, tx_payload)
-				except Exception:
-					# don't fail the mark-paid if transaction creation fails
-					pass
-			except Exception:
-				# Don't fail the operation if deduction fails
-				pass
+	# Build an update payload and delegate to the service which will create
+	# a transaction and update balances atomically when transitioning to 'paid'.
+	try:
+		from app.bills.schemas import BillUpdate
 
-	# Mark as paid
-	bill.status = "paid"
-	db.add(bill)
-	db.commit()
-	db.refresh(bill)
-	return bill
+		update_data = {"status": "paid"}
+		if acct_id is not None:
+			update_data["account_id"] = acct_id
+
+		new_payload = BillUpdate(**update_data)
+		updated = bills_service.update_bill(db, bill, new_payload)
+		return updated
+	except Exception as e:
+		print(f"ERROR marking bill paid: {type(e).__name__}: {e}")
+		raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not mark bill as paid")
 
 
 @router.delete("/{bill_id}")

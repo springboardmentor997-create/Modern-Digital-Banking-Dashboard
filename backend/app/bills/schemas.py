@@ -14,12 +14,12 @@ class BillCreate(BaseModel):
 
 
 class BillUpdate(BaseModel):
-    biller_name: Optional[str]
-    due_date: Optional[date]
-    amount_due: Optional[Decimal]
-    status: Optional[str]
-    auto_pay: Optional[bool]
-    account_id: Optional[int]
+    biller_name: Optional[str] = None
+    due_date: Optional[date] = None
+    amount_due: Optional[Decimal] = None
+    status: Optional[str] = None
+    auto_pay: Optional[bool] = None
+    account_id: Optional[int] = None
 
     @validator("due_date", pre=True)
     def _coerce_due_date(cls, v):
