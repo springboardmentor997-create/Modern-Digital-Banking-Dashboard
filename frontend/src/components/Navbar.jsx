@@ -2,7 +2,7 @@ import { Menu, X,Building2,UserCircle,LogIn } from "lucide-react";
 import React,{ useState , useEffect} from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-
+import { Link } from "react-router-dom";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -39,10 +39,10 @@ export default function Navbar() {
         </div>
 
         <ul className="hidden md:flex gap-12 text-gray-700 font-medium">
-          <a href = '/' className="hover:text-blue-600 transition">Home</a>
-          <a href = '/Services' className="hover:text-blue-600 transition">Services</a>
-          {user?.role === 'user' && (<a href = '/Analytics' className="hover:text-blue-600 transition">Analytics</a>)}
-          <a href = '/Support' className="hover:text-blue-600 transition">Support</a>
+          <Link href = '/' className="hover:text-blue-600 transition">Home</Link>
+          <Link to="/Services" className="hover:text-blue-600 transition">Services</Link>
+          {user?.role === 'user' && (<Link href = '/Analytics' className="hover:text-blue-600 transition">Analytics</Link>)}
+          <Link href = '/Support' className="hover:text-blue-600 transition">Support</Link>
         </ul>
 
         <button
@@ -66,10 +66,10 @@ export default function Navbar() {
 
       {open && (
         <div className="md:hidden bg-white/80 backdrop-blur-lg px-6 py-4 flex flex-col gap-4 text-gray-800 font-medium border-b border-gray-200">
-          <a href = '/' className="hover:text-blue-600 transition">Home</a>
-          <a href = '/Services' className="hover:text-blue-600 transition">Services</a>
-          {user?.role === 'user' && (<a href = '/Analytics' className="hover:text-blue-600 transition">Analytics</a>)}
-          <a href = '/Support' className="hover:text-blue-600 transition">Support</a>
+          <Link href = '/' className="hover:text-blue-600 transition">Home</Link>
+          <Link href = '/Services' className="hover:text-blue-600 transition">Services</Link>
+          {user?.role === 'user' && (<Link href = '/Analytics' className="hover:text-blue-600 transition">Analytics</Link>)}
+          <Link href = '/Support' className="hover:text-blue-600 transition">Support</Link>
           <button
             onClick={handleAccountClick}
             className="mt-2 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all"
