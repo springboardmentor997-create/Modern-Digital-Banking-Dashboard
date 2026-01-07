@@ -1,0 +1,52 @@
+services:
+  # PostgreSQL Database Service
+  - type: pserv
+    name: banking-db
+    plan: free
+    databaseName: banking_db
+    user: postgres
+  
+  # Backend API Service (Python FastAPI)
+  - type: web
+    name: banking-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: banking-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 1440
+      - key: SMTP_SERVER
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SENDER_EMAIL
+        value: urmilakshirsagar1945@gmail.com
+      - key: SENDER_PASSWORD
+        value: fotb nqqx hupx abap
+      - key: OTP_EXPIRY_MINUTES
+        value: 15
+  
+  # Frontend Service (React + Vite)
+  - type: web
+    name: banking-frontend
+    env: node
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm run preview -- --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: banking-backend
+          property: host
