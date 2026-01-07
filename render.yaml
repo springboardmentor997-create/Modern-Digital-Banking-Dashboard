@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: banking-backend
+    env: python
+    buildCommand: pip install -r frontend/backend/requirements.txt
+    startCommand: cd frontend/backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: banking-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: SECRET_KEY
+        generateValue: true
+
+  - type: pserv
+    name: banking-db
+    env: postgresql
+    plan: free
+    databaseName: banking_db
+    user: postgres

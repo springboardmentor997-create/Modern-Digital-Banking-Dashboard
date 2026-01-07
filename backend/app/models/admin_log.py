@@ -14,5 +14,5 @@ class AdminLog(Base):
     target_id = Column(Integer, nullable=True)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     
-    # Relationships
+
     admin = relationship("User")

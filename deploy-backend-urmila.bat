@@ -1,24 +1,31 @@
 @echo off
 echo ========================================
 echo   Modern Digital Banking Dashboard
-echo   Backend Deployment Script
+echo   Backend Deployment Script (Urmila Team1)
 echo ========================================
 echo.
+echo Repository: https://github.com/springboardmentor997-create/Modern-Digital-Banking-Dashboard/tree/Urmila-team1-backend/
+echo Branch: urmila-team1-backend
+echo.
 
-echo [1/4] Stopping existing containers...
+echo [1/5] Checking Git status...
+git status
+echo.
+
+echo [2/5] Stopping existing containers...
 docker-compose down
 
 echo.
-echo [2/4] Building backend image...
+echo [3/5] Building backend image...
 docker-compose build backend
 
 echo.
-echo [3/4] Starting services...
+echo [4/5] Starting services...
 docker-compose -f docker-compose.backend.yml up -d
 
 echo.
-echo [4/4] Checking container status...
-docker-compose ps
+echo [5/5] Checking container status...
+docker-compose -f docker-compose.backend.yml ps
 
 echo.
 echo ========================================

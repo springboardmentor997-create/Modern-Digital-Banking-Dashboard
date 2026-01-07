@@ -27,7 +27,7 @@ const CurrencyConverter = () => {
     
     setLoading(true);
     try {
-      const response = await axiosClient.get('/currency/convert', {
+      const response = await axiosClient.get('/api/currency/convert', {
         params: {
           from_currency: fromCurrency,
           to_currency: toCurrency,

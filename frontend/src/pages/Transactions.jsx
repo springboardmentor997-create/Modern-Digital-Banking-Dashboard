@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Filter, Download, Upload, FileText, Eye, CreditCard } from 'lucide-react';
 import axiosClient from '../api/client';
 import Navbar from '../components/Navbar';
+import CurrencyConverter from '../components/CurrencyConverter';
 import { createAlert } from '../api/alerts';
 import NotificationService from '../services/NotificationService';
 
@@ -399,6 +400,11 @@ const Transactions = () => {
             ))}
           </div>
         )}
+
+        {/* Currency Converter */}
+        <div className="mb-6">
+          <CurrencyConverter />
+        </div>
         {showFilters && (
           <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6 shadow-xl">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Filter Transactions</h3>
