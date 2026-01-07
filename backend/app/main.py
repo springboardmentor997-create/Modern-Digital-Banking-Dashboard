@@ -34,13 +34,17 @@ app = fastapi.FastAPI(
 # wildcard during development to avoid Swagger "Failed to fetch" errors caused by
 # origin mismatches. In production you should lock this down to your frontend host.
 
-origins = [
-    "http://localhost:5173",
-    "http://localhost:4173",
-    "http://localhost:4174",
+# Use CORS origins from settings so deploy-time env var can control allowed origins.
+origins = list(getattr(settings, "CORS_ORIGINS", []) or [])
+
+# Ensure deployed frontend origins used during demo are included (no-ops if already present).
+extra_prod_origins = [
     "https://modern-digital-banking-dashboard-pe-lemon.vercel.app",
-    "https://modern-digital-banking-dashboard-personal-so6b-cukb07hi0.vercel.app",
+    "https://modern-digital-banking-dashboard-personal-so6b-6n6w2uhz5.vercel.app",
 ]
+for o in extra_prod_origins:
+    if o not in origins:
+        origins.append(o)
 
 app.add_middleware(
     CORSMiddleware,
