@@ -54,7 +54,7 @@ export default function Carousel() {
   const CurrentIcon = slides[current].icon;
 
   return (
-    <div className="w-full max-w-2xl mx-auto overflow-hidden sm: hidden">
+    <div className="w-full max-w-2xl mx-auto overflow-hidden ">
 
       <div
         className="relative overflow-hidden rounded-3xl shadow-2xl"

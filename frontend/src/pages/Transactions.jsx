@@ -295,7 +295,7 @@ export default function Transactions() {
               <option value="credit">Income</option>
               <option value="debit">Expense</option>
             </select>
-
+            
             <input
               type="date"
               value={filters.dateFrom}
@@ -322,7 +322,6 @@ export default function Transactions() {
             </div>
           ) : (
             <>
-              {/* Desktop Table View */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
@@ -397,7 +396,6 @@ export default function Transactions() {
                 </table>
               </div>
 
-              {/* Mobile Card View */}
               <div className="md:hidden divide-y">
                 {!selectedAccountId ? (
                   <div className="px-4 py-12 text-center text-gray-500 text-sm">

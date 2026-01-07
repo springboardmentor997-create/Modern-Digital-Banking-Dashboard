@@ -35,7 +35,22 @@ app = fastapi.FastAPI(
 # origin mismatches. In production you should lock this down to your frontend host.
 
 # Use CORS origins from settings so deploy-time env var can control allowed origins.
-origins = list(getattr(settings, "CORS_ORIGINS", []) or [])
+# Be robust: `CORS_ORIGINS` may be a list (from Settings), or a string from env (JSON or comma-separated).
+raw_cors = getattr(settings, "CORS_ORIGINS", None)
+if isinstance(raw_cors, str):
+    try:
+        import json
+
+        parsed = json.loads(raw_cors)
+        origins = list(parsed) if isinstance(parsed, (list, tuple)) else [str(parsed)]
+    except Exception:
+        origins = [s.strip() for s in raw_cors.split(",") if s.strip()]
+elif isinstance(raw_cors, (list, tuple)):
+    origins = list(raw_cors)
+else:
+    origins = []
+
+# Ensure deployed frontend origins used during demo are included (no-ops if already present).
 
 # Ensure deployed frontend origins used during demo are included (no-ops if already present).
 extra_prod_origins = [
@@ -46,13 +61,40 @@ for o in extra_prod_origins:
     if o not in origins:
         origins.append(o)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
+# If no origins configured, allow a permissive fallback for local development.
+# In production you should set `CORS_ORIGINS` to your frontend host(s).
+use_origin_regex = False
+if not origins:
+    env = os.getenv("ENV", os.getenv("PY_ENV", "development")).lower()
+    if env in ("dev", "development", "local") or os.getenv("DEBUG", "0") == "1":
+        use_origin_regex = True
+
+print("CORS origins:", origins, "use_origin_regex:", use_origin_regex)
+
+# Allow common Vercel preview domains via regex when appropriate (keeps credentials support).
+# Enable via either presence of a vercel origin in `origins` or by setting `ALLOW_VERCEL_PREVIEWS=1`.
+vercel_allowed = any("vercel.app" in (o or "") for o in origins) or os.getenv("ALLOW_VERCEL_PREVIEWS", "0") == "1"
+vercel_regex = r"^https?://([a-zA-Z0-9-]+\.)?vercel\.app$"
+if vercel_allowed:
+    print("Vercel previews allowed via origin regex:", vercel_regex)
+
+mw_kwargs = dict(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+if use_origin_regex:
+    # Allow any origin (development only) while still supporting credentials.
+    mw_kwargs["allow_origins"] = []
+    mw_kwargs["allow_origin_regex"] = ".*"
+else:
+    mw_kwargs["allow_origins"] = origins
+    # If configured to allow Vercel previews, add a targeted regex in addition
+    # to the explicit origins list so dynamic preview URLs work.
+    if vercel_allowed:
+        mw_kwargs["allow_origin_regex"] = vercel_regex
+
+app.add_middleware(CORSMiddleware, **mw_kwargs)
 # Include routers
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(accounts_router, prefix="/api/accounts", tags=["accounts"])
