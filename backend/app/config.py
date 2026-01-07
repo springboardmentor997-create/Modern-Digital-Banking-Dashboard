@@ -24,7 +24,7 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
     # Database URL - prioritize environment variable
-    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:Urmila@localhost:5433/banking_db")
+    DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password123@postgres:5432/banking_db")
     
     # OTP Settings
     OTP_EXPIRY_MINUTES = int(os.getenv("OTP_EXPIRY_MINUTES", "15"))

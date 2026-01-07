@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from app.config import settings
 from sqlalchemy import text
 
-DATABASE_URL = "postgresql://postgres:Urmila@localhost:5433/banking_db"
+DATABASE_URL = settings.DATABASE_URL
 
 # Configure engine with proper PostgreSQL settings
 if "postgresql" in DATABASE_URL:
