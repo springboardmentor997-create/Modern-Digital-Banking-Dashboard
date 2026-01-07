@@ -8,16 +8,35 @@ const CurrencyConverter = () => {
   const [amount, setAmount] = useState('');
   const [convertedAmount, setConvertedAmount] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  // Static currencies for now
-  const currencies = {
+  const [currencies, setCurrencies] = useState({
     'USD': 'US Dollar',
     'EUR': 'Euro', 
-    'INR': 'Indian Rupee'
-  };
+    'INR': 'Indian Rupee',
+    'GBP': 'British Pound'
+  });
 
   useEffect(() => {
-    // Set default currencies
+    // Fetch supported currencies from API
+    const fetchCurrencies = async () => {
+      try {
+        const response = await axiosClient.get('/api/currency/supported');
+        const supportedCurrencies = {};
+        response.data.currencies.forEach(code => {
+          const names = {
+            'USD': 'US Dollar',
+            'EUR': 'Euro',
+            'INR': 'Indian Rupee',
+            'GBP': 'British Pound'
+          };
+          supportedCurrencies[code] = names[code] || code;
+        });
+        setCurrencies(supportedCurrencies);
+      } catch (error) {
+        console.error('Failed to fetch currencies:', error);
+      }
+    };
+    
+    fetchCurrencies();
     setFromCurrency('INR');
     setToCurrency('USD');
   }, []);
