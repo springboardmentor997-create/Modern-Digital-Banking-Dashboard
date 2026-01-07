@@ -1,25 +1,57 @@
-from sqlalchemy import Column, Integer, String, Numeric, DateTime, Boolean, ForeignKey, Text
+"""
+Transaction Model
+
+What:
+- Stores transaction records
+- Success / failure status
+
+Backend Connections:
+- Used by:
+  - transactions.service
+  - reports / exports
+
+Frontend Connections:
+- Transactions.jsx
+- PaymentSuccess.jsx
+- PaymentFailed.jsx
+"""
+
+
+
+
+from sqlalchemy import Column, Integer, String, Numeric, Enum, Date, ForeignKey, TIMESTAMP, text
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 from app.database import Base
+import enum
+
+
+class TransactionType(str, enum.Enum):
+    debit = "debit"
+    credit = "credit"
+
 
 class Transaction(Base):
     __tablename__ = "transactions"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    from_account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True)
-    to_account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True)
+
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    transaction_type = Column(String(20), nullable=False)  # transfer, deposit, withdrawal, payment
-    amount = Column(Numeric(15, 2), nullable=False)
-    currency = Column(String(3), default="USD")
-    description = Column(Text, nullable=True)
-    reference_number = Column(String(50), unique=True, nullable=False)
-    status = Column(String(20), default="completed")  # pending, completed, failed, cancelled
-    fee = Column(Numeric(10, 2), default=0.00)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    user = relationship("User", back_populates="transactions")
-    from_account = relationship("Account", foreign_keys=[from_account_id], back_populates="transactions_from")
-    to_account = relationship("Account", foreign_keys=[to_account_id], back_populates="transactions_to")
+    account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
+
+    description = Column(String, nullable=False)
+    category = Column(String, default="Uncategorized")
+    merchant = Column(String, nullable=True)
+
+    amount = Column(Numeric(12, 2), nullable=False)
+    currency = Column(String(3), default="INR")
+
+    txn_type = Column(Enum(TransactionType), nullable=False)
+    txn_date = Column(Date, nullable=False)
+
+    created_at = Column(
+        TIMESTAMP,
+        server_default=text("CURRENT_TIMESTAMP")
+    )
+
+    user = relationship("User")
+    account = relationship("Account")

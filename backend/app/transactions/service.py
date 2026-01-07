@@ -1,114 +1,186 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import desc, func, and_
-from app.models.transaction import Transaction
-from app.models.account import Account
-from app.transactions.schemas import TransactionCreate, TransactionUpdate
-from typing import List, Optional
-from decimal import Decimal
-import uuid
-from datetime import datetime
+"""
+Transaction Service
 
-class TransactionService:
-    
-    @staticmethod
-    def create_transaction(db: Session, transaction_data: TransactionCreate, user_id: int) -> Transaction:
-        # Generate unique reference number
-        reference_number = f"TXN{uuid.uuid4().hex[:8].upper()}"
-        
-        db_transaction = Transaction(
-            user_id=user_id,
-            from_account_id=transaction_data.from_account_id,
-            to_account_id=transaction_data.to_account_id,
-            transaction_type=transaction_data.transaction_type,
-            amount=transaction_data.amount,
-            currency=transaction_data.currency or "USD",
-            description=transaction_data.description,
-            reference_number=reference_number,
-            status="completed"
-        )
-        
-        db.add(db_transaction)
-        
-        # Update account balances
-        if transaction_data.from_account_id:
-            from_account = db.query(Account).filter(Account.id == transaction_data.from_account_id).first()
-            if from_account:
-                from_account.balance -= transaction_data.amount
-        
-        if transaction_data.to_account_id:
-            to_account = db.query(Account).filter(Account.id == transaction_data.to_account_id).first()
-            if to_account:
-                to_account.balance += transaction_data.amount
-        
-        db.commit()
-        db.refresh(db_transaction)
-        return db_transaction
-    
-    @staticmethod
-    def get_transactions(db: Session, user_id: int, limit: int = 50) -> List[Transaction]:
-        return db.query(Transaction).filter(
-            Transaction.user_id == user_id
-        ).order_by(desc(Transaction.created_at)).limit(limit).all()
-    
-    @staticmethod
-    def get_transaction_by_id(db: Session, transaction_id: int, user_id: int) -> Optional[Transaction]:
-        return db.query(Transaction).filter(
-            Transaction.id == transaction_id,
-            Transaction.user_id == user_id
+What:
+- Core transaction logic
+- Validates account
+- Enforces budget limits
+- Creates transaction record
+- Updates account balance
+- Updates budget spent amount
+
+Backend Connections:
+- Called by transactions.router
+- Uses Account, Transaction, Budget models
+"""
+
+from sqlalchemy.orm import Session
+from datetime import datetime, date, timezone
+from fastapi import HTTPException
+
+from app.models.transaction import Transaction, TransactionType
+from app.models.account import Account
+from app.budgets.models import Budget
+from app.transactions.schemas import TransactionCreate
+from app.models.user_settings import UserSettings
+from app.alerts.service import create_alert
+from app.alerts.utils import notify_transaction
+from app.utils.email_utils import send_email
+from app.models.user_device import UserDevice
+from app.firebase.firebase import send_push_notification
+
+
+def create_transaction(
+    db: Session,
+    user_id: int,
+    data: TransactionCreate
+):
+    # -------------------------------
+    # Validate account ownership
+    # -------------------------------
+    account = db.query(Account).filter(
+        Account.id == data.account_id,
+        Account.user_id == user_id
+    ).first()
+
+    if not account:
+        return None
+
+    # -------------------------------
+    # Detect category
+    # -------------------------------
+    category = detect_transaction_category(data.description)
+
+    # -------------------------------
+    # CHECK BUDGET LIMIT (ONLY FOR DEBIT)
+    # -------------------------------
+    if data.txn_type == TransactionType.debit:
+        now = datetime.utcnow()
+
+        budget = db.query(Budget).filter(
+            Budget.user_id == user_id,
+            Budget.category == category,
+            Budget.month == now.month,
+            Budget.year == now.year,
+            Budget.is_active == True
         ).first()
-    
-    @staticmethod
-    def get_transactions_by_account(db: Session, account_id: int, user_id: int) -> List[Transaction]:
-        return db.query(Transaction).filter(
-            and_(
-                Transaction.user_id == user_id,
-                (Transaction.from_account_id == account_id) | (Transaction.to_account_id == account_id)
-            )
-        ).order_by(desc(Transaction.created_at)).all()
-    
-    @staticmethod
-    def update_transaction(db: Session, transaction_id: int, transaction_data: TransactionUpdate, user_id: int) -> Optional[Transaction]:
-        transaction = TransactionService.get_transaction_by_id(db, transaction_id, user_id)
-        if not transaction:
-            return None
-        
-        for field, value in transaction_data.dict(exclude_unset=True).items():
-            setattr(transaction, field, value)
-        
+
+        if budget:
+            if budget.spent_amount + data.amount > budget.limit_amount:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Budget limit exceeded for this category"
+                )
+
+    # -------------------------------
+    # CREATE TRANSACTION
+    # -------------------------------
+    transaction = Transaction(
+        user_id=user_id,
+        account_id=data.account_id,
+        amount=data.amount,
+        txn_type=data.txn_type,
+        category=category,
+        description=data.description,
+        txn_date = data.txn_date or datetime.now(timezone.utc).date()
+    )
+
+    # -------------------------------
+    # UPDATE ACCOUNT BALANCE
+    # -------------------------------
+    if data.txn_type == TransactionType.debit:
+        account.balance -= data.amount
+    else:
+        account.balance += data.amount
+
+    db.add(transaction)
+    db.commit()
+    db.refresh(transaction)
+
+    # -------------------------------
+    # UPDATE BUDGET SPENT AMOUNT
+    # -------------------------------
+    if data.txn_type == TransactionType.debit:
+        update_budget_on_transaction(
+            db=db,
+            user_id=user_id,
+            category=category,
+            amount=data.amount
+        )
+
+    # -------------------------------
+    # REAL-TIME ALERTS (SETTINGS BASED)
+    # -------------------------------
+    settings = (
+        db.query(UserSettings)
+        .filter(UserSettings.user_id == user_id)
+        .first()
+    )
+
+    if settings:
+        message = (
+            f"₹{data.amount} credited to your account"
+            if data.txn_type == TransactionType.credit
+            else f"₹{data.amount} debited from your account"
+        )
+
+        notify_transaction(
+            db=db,
+            user_id=user_id,
+            settings=settings,
+            message=message
+        )
+    return transaction
+
+
+def update_budget_on_transaction(
+    db: Session,
+    user_id: int,
+    category: str,
+    amount: float
+):
+    now = datetime.utcnow()
+
+    budget = db.query(Budget).filter(
+        Budget.user_id == user_id,
+        Budget.category == category,
+        Budget.month == now.month,
+        Budget.year == now.year,
+        Budget.is_active == True
+    ).first()
+
+    if budget:
+        budget.spent_amount += amount
         db.commit()
-        db.refresh(transaction)
-        return transaction
+
     
-    @staticmethod
-    def delete_transaction(db: Session, transaction_id: int, user_id: int) -> bool:
-        transaction = TransactionService.get_transaction_by_id(db, transaction_id, user_id)
-        if not transaction:
-            return False
-        
-        db.delete(transaction)
-        db.commit()
-        return True
-    
-    @staticmethod
-    def get_transaction_summary(db: Session, user_id: int):
-        """Get transaction summary for dashboard"""
-        total_income = db.query(func.sum(Transaction.amount)).filter(
-            Transaction.user_id == user_id,
-            Transaction.transaction_type == "deposit"
-        ).scalar() or 0
-        
-        total_expenses = db.query(func.sum(Transaction.amount)).filter(
-            Transaction.user_id == user_id,
-            Transaction.transaction_type == "withdrawal"
-        ).scalar() or 0
-        
-        transaction_count = db.query(func.count(Transaction.id)).filter(
-            Transaction.user_id == user_id
-        ).scalar() or 0
-        
-        return {
-            "total_income": float(total_income),
-            "total_expenses": float(total_expenses),
-            "net_balance": float(total_income) - float(total_expenses),
-            "transaction_count": transaction_count
-        }
+
+def get_account_transactions(
+    db: Session,
+    user_id: int,
+    account_id: int
+):
+    return (
+        db.query(Transaction)
+        .join(Account)
+        .filter(
+            Transaction.account_id == account_id,
+            Account.user_id == user_id
+        )
+        .order_by(Transaction.txn_date.desc())
+        .all()
+    )
+
+
+def detect_transaction_category(description: str):
+    desc = description.lower()
+
+    if "food" in desc or "restaurant" in desc or "hotel" in desc:
+        return "Food"
+    if "uber" in desc or "ola" in desc:
+        return "Travel"
+    if "electricity" in desc or "bill" in desc:
+        return "Bills"
+
+    return "Others"
+

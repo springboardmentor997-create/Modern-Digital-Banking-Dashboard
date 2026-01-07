@@ -1,11 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional
 
-class Token(BaseModel):
+class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
-    token_type: str
-    user: dict  # This will store {"email": "...", "name": "..."}
-
-class TokenData(BaseModel):
-    user_id: Optional[str] = None
+    token_type: str = "bearer"

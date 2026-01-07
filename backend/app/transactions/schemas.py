@@ -1,45 +1,33 @@
-from pydantic import BaseModel, validator, EmailStr
+from pydantic import BaseModel, Field
+from datetime import date
 from decimal import Decimal
-from datetime import datetime
 from typing import Optional
-from enum import Enum
-
-class TransactionType(str, Enum):
-    CREDIT = "credit"
-    DEBIT = "debit"
 
 
-
-class TransactionCreate(BaseModel):
-    account_id: int
-    amount: Decimal
-    txn_type: str  # Changed from transaction_type
+# -----------------------------
+# BASE
+# -----------------------------
+class TransactionBase(BaseModel):
+    amount: Decimal = Field(..., gt=0)
+    txn_type: str = Field(..., example="debit")  # debit | credit
+    category: str = Field(default="Uncategorized")
     description: Optional[str] = None
-    category: Optional[str] = None
-    date: Optional[str] = None  # Added date field
-    merchant: Optional[str] = None  # Added merchant field
-    
-    @validator('amount')
-    def validate_amount(cls, v):
-        if v == 0:
-            raise ValueError('Amount cannot be zero')
-        return v
-    
-    @validator('description')
-    def validate_description(cls, v):
-        if v and len(v.strip()) > 500:
-            raise ValueError('Description cannot exceed 500 characters')
-        return v.strip() if v else v
+    txn_date: Optional[date] = None
 
-class TransactionResponse(BaseModel):
+
+# -----------------------------
+# CREATE (USER)
+# -----------------------------
+class TransactionCreate(TransactionBase):
+    account_id: int
+
+
+# -----------------------------
+# RESPONSE (USER)
+# -----------------------------
+class TransactionResponse(TransactionBase):
     id: int
     account_id: int
-    amount: Decimal
-    txn_type: str  # Changed from transaction_type
-    description: Optional[str]
-    category: Optional[str]
-    txn_date: datetime  # Changed from transaction_date
-    created_at: datetime
-    
+
     class Config:
         from_attributes = True

@@ -1,22 +1,33 @@
 from pydantic import BaseModel
-from datetime import datetime
+from decimal import Decimal
+from typing import Optional
 
-class AccountCreate(BaseModel):
-    name: str              # Matches frontend payload
-    account_number: str    # Matches frontend payload
-    type: str              # Matches frontend payload
-    balance: float         # Matches frontend payload
-    status: str = "active" # Matches frontend payload
+# Base schema
+class AccountBase(BaseModel):
+    bank_name: str
+    account_type: str
+    masked_account: str
+    currency: str = "INR"
+    balance: Decimal = 0
 
-class AccountResponse(BaseModel):
+
+# Create request
+class AccountCreate(AccountBase):
+    pass
+
+
+# Update request
+class AccountUpdate(BaseModel):
+    bank_name: Optional[str] = None
+    account_type: Optional[str] = None
+    masked_account: Optional[str] = None
+    currency: Optional[str] = None
+    balance: Optional[Decimal] = None
+
+
+# Response schema
+class AccountResponse(AccountBase):
     id: int
-    user_id: int
-    name: str
-    account_number: str
-    type: str
-    balance: float
-    status: str
-    created_at: datetime
 
     class Config:
         from_attributes = True
