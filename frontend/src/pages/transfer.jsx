@@ -298,20 +298,24 @@ export default function Transfer() {
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
-
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-              />
-
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-              />
+              <div>
+                <span> From </span>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                />
+              </div>
+              <div>
+                <span> To </span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                />
+              </div>
             </div>
           </div>
 
@@ -332,7 +336,6 @@ export default function Transfer() {
               </div>
             ) : (
               <>
-                {/* Desktop Table View */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b">
@@ -370,7 +373,6 @@ export default function Transfer() {
                   </table>
                 </div>
 
-                {/* Mobile Card View */}
                 <div className="md:hidden divide-y">
                   {filteredTransactions.map(txn => (
                     <div key={txn.id} className="p-4 hover:bg-blue-50">
