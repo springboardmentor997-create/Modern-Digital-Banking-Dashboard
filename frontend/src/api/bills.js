@@ -9,7 +9,7 @@ export const getBills = async () => {
 
 
 export const addBill = async (payload) => {
-  const { data } = await axiosClient.post(BASE_URL, payload);
+  const { data } = await axiosClient.post(`${BASE_URL}accounts/${payload.account_id}/bills`, payload);
   return data;
 };
 
@@ -27,9 +27,6 @@ export const deleteBill = async (id) => {
 };
 
 export const markPaid = async (id) => {
-  const { data } = await axiosClient.put(
-    `${BASE_URL}${id}/`,
-    { status: "paid" }
-  );
+  const { data } = await axiosClient.post(`${BASE_URL}${id}/mark-paid`);
   return data;
 };

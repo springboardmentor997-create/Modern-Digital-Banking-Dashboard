@@ -8,10 +8,7 @@ export const fetchRewards = async () => {
 };
 
 export const createReward = async (payload) => {
-  const { data } = await axiosClient.post(BASE_URL, {
-    program_name: payload.program_name,
-    points_balance: payload.points_balance,
-  });
+  const { data } = await axiosClient.post(`${BASE_URL}assign`,payload);
   return data;
 };
 

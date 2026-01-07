@@ -149,13 +149,19 @@ export default function Budgets() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 ">
       <div className=" mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800">Budget Manager</h1>
+        <div className="flex flex-col gap-4 mb-8 sm:flex-row sm:justify-between sm:items-center">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-800">
+            Budget Manager
+          </h1>
+
           <button
             onClick={openAddModal}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg flex gap-2 items-center shadow-lg transition"
+            className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white 
+                      px-5 py-3 rounded-lg flex gap-2 items-center justify-center 
+                      shadow-lg transition"
           >
-            <Plus size={20} /> Add Budget
+            <Plus size={20} />
+            <span>Add Budget</span>
           </button>
         </div>
 

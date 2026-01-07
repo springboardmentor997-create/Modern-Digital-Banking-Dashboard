@@ -10,7 +10,6 @@ import Analytics from './pages/Analytics';
 import Support from './pages/Support';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
-import AuditorDashboard from './pages/AudiDashboard.jsx';
 
 function MainLayout() {
   return (
@@ -40,11 +39,6 @@ export default function App() {
         <Route path ="/AdminDashboard" element={
             <ProtectedRoute allowedRoles={["admin"]}>
                 <AdminDashboard />
-            </ProtectedRoute>
-          }/>
-          <Route path ="/AuditorDashboard" element={
-            <ProtectedRoute allowedRoles={["Auditor"]}>
-                <AuditorDashboard />
             </ProtectedRoute>
           }/>
       </Route>

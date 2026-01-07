@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Smartphone, CreditCard, Wallet, Shield, Zap, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const slides = [
   {
@@ -20,31 +21,16 @@ const slides = [
   },
   {
     id: 3,
-    title: "Premium Cards",
-    text: "Experience modern banking with exclusive rewards and benefits.",
-    icon: CreditCard,
-    color: "from-green-500 to-teal-400",
-    features: ["5% Cashback", "Travel Benefits", "Zero Annual Fee"]
-  },
-  {
-    id: 4,
     title: "Digital Wallet",
     text: "Store all your cards securely and pay with just a tap.",
     icon: Wallet,
     color: "from-orange-500 to-yellow-400",
     features: ["Contactless Pay", "Multi-Currency", "Instant Checkout"]
-  },
-  {
-    id: 5,
-    title: "Bank-Grade Security",
-    text: "Your money protected with advanced encryption and authentication.",
-    icon: Shield,
-    color: "from-red-500 to-pink-500",
-    features: ["256-bit Encryption", " Login", "Fraud Protection"]
   }
 ];
 
 export default function Carousel() {
+  const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -68,7 +54,7 @@ export default function Carousel() {
   const CurrentIcon = slides[current].icon;
 
   return (
-    <div className="w-full max-w-2xl mx-auto overflow-hidden">
+    <div className="w-full max-w-2xl mx-auto overflow-hidden sm: hidden">
 
       <div
         className="relative overflow-hidden rounded-3xl shadow-2xl"
@@ -112,7 +98,8 @@ export default function Carousel() {
                         ))}
                       </div>
 
-                      <button className="mt-6 px-8 py-4 bg-white text-gray-900 rounded-xl font-bold hover:bg-gray-100 transition-all transform hover:scale-105">
+                      <button onClick={() => navigate('/Services')}
+                      className="mt-6 px-8 py-4 bg-white text-gray-900 rounded-xl font-bold hover:bg-gray-100 transition-all transform hover:scale-105">
                         Learn More
                       </button>
                     </div>

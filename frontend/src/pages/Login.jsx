@@ -7,6 +7,7 @@ import loginImg from "../images/login.jpg";
 import signupImg from "../images/signup.jpg";
 import { useAuth } from "../context/AuthContext";
 import { useLocation } from "react-router-dom";
+import Load from "../components/Loader.jsx";
 
 export default function Login() {
   const [isLoginPage, setIsLoginPage] = useState(true);
@@ -23,8 +24,7 @@ export default function Login() {
     email: "",
     phone: "",
     password: "",
-    role: location.state?.role,
-    kyc_status: "unverified"
+    role: location.state?.role
   });
 
   const [errors, setErrors] = useState({});
@@ -122,10 +122,13 @@ export default function Login() {
   }
 
   function handleToggleForm() {
-    console.log(location.state?.role);
     setIsLoginPage(!isLoginPage);
-    setForm({ name: "", email: "", phone: "", password: "", kyc_status: "unverified" ,role: location.state?.role });
+    setForm({ name: "", email: "", phone: "", password: "", role: location.state?.role });
     setErrors({});
+  }
+
+  if (loading){
+    return <Load/>
   }
 
   return (
@@ -234,36 +237,6 @@ export default function Login() {
                 <p className="text-red-500 text-sm mt-1">{errors.password}</p>
               )}
             </div>
-
-            {!isLoginPage && (
-              <div className="relative flex items-center gap-3 bg-white/10">
-                <input
-                  name="kyc_status"
-                  type="checkbox"
-                  id="kyc"
-                  checked={form.kyc_status === "verified" }
-                  onChange={handleChange}
-                  disabled={loading}
-                  className="w-5 h-5 cursor-pointer accent-blue-500 rounded disabled:cursor-not-allowed"
-                />
-                <label htmlFor="kyc" className="text-blue-500 font-medium cursor-pointer select-none">
-                  KYC Verified
-                </label>
-              </div>
-            )}
-
-            {isLoginPage && (
-              <button
-                type="button"
-                onClick={() => handleClick("forget")}
-                className={`text-blue-600 text-sm hover:text-blue-800 transition-colors ${
-                  clicked === "forget" ? "text-blue-800" : ""
-                }`}
-                disabled={loading}
-              >
-                Forgot password?
-              </button>
-            )}
 
             <button
               type="submit"
