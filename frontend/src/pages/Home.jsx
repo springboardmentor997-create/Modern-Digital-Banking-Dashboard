@@ -107,7 +107,7 @@ export default function Home() {
                 Open Free Account <ArrowRight className="w-5 h-5" />
               </button>
             </div>
-            <div className="relative overflow:hidden">
+            <div className="relative overflow:hidden hidden md:block">
               <Carousel />
             </div>
           </div>
