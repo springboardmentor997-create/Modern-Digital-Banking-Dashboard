@@ -1,12 +1,12 @@
 import axiosClient from './client';
 
 export const getBills = async () => {
-  const response = await axiosClient.get('/bills');
+  const response = await axiosClient.get('/api/bills');
   return response.data;
 };
 
 export const createBill = async (name, amount, dueDate) => {
-  const response = await axiosClient.post('/bills', {
+  const response = await axiosClient.post('/api/bills', {
     name: name,
     amount: amount,
     due_date: dueDate
@@ -16,7 +16,7 @@ export const createBill = async (name, amount, dueDate) => {
 
 export const fetchExchangeRates = async () => {
   try {
-    const response = await axiosClient.get('/bills/exchange-rates');
+    const response = await axiosClient.get('/api/bills/exchange-rates');
     return response.data;
   } catch (error) {
     // Return default rates if API fails
