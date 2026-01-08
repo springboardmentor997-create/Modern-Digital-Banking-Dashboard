@@ -4,7 +4,7 @@ import axios from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const axiosClient = axios.create({
-  baseURL: `${API_BASE_URL}/api`,
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -16,7 +16,7 @@ axiosClient.interceptors.request.use(
     const token = localStorage.getItem('token');
     
     // List of auth endpoints that DON'T need authentication
-    const publicAuthEndpoints = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/verify-otp', '/auth/reset-password'];
+    const publicAuthEndpoints = ['/api/auth/login', '/api/auth/signup', '/api/auth/forgot-password', '/api/auth/verify-otp', '/api/auth/reset-password'];
     
     // Add token for all requests except public auth endpoints
     const isPublicAuthEndpoint = publicAuthEndpoints.some(endpoint => config.url.includes(endpoint));

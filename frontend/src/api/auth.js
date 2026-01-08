@@ -10,13 +10,13 @@ export const login = async (credentials) => {
     password: credentials.password
   };
   console.log('Login request data:', loginData);
-  const response = await axiosClient.post('/auth/login', loginData);
+  const response = await axiosClient.post('/api/auth/login', loginData);
   return response.data;
 };
 
 export const signup = async (data) => {
   console.log('Signup request data:', data);
-  const response = await axiosClient.post('/auth/signup', data);
+  const response = await axiosClient.post('/api/auth/signup', data);
   console.log('Signup response:', response.data);
   return response.data;
 };
