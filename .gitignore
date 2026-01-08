@@ -90,3 +90,9 @@ build/
 # Temporary files
 tmp/
 temp/
+# Environment files
+.env
+.env.local
+.env.production
+frontend/.env
+backend/.env
