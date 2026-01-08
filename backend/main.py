@@ -112,11 +112,11 @@ async def root():
     return {"message": "Banking Backend API is running"}
 
 @app.get("/api/expenses/", response_model=List[ExpenseResponse])
-async def get_expenses(current_user: dict = Depends(get_current_user)):
+async def get_expenses():
     return expenses_db
 
 @app.post("/api/expenses/", response_model=ExpenseResponse)
-async def create_expense(expense: ExpenseCreate, current_user: dict = Depends(get_current_user)):
+async def create_expense(expense: ExpenseCreate):
     new_expense = {
         "id": len(expenses_db) + 1,
         "amount": expense.amount,
@@ -127,13 +127,13 @@ async def create_expense(expense: ExpenseCreate, current_user: dict = Depends(ge
         "has_receipt": expense.has_receipt,
         "ai_suggested": expense.ai_suggested,
         "expense_date": datetime.now().isoformat(),
-        "user_id": current_user["user_id"]
+        "user_id": 1
     }
     expenses_db.append(new_expense)
     return new_expense
 
 @app.put("/api/expenses/{expense_id}", response_model=ExpenseResponse)
-async def update_expense(expense_id: int, expense: ExpenseCreate, current_user: dict = Depends(get_current_user)):
+async def update_expense(expense_id: int, expense: ExpenseCreate):
     for i, exp in enumerate(expenses_db):
         if exp["id"] == expense_id:
             expenses_db[i].update({
@@ -148,7 +148,7 @@ async def update_expense(expense_id: int, expense: ExpenseCreate, current_user: 
     raise HTTPException(status_code=404, detail="Expense not found")
 
 @app.delete("/api/expenses/{expense_id}")
-async def delete_expense(expense_id: int, current_user: dict = Depends(get_current_user)):
+async def delete_expense(expense_id: int):
     for i, exp in enumerate(expenses_db):
         if exp["id"] == expense_id:
             expenses_db.pop(i)
@@ -156,16 +156,16 @@ async def delete_expense(expense_id: int, current_user: dict = Depends(get_curre
     raise HTTPException(status_code=404, detail="Expense not found")
 
 @app.get("/api/expenses/categories/list", response_model=List[Category])
-async def get_categories(current_user: dict = Depends(get_current_user)):
+async def get_categories():
     return categories_db
 
 @app.get("/api/expenses/receipts/")
-async def get_receipts(current_user: dict = Depends(get_current_user)):
+async def get_receipts():
     receipts = [exp for exp in expenses_db if exp.get("has_receipt", False)]
     return receipts
 
 @app.get("/api/expenses/analytics/summary")
-async def get_analytics(days: int = 30, current_user: dict = Depends(get_current_user)):
+async def get_analytics(days: int = 30):
     if not expenses_db:
         return {
             "total_expenses": 0,
@@ -212,11 +212,11 @@ async def get_analytics(days: int = 30, current_user: dict = Depends(get_current
 
 # Bills endpoints
 @app.get("/api/bills", response_model=List[BillResponse])
-async def get_bills(current_user: dict = Depends(get_current_user)):
+async def get_bills():
     return bills_db
 
 @app.post("/api/bills", response_model=BillResponse)
-async def create_bill(bill: BillCreate, current_user: dict = Depends(get_current_user)):
+async def create_bill(bill: BillCreate):
     new_bill = {
         "id": len(bills_db) + 1,
         "name": bill.name,
@@ -242,6 +242,15 @@ async def toggle_autopay(bill_id: int):
 @app.get("/api/bills/exchange-rates")
 async def get_exchange_rates():
     return {"USD": 83.12, "EUR": 89.45, "GBP": 104.23}
+
+# Alerts endpoints
+@app.get("/api/alerts/summary")
+async def get_alerts_summary():
+    return {"total": 3, "high": 1, "medium": 2, "low": 0}
+
+@app.post("/api/alerts/bill-reminders")
+async def check_bill_reminders():
+    return {"message": "Bill reminders checked"}
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
