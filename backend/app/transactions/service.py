@@ -8,6 +8,7 @@ from decimal import Decimal
 
 
 from app.models.account import Account
+from app.budgets.service import update_budget_spent
 
 class TransactionService:
     @staticmethod
@@ -47,6 +48,14 @@ class TransactionService:
             db.add(new_transaction)
             db.commit()
             db.refresh(new_transaction)
+
+            # If we have the account and it belongs to a user, update matching budget's spent amount
+            try:
+                if acct and getattr(acct, 'user_id', None) is not None:
+                    update_budget_spent(db, new_transaction, acct.user_id)
+            except Exception:
+                # Do not fail transaction creation if budget update errors; fail silently
+                pass
 
             # refresh account if present
             if acct:

@@ -104,3 +104,25 @@ def require_admin_only(current_user: User = Depends(get_current_user)) -> User:
     if user_role == "admin":
         return current_user
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required")
+
+
+def get_current_active_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Require admin or auditor roles.
+
+    Use this when both 'admin' and 'auditor' roles should be allowed.
+    """
+    user_role = getattr(current_user, "role", "user")
+    if user_role in ("admin", "auditor"):
+        return current_user
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin or auditor privileges required")
+
+
+def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Require the current user to be an admin.
+
+    This is a convenience callable used by some routers.
+    """
+    user_role = getattr(current_user, "role", "user")
+    if user_role == "admin":
+        return current_user
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required")
