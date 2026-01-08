@@ -50,6 +50,19 @@ class ExpenseResponse(BaseModel):
     expense_date: str
     user_id: Optional[int] = None
 
+class BillCreate(BaseModel):
+    name: str
+    amount: float
+    due_date: str
+
+class BillResponse(BaseModel):
+    id: int
+    name: str
+    amount: float
+    dueDate: str
+    status: str
+    autoPay: bool
+
 class Category(BaseModel):
     name: str
     icon: str
@@ -65,6 +78,11 @@ class Analytics(BaseModel):
 
 # Mock data storage (in production, use a proper database)
 expenses_db = []
+bills_db = [
+    {"id": 1, "name": "Electricity Bill", "amount": 2500.0, "dueDate": "2024-01-15", "status": "pending", "autoPay": False},
+    {"id": 2, "name": "Internet Bill", "amount": 1200.0, "dueDate": "2024-01-20", "status": "paid", "autoPay": True},
+    {"id": 3, "name": "Water Bill", "amount": 800.0, "dueDate": "2024-01-25", "status": "pending", "autoPay": False}
+]
 categories_db = [
     {"name": "Food & Dining", "icon": "🍔", "color": "bg-red-500"},
     {"name": "Transportation", "icon": "🚗", "color": "bg-blue-500"},
@@ -191,6 +209,39 @@ async def get_analytics(days: int = 30, current_user: dict = Depends(get_current
         "category_breakdown": category_breakdown,
         "top_merchants": top_merchants
     }
+
+# Bills endpoints
+@app.get("/api/bills", response_model=List[BillResponse])
+async def get_bills(current_user: dict = Depends(get_current_user)):
+    return bills_db
+
+@app.post("/api/bills", response_model=BillResponse)
+async def create_bill(bill: BillCreate, current_user: dict = Depends(get_current_user)):
+    new_bill = {
+        "id": len(bills_db) + 1,
+        "name": bill.name,
+        "amount": bill.amount,
+        "dueDate": bill.due_date,
+        "status": "pending",
+        "autoPay": False
+    }
+    bills_db.append(new_bill)
+    return new_bill
+
+@app.patch("/api/bills/{bill_id}/autopay")
+async def toggle_autopay(bill_id: int, current_user: dict = Depends(get_current_user)):
+    for bill in bills_db:
+        if bill["id"] == bill_id:
+            bill["autoPay"] = not bill["autoPay"]
+            return {
+                "message": f"Auto-pay {'enabled' if bill['autoPay'] else 'disabled'} for {bill['name']}",
+                "autoPay": bill["autoPay"]
+            }
+    raise HTTPException(status_code=404, detail="Bill not found")
+
+@app.get("/api/bills/exchange-rates")
+async def get_exchange_rates():
+    return {"USD": 83.12, "EUR": 89.45, "GBP": 104.23}
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
