@@ -229,7 +229,7 @@ async def create_bill(bill: BillCreate, current_user: dict = Depends(get_current
     return new_bill
 
 @app.patch("/api/bills/{bill_id}/autopay")
-async def toggle_autopay(bill_id: int, current_user: dict = Depends(get_current_user)):
+async def toggle_autopay(bill_id: int):
     for bill in bills_db:
         if bill["id"] == bill_id:
             bill["autoPay"] = not bill["autoPay"]
