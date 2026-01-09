@@ -252,6 +252,32 @@ async def get_alerts_summary():
 async def check_bill_reminders():
     return {"message": "Bill reminders checked"}
 
+# Auth endpoints
+@app.post("/api/auth/login")
+async def login(credentials: dict):
+    # Simple mock login - accepts any email/password
+    return {
+        "access_token": "mock-jwt-token",
+        "token_type": "bearer",
+        "user": {
+            "id": 1,
+            "email": credentials.get("email", "user@example.com"),
+            "name": "User",
+            "role": "user"
+        }
+    }
+
+@app.post("/api/auth/register")
+async def register(user_data: dict):
+    return {
+        "message": "User registered successfully",
+        "user": {
+            "id": 1,
+            "email": user_data.get("email"),
+            "name": user_data.get("name")
+        }
+    }
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
