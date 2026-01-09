@@ -1,5 +1,5 @@
 import React, { useState,useEffect } from 'react';
-import { Home, CreditCard, ReceiptIndianRupee, Gift, TrendingUp, ArrowLeftCircle,ArrowRightCircle, Plus, ArrowUpRight, ArrowDownRight, RefreshCcw, User, Settings, LogOut, PieChart, IndianRupee, Mail, Phone, MapPin, Lock, Bell, Globe, ImageOff } from 'lucide-react';
+import { Home, CreditCard, ReceiptIndianRupee, Gift, Replace, ArrowLeftCircle,ArrowRightCircle, RefreshCcw, Settings, LogOut, PieChart } from 'lucide-react';
 import Accounts from './Accounts.jsx';
 import Transfer from './transfer.jsx';
 import Budgets from './Budgets.jsx';
@@ -8,8 +8,8 @@ import Setting from './Settings.jsx';
 import Gifts from './Gifts.jsx';
 import Bills from './Bills.jsx';
 import { useAuth } from "../context/AuthContext.jsx";
-import { getBudgets } from '../api/budgets.js';
 import Stats from './custStats.jsx';
+import CurrencyConverter from './CurrConv.jsx';
 
 export default function Dashboard() {
   const [activePage, setActivePage] = useState('Home');
@@ -74,8 +74,9 @@ export default function Dashboard() {
           <MenuItem icon={PieChart} label="Budget" page="budget" />
           <MenuItem icon={ReceiptIndianRupee} label="Bills" page="bills" />
           <MenuItem icon={Gift} label="Rewards" page="rewards" />
+          <MenuItem icon = {Replace} label = "Currency Converter" page = "converter"/>
           <MenuItem icon={Settings} label="Settings" page="settings" />
-
+          
           <button
             onClick={handleLogout}
             className="ml-auto flex items-center gap-2 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg transition whitespace-nowrap"
@@ -104,6 +105,7 @@ export default function Dashboard() {
             <MenuItem icon={PieChart} label="Budget" page="budget" />
             <MenuItem icon={ReceiptIndianRupee} label="Bills" page="bills" />
             <MenuItem icon={Gift} label="Rewards" page="rewards" />
+            <MenuItem icon = {Replace} label = "Currency Converter" page = "converter"/>
             <MenuItem icon={Settings} label="Settings" page="settings" />
           </nav>
         </div>
@@ -125,6 +127,7 @@ export default function Dashboard() {
           {activePage === 'bills' && <Bills/>}
           {activePage === 'rewards' && <Gifts/>}
           {activePage === 'settings' && <Setting/>}
+          {activePage === "converter" && <CurrencyConverter/>}
         </div>
       </main>
       </div>

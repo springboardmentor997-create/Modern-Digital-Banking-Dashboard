@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, CreditCard, DollarSign, TrendingUp, Bell, Settings, BarChart3, Activity, AlertCircle, CheckCircle, Clock, ArrowLeftCircle, ArrowRightCircle, LogOut, Shield, Database, Gift } from 'lucide-react';
+import { Users, CreditCard, DollarSign, TrendingUp, Bell, Settings, BarChart3, Activity, AlertCircle, CheckCircle, Clock, ArrowLeftCircle, ArrowRightCircle, LogOut, Replace, Database, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Transactions from './Transactions';
 import Rewards from './Rewards';
@@ -13,6 +13,7 @@ import { getTransactions } from '../api/transactions.js';
 import { getBills } from '../api/bills.js';
 import { fetchRewards } from '../api/rewards.js';
 import AdminAnalytics from './AdminAnalytics.jsx';
+import CurrencyConverter from './CurrConv.jsx';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -280,6 +281,8 @@ const AdminDashboard = () => {
         return <Setting/>
       case 'analytics':
         return <AdminAnalytics users = {users}/>
+      case 'converter':
+        return <CurrencyConverter />
       default:
         return null;
     }
@@ -319,6 +322,7 @@ const AdminDashboard = () => {
         <MenuItem icon={Activity} label="Transactions" page="transactions" />
         <MenuItem icon={Database} label="Analytics" page="analytics" />
         <MenuItem icon={Gift} label="Rewards" page="rewards" />
+        <MenuItem icon = {Replace} label = "Currency Converter" page = "converter"/>
         <MenuItem icon={Settings} label="Settings" page="settings" />
 
         <button
@@ -346,6 +350,7 @@ const AdminDashboard = () => {
               <MenuItem icon={Activity} label="Transactions" page="transactions" />
               <MenuItem icon={Database} label="Analytics" page="analytics" />
               <MenuItem icon={Gift} label="Rewards" page="rewards"/>
+              <MenuItem icon = {Replace} label = "Currency Converter" page = "converter"/>
               <MenuItem icon={Settings} label="Settings" page="settings" />
             </nav>
           </div>
