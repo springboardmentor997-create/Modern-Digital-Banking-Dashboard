@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRightLeft, RefreshCw, TrendingUp, DollarSign, Replace } from 'lucide-react';
+import { ArrowRightLeft, RefreshCw, TrendingUp } from 'lucide-react';
 
 export default function CurrencyConverter() {
   const [amount, setAmount] = useState('1');
@@ -30,9 +30,13 @@ export default function CurrencyConverter() {
   }, []);
 
   useEffect(() => {
-    if (amount && fromCurrency && toCurrency) {
-      convertCurrency();
-    }
+    const timer = setTimeout(() => {
+      if (amount && fromCurrency && toCurrency) {
+        convertCurrency();
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
   }, [amount, fromCurrency, toCurrency]);
 
   const fetchCurrencies = async () => {
@@ -62,7 +66,8 @@ export default function CurrencyConverter() {
       );
       const data = await response.json();
       
-      const rate = data.rates[toCurrency];
+      const rate = data?.rates?.[toCurrency];
+      if (!rate) throw new Error("Rate not found");
       setExchangeRate(rate);
       setConvertedAmount((parseFloat(amount) * rate).toFixed(2));
       setLastUpdated(new Date().toLocaleTimeString());
