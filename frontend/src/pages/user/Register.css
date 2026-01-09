@@ -1,0 +1,50 @@
+/* Mobile responsive styles for Register page */
+@media (max-width: 768px) {
+  .register-content-wrap {
+    grid-template-columns: 1fr !important;
+    gap: 20px;
+  }
+  
+  .register-left-side {
+    display: none !important;
+  }
+  
+  .register-form-card {
+    padding: 20px !important;
+    margin: 0 auto !important;
+    max-width: 90% !important;
+  }
+  
+  .register-page {
+    padding: 12px !important;
+  }
+  
+  .register-two-col-row {
+    grid-template-columns: 1fr !important;
+    column-gap: 0 !important;
+    row-gap: 14px !important;
+  }
+}
+
+/* Samsung mobile specific adjustments */
+@media (max-width: 480px) {
+  .register-form-card {
+    padding: 18px !important;
+    border-radius: 12px !important;
+    max-width: 95% !important;
+  }
+  
+  .register-page {
+    padding: 10px !important;
+  }
+  
+  .register-input {
+    height: 48px !important;
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+  
+  .register-button {
+    height: 48px !important;
+    font-size: 16px !important;
+  }
+}

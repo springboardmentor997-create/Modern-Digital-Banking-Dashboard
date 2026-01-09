@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+*.env
+
+# Node
+node_modules/
+.vite/
+
+# Database
+*.db
+backend/dev
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets (DO NOT COMMIT)
+backend/app/config/firebase_key.json

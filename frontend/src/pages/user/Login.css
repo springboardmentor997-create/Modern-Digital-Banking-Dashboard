@@ -1,0 +1,44 @@
+/* Mobile responsive styles for Login page */
+@media (max-width: 768px) {
+  .login-content-wrap {
+    grid-template-columns: 1fr !important;
+    gap: 20px;
+  }
+  
+  .login-left-side {
+    display: none !important;
+  }
+  
+  .login-form-card {
+    padding: 20px !important;
+    margin: 0 auto !important;
+    max-width: 90% !important;
+  }
+  
+  .login-page {
+    padding: 12px !important;
+  }
+}
+
+/* Samsung mobile specific adjustments */
+@media (max-width: 480px) {
+  .login-form-card {
+    padding: 18px !important;
+    border-radius: 12px !important;
+    max-width: 95% !important;
+  }
+  
+  .login-page {
+    padding: 10px !important;
+  }
+  
+  .login-input {
+    height: 48px !important;
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+  
+  .login-button {
+    height: 48px !important;
+    font-size: 16px !important;
+  }
+}

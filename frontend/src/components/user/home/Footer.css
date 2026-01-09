@@ -1,0 +1,91 @@
+/* Mobile responsive styles for Footer */
+@media (max-width: 768px) {
+  .footer-container {
+    padding: 40px 20px 20px !important;
+    margin-top: 60px !important;
+  }
+  
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 30px !important;
+    margin-bottom: 30px !important;
+  }
+  
+  .footer-brand-header {
+    gap: 10px !important;
+  }
+  
+  .footer-brand-logo {
+    width: 60px !important;
+    height: 50px !important;
+  }
+  
+  .footer-brand-title {
+    font-size: 20px !important;
+  }
+  
+  .footer-brand-desc {
+    font-size: 14px !important;
+    max-width: 100% !important;
+  }
+  
+  .footer-section-title {
+    font-size: 15px !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .footer-links {
+    line-height: 2.2 !important;
+  }
+  
+  .footer-bottom {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 15px !important;
+  }
+  
+  .footer-bottom p {
+    font-size: 13px !important;
+  }
+}
+
+/* Small mobile specific adjustments */
+@media (max-width: 480px) {
+  .footer-container {
+    padding: 30px 15px 15px !important;
+    margin-top: 40px !important;
+  }
+  
+  .footer-grid {
+    gap: 25px !important;
+  }
+  
+  .footer-brand-header {
+    gap: 8px !important;
+  }
+  
+  .footer-brand-logo {
+    width: 50px !important;
+    height: 42px !important;
+  }
+  
+  .footer-brand-title {
+    font-size: 18px !important;
+  }
+  
+  .footer-brand-desc {
+    font-size: 13px !important;
+  }
+  
+  .footer-section-title {
+    font-size: 14px !important;
+  }
+  
+  .footer-links {
+    line-height: 2 !important;
+  }
+  
+  .footer-link-item {
+    font-size: 14px !important;
+  }
+}
