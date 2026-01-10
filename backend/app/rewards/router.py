@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
+import traceback
 from typing import List
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -20,37 +22,21 @@ def assign_rewards_bulk(payload: RewardBulkAssign, db: Session = Depends(get_db)
 	- Add all Reward objects to the session.
 	- Commit once, then refresh and return created rewards.
 	"""
-	# validate user ids exist
-	payload.check_ids_exist(db)
+	# Wrap the whole handler so any unexpected error becomes JSONifiable and logged
+	try:
+		# validate user ids exist
+		payload.check_ids_exist(db)
 
-	created: List[Reward] = []
-	uids = payload.user_ids
-	pts = payload.points_balance
-
-	# Create first reward and flush to obtain an id which we'll use as group_id
-	first_uid = uids[0]
-	r0 = Reward(user_id=first_uid, program_name=payload.program_name, points_balance=int(pts))
-	db.add(r0)
-	db.flush()  # assigns r0.id without committing
-
-	group_id = r0.id
-	r0.group_id = group_id
-	created.append(r0)
-
-	# create remaining rewards referencing the same group_id
-	for uid in uids[1:]:
-		r = Reward(user_id=uid, program_name=payload.program_name, points_balance=int(pts), group_id=group_id)
-		db.add(r)
-		created.append(r)
-
-	# commit once for all inserts
-	db.commit()
-
-	# refresh instances to populate any DB-side defaults (timestamps, etc.)
-	for r in created:
-		db.refresh(r)
-
-	return created
+		# Delegate safe bulk work to service layer which handles per-user failures
+		created = rewards_service.bulk_assign_rewards(db, payload)
+		# Return created Reward objects (includes id and group_id)
+		return created
+	except Exception as exc:
+		# Log traceback for debugging and return structured error JSON
+		traceback_str = traceback.format_exc()
+		print("Error in bulk assign:", str(exc))
+		print(traceback_str)
+		return JSONResponse(status_code=500, content={"error": str(exc), "trace": traceback_str})
 
 
 @router.get("/", response_model=List[RewardResponse])

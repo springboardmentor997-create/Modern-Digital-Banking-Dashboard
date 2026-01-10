@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.reward import Reward
-from app.rewards.schemas import RewardCreate, RewardUpdate
+from app.rewards.schemas import RewardCreate, RewardUpdate, RewardBulkAssign
 from datetime import datetime
 
 
@@ -77,6 +77,80 @@ class RewardService:
         db.commit()
 
 
+    def bulk_assign_rewards(db: Session, bulk_data: RewardBulkAssign):
+        """Safely assign rewards in bulk.
+
+        Creates one Reward per user id in `bulk_data.user_ids`.
+        Uses a common group_id derived from the first inserted row.
+        Performs per-user try/except so one bad insert won't abort the whole operation.
+        Commits once; if that fails, attempts to commit individually for created rows.
+        Returns a summary dict: {"success": int, "failed": int}
+        """
+        success = 0
+        failed = 0
+        created = []
+        created_committed = []
+        group_id = None
+
+        # iterate and attempt to create Reward rows (add to session)
+        for idx, uid in enumerate(bulk_data.user_ids):
+            try:
+                pts = int(bulk_data.points_balance)
+                if group_id is None:
+                    # first row: add, flush to obtain id for group
+                    r = Reward(user_id=uid, program_name=bulk_data.program_name, points_balance=pts)
+                    db.add(r)
+                    db.flush()
+                    group_id = r.id
+                    r.group_id = group_id
+                    db.add(r)
+                else:
+                    r = Reward(user_id=uid, program_name=bulk_data.program_name, points_balance=pts, group_id=group_id)
+                    db.add(r)
+                created.append(r)
+            except Exception as exc:
+                failed += 1
+                print(f"Failed to create reward for user_id={uid}: {exc}")
+                import traceback
+                traceback.print_exc()
+
+        # Try commit once for all inserted rows
+        try:
+            db.commit()
+            # refresh successful rows and collect them
+            for r in created:
+                try:
+                    db.refresh(r)
+                    created_committed.append(r)
+                except Exception:
+                    failed += 1
+        except Exception as exc:
+            # Commit failed; attempt to persist rows individually
+            print("Bulk commit failed, attempting individual commits:", exc)
+            db.rollback()
+            created_committed = []
+            for r in created:
+                try:
+                    db.add(r)
+                    db.commit()
+                    db.refresh(r)
+                    created_committed.append(r)
+                except Exception as exc2:
+                    db.rollback()
+                    failed += 1
+                    print(f"Individual commit failed for reward (user_id={getattr(r, 'user_id', None)}): {exc2}")
+                    import traceback
+                    traceback.print_exc()
+
+        # success/failed counts (computed from created_committed)
+        success = len(created_committed)
+        failed = max(0, len(created) - success)
+
+        # Return list of created Reward instances so router can return ids/group_ids
+        return created_committed
+
+
+
 def create_reward(db: Session, user_id: int, payload: RewardCreate):
     return RewardService.create_reward(db, user_id, payload)
 
@@ -98,3 +172,7 @@ def delete_reward(db: Session, reward: Reward):
 
 def get_all_rewards(db: Session):
     return RewardService.get_all_rewards(db)
+
+
+def bulk_assign_rewards(db: Session, bulk_data: RewardBulkAssign):
+    return RewardService.bulk_assign_rewards(db, bulk_data)
