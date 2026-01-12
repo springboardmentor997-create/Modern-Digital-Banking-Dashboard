@@ -116,6 +116,35 @@ export default function Rewards({ users }) {
     }
   }
 
+  function confirmDelete(onConfirm) {
+    toast.custom((t) => (
+      <div className="bg-white rounded-xl shadow-lg p-4 w-80">
+        <p className="text-gray-800 font-medium mb-4">
+          Are you sure you want to delete this Budget?
+        </p>
+
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100"
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              onConfirm();
+            }}
+            className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ));
+  }
+
   async function handleDelete(programName) {
     if (!confirm('Delete this reward program and all assignments?')) return;
 
@@ -223,7 +252,7 @@ export default function Rewards({ users }) {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDelete(reward.program_name)}
+                  onClick={() => confirmDelete( () => handleDelete(reward.program_name))}
                   className="flex-1 px-4 py-2.5 border-2 border-red-600 text-red-600 font-medium rounded-lg hover:bg-red-50 transition-all flex items-center justify-center gap-2 group"
                 >
                   <Trash2 size={16} className="group-hover:scale-110 transition" />
@@ -263,7 +292,6 @@ export default function Rewards({ users }) {
                   value={form.program_name}
                   onChange={e => setForm({ ...form, program_name: e.target.value })}
                   className="w-full border-2 border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:border-orange-600 transition-colors"
-                  disabled={editMode}
                   required
                   placeholder="e.g., Loyalty Plus"
                 />
