@@ -1,8 +1,0 @@
-services:
-  - type: web
-    name: banking-backend
-    env: python
-    pythonVersion: "3.11"
-    buildCommand: echo "No dependencies needed - using Python stdlib"
-    startCommand: cd backend && python pure_server.py
-    plan: free
