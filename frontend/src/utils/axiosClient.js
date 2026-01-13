@@ -2,7 +2,9 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const axiosClient = axios.create({
-  baseURL: 'https://your-backend-service-name.onrender.com/api',
+  baseURL: process.env.NODE_ENV === 'production' 
+    ? 'https://your-backend-service-name.onrender.com/api'
+    : 'http://localhost:8000/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
