@@ -296,6 +296,16 @@ export const exportUserTransactionsCSV = async (userId) => {
   }
 };
 
+export const getSystemLogs = async () => {
+  try {
+    const response = await axiosClient.get('/api/admin/system-logs');
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch system logs:', error);
+    return [];
+  }
+};
+
 export const importTransactionsCSV = async (csvContent) => {
   try {
     const response = await axiosClient.post('/api/admin/transactions/import', {
