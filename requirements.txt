@@ -1,7 +1,7 @@
-fastapi==0.63.0
+fastapi==0.60.1
 waitress==2.1.2
 PyJWT==2.8.0
 python-multipart==0.0.5
-pydantic==1.7.4
+pydantic==1.6.2
 python-dotenv==0.19.2
 psycopg2-binary==2.9.3
