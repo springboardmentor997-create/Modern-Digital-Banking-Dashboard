@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api.js';
 
 // Create axios instance with base configuration
 const axiosClient = axios.create({
-  baseURL: 'https://modern-digital-banking-dashboard-1-vg97.onrender.com/api',
+  baseURL: `${API_BASE_URL}/api`,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
