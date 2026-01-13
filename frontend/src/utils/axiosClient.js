@@ -3,7 +3,7 @@ import axios from 'axios';
 // Create axios instance with base configuration
 const axiosClient = axios.create({
   baseURL: process.env.NODE_ENV === 'production' 
-    ? 'https://your-backend-service-name.onrender.com/api'
+    ? 'https://modern-digital-banking-dashboard-1-vg97.onrender.com/api'
     : 'http://localhost:8000/api',
   timeout: 10000,
   headers: {
