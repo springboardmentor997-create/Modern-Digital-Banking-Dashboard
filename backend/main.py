@@ -7,6 +7,7 @@ import uvicorn
 from datetime import datetime, timedelta
 import jwt
 import os
+import hashlib
 from dotenv import load_dotenv
 
 # Load environment variables
