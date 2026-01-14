@@ -47,9 +47,16 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             '/api/profile': {"id": 1, "name": "User", "email": "user@example.com"},
             '/api/profile/kyc/status': {"status": "verified", "message": "KYC verified"},
             '/api/admin/system-summary': {"total_users": 100, "active_users": 80, "total_transactions": 500},
-            '/api/admin/users': [],
-            '/api/admin/accounts': [],
-            '/api/admin/transactions': [],
+            '/api/admin/users': [
+                {"id": 1, "email": "user@bank.com", "name": "User", "role": "user", "is_active": True, "kyc_status": "verified"},
+                {"id": 2, "email": "admin@bank.com", "name": "Admin", "role": "admin", "is_active": True, "kyc_status": "verified"}
+            ],
+            '/api/admin/accounts': [
+                {"id": 1, "user_id": 1, "account_type": "savings", "balance": 50000, "masked_account": "****1234"}
+            ],
+            '/api/admin/transactions': [
+                {"id": 1, "amount": 1000, "type": "credit", "date": datetime.now().isoformat(), "status": "completed"}
+            ],
         }
         
         response = responses.get(path, {"message": "Success", "data": []})
