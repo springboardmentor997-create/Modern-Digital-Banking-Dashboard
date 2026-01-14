@@ -5,8 +5,11 @@ from urllib.parse import urlparse, parse_qs
 from datetime import datetime
 
 class BankingAPIHandler(BaseHTTPRequestHandler):
-    # Class variable to store created accounts
+    # Class variables to store created data
     created_accounts = []
+    created_budgets = []
+    created_bills = []
+    created_expenses = []
     
     def _set_headers(self, status=200):
         self.send_response(status)
@@ -40,15 +43,15 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
         # Mock responses for all GET endpoints
         responses = {
             '/': {"message": "Banking Backend API is running"},
-            '/api/expenses/': [],
-            '/api/bills': [{"id": 1, "name": "Electricity", "amount": 2500, "dueDate": "2024-01-15", "status": "pending", "autoPay": False}],
+            '/api/expenses/': self.created_expenses if self.created_expenses else [],
+            '/api/bills': self.created_bills if self.created_bills else [],
             '/api/bills/exchange-rates': {"USD": 83.0, "EUR": 90.0, "GBP": 105.0},
             '/api/accounts': self.created_accounts if self.created_accounts else [],
             '/api/accounts/': self.created_accounts if self.created_accounts else [],
             '/api/transactions': [],
             '/api/transactions/': [],
-            '/api/budgets': [],
-            '/api/budgets/': [],
+            '/api/budgets': self.created_budgets if self.created_budgets else [],
+            '/api/budgets/': self.created_budgets if self.created_budgets else [],
             '/api/budgets/categories': ["Food", "Transportation", "Entertainment", "Shopping", "Bills"],
             '/api/rewards': [],
             '/api/alerts': [],
@@ -56,10 +59,10 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             '/api/dashboard-stats': {"total_balance": 0, "total_transactions": 0, "pending_bills": 0},
             '/api/currency/supported': {"currencies": ["USD", "EUR", "GBP", "INR", "JPY"]},
             '/api/currency/convert': {"converted_amount": 100.0, "rate": 1.0, "from_currency": "USD", "to_currency": "INR"},
-            '/api/insights/': [],
-            '/api/insights/spending': [],
-            '/api/insights/categories': [],
-            '/api/insights/trends': [],
+            '/api/insights/': {"total_spent": 0, "categories": [], "trends": []},
+            '/api/insights/spending': {"total": 0, "by_category": []},
+            '/api/insights/categories': {"categories": []},
+            '/api/insights/trends': {"trends": []},
             '/api/profile': {"id": 1, "name": "User", "email": "user@example.com"},
             '/api/profile/kyc/status': {"status": "verified", "message": "KYC verified"},
             '/api/admin/system-summary': {"total_users": 100, "active_users": 80, "total_transactions": 500},
@@ -119,10 +122,27 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 "message": "User registered successfully",
                 "user": {"id": 1, "email": data.get("email")}
             }
-        elif path == '/api/expenses/':
-            response = {"id": 1, "amount": data.get("amount", 0), "description": data.get("description", ""), "category": data.get("category", "")}
-        elif path == '/api/bills':
-            response = {"id": 1, "name": data.get("name"), "amount": data.get("amount"), "dueDate": data.get("due_date")}
+        elif path == '/api/expenses/' or path == '/api/expenses':
+            expense = {
+                "id": len(self.created_expenses) + 1,
+                "amount": data.get("amount", 0),
+                "description": data.get("description", ""),
+                "category": data.get("category", ""),
+                "date": datetime.now().isoformat()
+            }
+            self.created_expenses.append(expense)
+            response = expense
+        elif path == '/api/bills' or path == '/api/bills/':
+            bill = {
+                "id": len(self.created_bills) + 1,
+                "name": data.get("name"),
+                "amount": data.get("amount"),
+                "dueDate": data.get("due_date", datetime.now().isoformat()),
+                "status": "pending",
+                "autoPay": False
+            }
+            self.created_bills.append(bill)
+            response = bill
         elif path in ['/api/alerts/bill-reminders', '/api/alerts/', '/api/alerts']:
             response = {"message": "Success"}
         elif path == '/api/accounts' or path == '/api/accounts/':
@@ -139,8 +159,17 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             response = [account]
         elif path == '/api/transactions':
             response = {"id": 1, "amount": data.get("amount"), "type": data.get("type"), "status": "completed"}
-        elif path == '/api/budgets':
-            response = {"id": 1, "name": data.get("name"), "amount": data.get("amount"), "category": data.get("category")}
+        elif path == '/api/budgets' or path == '/api/budgets/':
+            budget = {
+                "id": len(self.created_budgets) + 1,
+                "name": data.get("name"),
+                "amount": data.get("amount"),
+                "category": data.get("category"),
+                "spent": 0,
+                "remaining": data.get("amount", 0)
+            }
+            self.created_budgets.append(budget)
+            response = budget
         else:
             response = {"message": "Success", "data": data}
         
