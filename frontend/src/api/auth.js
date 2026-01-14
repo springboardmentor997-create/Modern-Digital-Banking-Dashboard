@@ -11,6 +11,9 @@ export const login = async (credentials) => {
   };
   console.log('Login request data:', loginData);
   const response = await axiosClient.post('/api/auth/login', loginData);
+  console.log('Login response data:', response.data);
+  console.log('Has access_token?', !!response.data?.access_token);
+  console.log('Has user?', !!response.data?.user);
   return response.data;
 };
 
