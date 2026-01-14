@@ -163,22 +163,22 @@ const Login = () => {
                       🔑 Demo Account Samples
                     </summary>
                     <div className="mt-2 space-y-2 text-slate-600">
-                      <p className="text-xs mb-2">Test the system with these demo accounts or create your own on the <strong>Register</strong> page.</p>
+                      <p className="text-xs mb-2">Test the system with these demo accounts (password works for all):</p>
                       <div className="border-l-2 border-blue-400 pl-2 mb-1">
                         <div className="font-semibold text-blue-700">Admin</div>
-                        <div className="text-xs">admin@bank.com / admin123</div>
+                        <div className="text-xs">admin@bank.com / any password</div>
                       </div>
                       <div className="border-l-2 border-purple-400 pl-2 mb-1">
                         <div className="font-semibold text-purple-700">Auditor</div>
-                        <div className="text-xs">auditor@bank.com / auditor123</div>
+                        <div className="text-xs">auditor@bank.com / any password</div>
                       </div>
                       <div className="border-l-2 border-green-400 pl-2 mb-1">
                         <div className="font-semibold text-green-700">Support</div>
-                        <div className="text-xs">support@bank.com / support123</div>
+                        <div className="text-xs">support@bank.com / any password</div>
                       </div>
                       <div className="border-l-2 border-orange-400 pl-2">
                         <div className="font-semibold text-orange-700">User</div>
-                        <div className="text-xs">user@bank.com / user123</div>
+                        <div className="text-xs">user@bank.com / any password</div>
                       </div>
                     </div>
                   </details>

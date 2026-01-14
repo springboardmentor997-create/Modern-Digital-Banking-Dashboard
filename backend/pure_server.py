@@ -35,6 +35,8 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             '/api/budgets/': [],
             '/api/budgets/categories': ["Food", "Transportation", "Entertainment", "Shopping", "Bills"],
             '/api/rewards': [],
+            '/api/alerts': [],
+            '/api/alerts/': [],
             '/api/dashboard-stats': {"total_balance": 0, "total_transactions": 0, "pending_bills": 0},
             '/api/currency/supported': {"currencies": ["USD", "EUR", "GBP", "INR", "JPY"]},
             '/api/currency/convert': {"converted_amount": 100.0, "rate": 1.0, "from_currency": "USD", "to_currency": "INR"},
@@ -45,7 +47,7 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             '/api/profile': {"id": 1, "name": "User", "email": "user@example.com"},
             '/api/profile/kyc/status': {"status": "verified", "message": "KYC verified"},
             '/api/admin/system-summary': {"total_users": 100, "active_users": 80, "total_transactions": 500},
-            '/api/admin/users': [{"id": 1, "email": "user@example.com", "status": "active"}],
+            '/api/admin/users': [],
             '/api/admin/accounts': [],
             '/api/admin/transactions': [],
         }
