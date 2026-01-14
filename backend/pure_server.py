@@ -31,15 +31,26 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
         
         # Handle currency convert with query params
         if path == '/api/currency/convert':
-            amount = float(query_params.get('amount', [100])[0])
-            response = {
-                "converted_amount": amount * 83.0,
-                "rate": 83.0,
-                "from_currency": query_params.get('from', ['USD'])[0],
-                "to_currency": query_params.get('to', ['INR'])[0]
-            }
-            self.wfile.write(json.dumps(response).encode())
-            return
+            try:
+                amount = float(query_params.get('amount', [100])[0])
+                from_curr = query_params.get('from', ['USD'])[0]
+                to_curr = query_params.get('to', ['INR'])[0]
+                rate = 83.0
+                converted = amount * rate
+                response = {
+                    "converted_amount": converted,
+                    "convertedAmount": converted,
+                    "rate": rate,
+                    "from_currency": from_curr,
+                    "to_currency": to_curr,
+                    "amount": amount
+                }
+                self.wfile.write(json.dumps(response).encode())
+                return
+            except:
+                response = {"converted_amount": 8300.0, "convertedAmount": 8300.0, "rate": 83.0}
+                self.wfile.write(json.dumps(response).encode())
+                return
         
         # Mock responses for all GET endpoints
         responses = {
@@ -54,6 +65,10 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 {"id": 2, "amount": 1200, "type": "debit", "description": "Rent", "date": "2024-01-10", "category": "Bills"}
             ],
             '/api/transactions/': [
+                {"id": 1, "amount": 5000, "type": "credit", "description": "Salary", "date": "2024-01-15", "category": "Income"},
+                {"id": 2, "amount": 1200, "type": "debit", "description": "Rent", "date": "2024-01-10", "category": "Bills"}
+            ],
+            '/api/transactions/recent': [
                 {"id": 1, "amount": 5000, "type": "credit", "description": "Salary", "date": "2024-01-15", "category": "Income"},
                 {"id": 2, "amount": 1200, "type": "debit", "description": "Rent", "date": "2024-01-10", "category": "Bills"}
             ],
