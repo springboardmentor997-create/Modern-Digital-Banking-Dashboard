@@ -19,11 +19,20 @@ const Login = () => {
     setIsLoading(true);
 
     try {
+      console.log('Attempting login...');
       const success = await login({ email, password });
+      console.log('Login success:', success);
+      console.log('Token in localStorage:', localStorage.getItem('token'));
+      console.log('User in localStorage:', localStorage.getItem('user'));
+      
       if (success) {
+        console.log('Navigating to dashboard...');
         navigate('/app/dashboard');
+      } else {
+        setError('Login failed - no token received');
       }
     } catch (err) {
+      console.error('Login error:', err);
       const message = err.message || 'Login failed';
       setError(message);
     } finally {
