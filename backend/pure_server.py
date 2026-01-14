@@ -10,6 +10,7 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
     created_budgets = []
     created_bills = []
     created_expenses = []
+    current_user = {"id": 1, "name": "Demo User", "email": "user@bank.com", "role": "user", "phone": "+1234567890"}
     
     def _set_headers(self, status=200):
         self.send_response(status)
@@ -48,8 +49,14 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             '/api/bills/exchange-rates': {"USD": 83.0, "EUR": 90.0, "GBP": 105.0},
             '/api/accounts': self.created_accounts if self.created_accounts else [],
             '/api/accounts/': self.created_accounts if self.created_accounts else [],
-            '/api/transactions': [],
-            '/api/transactions/': [],
+            '/api/transactions': [
+                {"id": 1, "amount": 5000, "type": "credit", "description": "Salary", "date": "2024-01-15", "category": "Income"},
+                {"id": 2, "amount": 1200, "type": "debit", "description": "Rent", "date": "2024-01-10", "category": "Bills"}
+            ],
+            '/api/transactions/': [
+                {"id": 1, "amount": 5000, "type": "credit", "description": "Salary", "date": "2024-01-15", "category": "Income"},
+                {"id": 2, "amount": 1200, "type": "debit", "description": "Rent", "date": "2024-01-10", "category": "Bills"}
+            ],
             '/api/budgets': self.created_budgets if self.created_budgets else [],
             '/api/budgets/': self.created_budgets if self.created_budgets else [],
             '/api/budgets/categories': ["Food", "Transportation", "Entertainment", "Shopping", "Bills"],
@@ -63,7 +70,8 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             '/api/insights/spending': {"total": 0, "by_category": []},
             '/api/insights/categories': {"categories": []},
             '/api/insights/trends': {"trends": []},
-            '/api/profile': {"id": 1, "name": "User", "email": "user@example.com"},
+            '/api/user/profile': self.current_user,
+            '/api/profile': self.current_user,
             '/api/profile/kyc/status': {"status": "verified", "message": "KYC verified"},
             '/api/admin/system-summary': {"total_users": 100, "active_users": 80, "total_transactions": 500},
             '/api/admin/users': [
@@ -99,22 +107,30 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             # Determine role based on email
             if "admin" in email:
                 role = "admin"
+                name = "Admin User"
             elif "auditor" in email:
                 role = "auditor"
+                name = "Auditor User"
             elif "support" in email:
                 role = "support"
+                name = "Support User"
             else:
                 role = "user"
+                name = "Demo User"
+            
+            # Store current user
+            self.current_user = {
+                "id": 1,
+                "email": email,
+                "name": name,
+                "role": role,
+                "phone": "+1234567890"
+            }
             
             response = {
                 "access_token": "mock-token-" + str(datetime.now().timestamp()),
                 "token_type": "bearer",
-                "user": {
-                    "id": 1,
-                    "email": email,
-                    "name": "User",
-                    "role": role
-                }
+                "user": self.current_user
             }
             print(f"Login response: {response}")  # Debug log
         elif path in ['/api/auth/signup', '/api/auth/register']:
@@ -180,7 +196,33 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
         self.do_POST()
     
     def do_PATCH(self):
-        self.do_POST()
+        content_length = int(self.headers.get('Content-Length', 0))
+        post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
+        
+        try:
+            data = json.loads(post_data.decode('utf-8'))
+        except:
+            data = {}
+        
+        parsed_path = urlparse(self.path)
+        path = parsed_path.path
+        
+        # Handle PATCH /api/bills/{id}/autopay
+        if '/api/bills/' in path and '/autopay' in path:
+            bill_id = int(path.split('/')[3])
+            # Find and update the bill
+            for bill in self.created_bills:
+                if bill['id'] == bill_id:
+                    bill['autoPay'] = not bill.get('autoPay', False)
+                    self._set_headers()
+                    self.wfile.write(json.dumps(bill).encode())
+                    return
+            # If not found, return success anyway
+            response = {"message": "Auto-pay toggled", "autoPay": True}
+            self._set_headers()
+            self.wfile.write(json.dumps(response).encode())
+        else:
+            self.do_POST()
     
     def do_DELETE(self):
         self._set_headers()
