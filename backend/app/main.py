@@ -258,19 +258,22 @@ def debug_routes():
             routes.append({"path": route.path, "methods": list(route.methods)})
     return {"routes": routes}
 
-# Serve frontend static files
-frontend_dist = Path(__file__).parent.parent.parent / "frontend" / "dist"
-if frontend_dist.exists():
-    app.mount("/assets", StaticFiles(directory=str(frontend_dist / "assets")), name="assets")
-    
-    @app.get("/{full_path:path}")
-    async def serve_frontend(full_path: str):
-        # Serve index.html for all non-API routes
-        if not full_path.startswith("api/"):
-            index_file = frontend_dist / "index.html"
-            if index_file.exists():
-                return FileResponse(index_file)
-        return {"error": "Not found"}
+# Serve frontend static files (disabled to prevent API interception)
+# Uncomment after building frontend with: cd frontend && npm run build
+# frontend_dist = Path(__file__).parent.parent.parent / "frontend" / "dist"
+# if frontend_dist.exists():
+#     app.mount("/assets", StaticFiles(directory=str(frontend_dist / "assets")), name="assets")
+#     
+#     @app.get("/{full_path:path}")
+#     async def serve_frontend(full_path: str):
+#         # Only serve frontend for non-API routes
+#         if not full_path.startswith("api") and not full_path.startswith("health") and not full_path.startswith("debug"):
+#             index_file = frontend_dist / "index.html"
+#             if index_file.exists():
+#                 return FileResponse(index_file)
+#         # Let other routes handle API calls
+#         from fastapi import HTTPException
+#         raise HTTPException(status_code=404, detail="Not found")
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
