@@ -5,6 +5,9 @@ from urllib.parse import urlparse, parse_qs
 from datetime import datetime
 
 class BankingAPIHandler(BaseHTTPRequestHandler):
+    # Class variable to store created accounts
+    created_accounts = []
+    
     def _set_headers(self, status=200):
         self.send_response(status)
         self.send_header('Content-type', 'application/json')
@@ -27,8 +30,8 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             '/api/expenses/': [],
             '/api/bills': [{"id": 1, "name": "Electricity", "amount": 2500, "dueDate": "2024-01-15", "status": "pending", "autoPay": False}],
             '/api/bills/exchange-rates': {"USD": 83.0, "EUR": 90.0, "GBP": 105.0},
-            '/api/accounts': [],
-            '/api/accounts/': [],
+            '/api/accounts': self.created_accounts if self.created_accounts else [],
+            '/api/accounts/': self.created_accounts if self.created_accounts else [],
             '/api/transactions': [],
             '/api/transactions/': [],
             '/api/budgets': [],
@@ -110,8 +113,17 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
         elif path in ['/api/alerts/bill-reminders', '/api/alerts/', '/api/alerts']:
             response = {"message": "Success"}
         elif path == '/api/accounts' or path == '/api/accounts/':
-            # Return the created account in an array
-            response = [{"id": 1, "name": data.get("name"), "account_type": data.get("account_type"), "balance": data.get("balance", 0), "masked_account": "****1234", "user_id": 1}]
+            # Create account and store it
+            account = {
+                "id": len(self.created_accounts) + 1,
+                "name": data.get("name"),
+                "account_type": data.get("account_type"),
+                "balance": data.get("balance", 0),
+                "masked_account": f"****{1234 + len(self.created_accounts)}",
+                "user_id": 1
+            }
+            self.created_accounts.append(account)
+            response = [account]
         elif path == '/api/transactions':
             response = {"id": 1, "amount": data.get("amount"), "type": data.get("type"), "status": "completed"}
         elif path == '/api/budgets':
