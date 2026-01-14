@@ -35,8 +35,8 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         self._set_headers()
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
+        content_length = int(self.headers.get('Content-Length', 0))
+        post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
         
         try:
             data = json.loads(post_data.decode('utf-8'))
@@ -56,8 +56,10 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
         elif parsed_path.path == '/api/auth/login':
             response = {
                 "access_token": "mock-token",
-                "user": {"id": 1, "email": "user@example.com"}
+                "user": {"id": 1, "email": data.get("email", "user@example.com"), "role": "user"}
             }
+        elif parsed_path.path == '/api/admin/transactions/import':
+            response = {"message": "Transactions imported successfully", "count": 0}
         else:
             response = {"message": "Created"}
         
