@@ -61,14 +61,25 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
         
         # Mock responses for all POST endpoints
         if path == '/api/auth/login':
+            email = data.get("email", "user@example.com")
+            # Determine role based on email
+            if "admin" in email:
+                role = "admin"
+            elif "auditor" in email:
+                role = "auditor"
+            elif "support" in email:
+                role = "support"
+            else:
+                role = "user"
+            
             response = {
                 "access_token": "mock-token-" + str(datetime.now().timestamp()),
                 "token_type": "bearer",
                 "user": {
                     "id": 1,
-                    "email": data.get("email", "user@example.com"),
+                    "email": email,
                     "name": "User",
-                    "role": "user"
+                    "role": role
                 }
             }
             print(f"Login response: {response}")  # Debug log
