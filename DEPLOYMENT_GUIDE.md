@@ -1,87 +1,161 @@
 # Deployment Guide - Fixed Network Errors
 
 ## Problem Solved
-The frontend was trying to connect to a non-existent backend URL causing ERR_NAME_NOT_RESOLVED errors.
+Fixed "Login failed - no token received" and network connection errors.
+
+## Root Causes Fixed
+1. Backend URL was hardcoded to non-existent domain
+2. Database URL was hardcoded to localhost
+3. Frontend and backend were not properly integrated
 
 ## Solution Implemented
-Changed architecture to serve frontend and backend together from a single server.
+- Frontend uses relative URLs to connect to backend on same domain
+- Backend serves frontend static files
+- Database URL uses environment variables
+- Single deployment serves both frontend and backend
 
-## Changes Made
+## Quick Deploy to Render
 
-### 1. API Configuration
-- **frontend/src/api/client.js**: Uses relative URLs (empty base URL)
-- **frontend/.env**: Set `VITE_API_URL=` (empty for relative paths)
-- **frontend/.env.production**: Set `VITE_API_URL=` (empty for relative paths)
+### Step 1: Create PostgreSQL Database
+1. Go to [Render Dashboard](https://dashboard.render.com/)
+2. Click "New +" → "PostgreSQL"
+3. Name: `banking-db`
+4. Database: `banking_db`
+5. User: `banking_user`
+6. Click "Create Database"
+7. **Copy the Internal Database URL** (starts with `postgresql://`)
 
-### 2. Backend Updates
-- **backend/app/main.py**: Added static file serving for frontend
-- **backend/requirements.txt**: Added aiofiles for static files
+### Step 2: Deploy Web Service
+1. Click "New +" → "Web Service"
+2. Connect your GitHub repo: `https://github.com/Urmila1945/modern-digital-banking-dashboard`
+3. Configure:
+   - **Name**: `modern-banking-dashboard`
+   - **Environment**: `Python 3`
+   - **Region**: Choose closest to you
+   - **Branch**: `main` or `urmila-team1-backend`
+   - **Build Command**: 
+     ```bash
+     cd frontend && npm install && npm run build && cd ../backend && pip install -r requirements.txt
+     ```
+   - **Start Command**: 
+     ```bash
+     cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+     ```
 
-### 3. Build Process
-- **Procfile**: Builds frontend, then starts backend
-- **build.sh / build.bat**: Manual build scripts
+### Step 3: Add Environment Variables
+In the web service, add these environment variables:
 
-## Deployment to Render
+```
+DATABASE_URL=<paste your Internal Database URL from Step 1>
+JWT_SECRET_KEY=your-secret-key-here-change-this
+JWT_ALGORITHM=HS256
+JWT_EXPIRATION_HOURS=24
+```
 
-### Option 1: Web Service (Recommended)
-1. Go to Render Dashboard
-2. Create New Web Service
-3. Connect your GitHub repo: `https://github.com/Urmila1945/modern-digital-banking-dashboard`
-4. Configure:
-   - **Name**: modern-banking-dashboard
-   - **Environment**: Python
-   - **Build Command**: `cd frontend && npm install && npm run build && cd ../backend && pip install -r requirements.txt`
-   - **Start Command**: `cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-   - **Add Environment Variables**:
-     - `DATABASE_URL`: Your PostgreSQL connection string
-     - `JWT_SECRET_KEY`: Your JWT secret
-     - `SMTP_SERVER`: smtp.gmail.com
-     - `SMTP_PORT`: 587
-     - `SENDER_EMAIL`: Your email
-     - `SENDER_PASSWORD`: Your app password
+### Step 4: Deploy
+1. Click "Create Web Service"
+2. Wait for build to complete (5-10 minutes)
+3. Once deployed, click your service URL
+4. You should see the login page
 
-### Option 2: Using Procfile
-The Procfile is already configured. Just push to GitHub and Render will use it automatically.
+## Test Login
+Use these credentials (created automatically):
+- **Admin**: admin@bank.com / admin123
+- **User**: user@bank.com / user123
+- **Test**: test@test.com / test123
 
 ## Local Testing
 
-### Build and Run Locally
+### Prerequisites
+- PostgreSQL running on localhost:5433
+- Node.js 18+
+- Python 3.11+
+
+### Run Locally
 ```bash
-# Build frontend
+# Terminal 1: Start PostgreSQL (if not running)
+# Make sure PostgreSQL is running on port 5433
+
+# Terminal 2: Build frontend
 cd frontend
 npm install
 npm run build
-cd ..
 
-# Start backend (serves frontend too)
+# Terminal 3: Start backend
 cd backend
+pip install -r requirements.txt
 python -m uvicorn app.main:app --reload
 ```
 
 Access at: http://localhost:8000
 
-## How It Works
-1. Frontend builds to `frontend/dist`
-2. Backend serves static files from `frontend/dist`
-3. API calls use relative paths (e.g., `/api/auth/login`)
-4. Single domain = no CORS issues, no separate backend URL needed
-
-## Testing After Deployment
-1. Visit your Render URL (e.g., https://your-app.onrender.com)
-2. Frontend should load
-3. Login should work without network errors
-4. All API calls go to same domain
-
 ## Troubleshooting
 
-### If you still get network errors:
-1. Check Render logs for build errors
-2. Ensure frontend/dist exists after build
-3. Verify DATABASE_URL is set in Render environment
-4. Check that all environment variables are configured
+### "Login failed - no token received"
+**Cause**: Backend not responding or database not connected
 
-### Database Setup
-You need a PostgreSQL database. On Render:
-1. Create a PostgreSQL database
-2. Copy the Internal Database URL
-3. Set it as DATABASE_URL in your web service environment variables
+**Solutions**:
+1. Check Render logs for errors
+2. Verify DATABASE_URL is set correctly
+3. Ensure database is running and accessible
+4. Check backend logs for connection errors
+
+### "Network Error: Cannot connect to backend"
+**Cause**: Backend not running or build failed
+
+**Solutions**:
+1. Check Render build logs
+2. Verify build command completed successfully
+3. Check start command is correct
+4. Ensure PORT environment variable is available
+
+### Database Connection Failed
+**Cause**: DATABASE_URL incorrect or database not accessible
+
+**Solutions**:
+1. Use **Internal Database URL** (not External)
+2. Verify database is running in Render
+3. Check database and web service are in same region
+4. Ensure connection string format is correct
+
+### Build Fails
+**Cause**: Missing dependencies or build errors
+
+**Solutions**:
+1. Check Node.js version (should be 18+)
+2. Check Python version (should be 3.11+)
+3. Verify all dependencies in requirements.txt
+4. Check frontend/package.json for errors
+
+## Architecture
+
+```
+User Browser
+     ↓
+  Render URL (https://your-app.onrender.com)
+     ↓
+  FastAPI Backend (serves both API and frontend)
+     ├── /api/* → API endpoints
+     ├── /assets/* → Frontend static files
+     └── /* → Frontend index.html
+     ↓
+  PostgreSQL Database
+```
+
+## Files Modified
+- `backend/app/database.py` - Use environment variable for DATABASE_URL
+- `backend/app/main.py` - Serve frontend static files
+- `backend/requirements.txt` - Added dependencies
+- `frontend/src/api/client.js` - Use relative URLs
+- `frontend/.env` - Empty VITE_API_URL for relative paths
+- `Procfile` - Build and start commands
+- `render.yaml` - Render configuration
+
+## Success Indicators
+1. ✅ Build completes without errors
+2. ✅ Service shows "Live" status in Render
+3. ✅ Opening service URL shows login page
+4. ✅ Login with test credentials works
+5. ✅ Dashboard loads after login
+
+If all indicators pass, deployment is successful!
