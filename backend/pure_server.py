@@ -34,6 +34,8 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             '/api/budgets/': [],
             '/api/rewards': [],
             '/api/dashboard-stats': {"total_balance": 0, "total_transactions": 0, "pending_bills": 0},
+            '/api/currency/supported': {"currencies": ["USD", "EUR", "GBP", "INR", "JPY"]},
+            '/api/currency/convert': {"converted_amount": 100.0, "rate": 1.0},
             '/api/profile': {"id": 1, "name": "User", "email": "user@example.com"},
             '/api/profile/kyc/status': {"status": "verified", "message": "KYC verified"},
             '/api/admin/system-summary': {"total_users": 100, "active_users": 80, "total_transactions": 500},
@@ -80,7 +82,7 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
         elif path == '/api/bills':
             response = {"id": 1, "name": data.get("name"), "amount": data.get("amount"), "dueDate": data.get("due_date")}
         elif path == '/api/accounts':
-            response = {"id": 1, "name": data.get("name"), "account_type": data.get("account_type"), "balance": 0}
+            response = {"id": 1, "name": data.get("name"), "account_type": data.get("account_type"), "balance": data.get("balance", 0), "masked_account": "****1234"}
         elif path == '/api/transactions':
             response = {"id": 1, "amount": data.get("amount"), "type": data.get("type"), "status": "completed"}
         elif path == '/api/budgets':
