@@ -23,6 +23,19 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
         self._set_headers()
         parsed_path = urlparse(self.path)
         path = parsed_path.path
+        query_params = parse_qs(parsed_path.query)
+        
+        # Handle currency convert with query params
+        if path == '/api/currency/convert':
+            amount = float(query_params.get('amount', [100])[0])
+            response = {
+                "converted_amount": amount * 83.0,
+                "rate": 83.0,
+                "from_currency": query_params.get('from', ['USD'])[0],
+                "to_currency": query_params.get('to', ['INR'])[0]
+            }
+            self.wfile.write(json.dumps(response).encode())
+            return
         
         # Mock responses for all GET endpoints
         responses = {
