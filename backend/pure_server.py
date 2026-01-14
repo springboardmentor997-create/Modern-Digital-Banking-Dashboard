@@ -28,6 +28,8 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 {"id": 1, "name": "Electricity Bill", "amount": 2500.0, "dueDate": "2024-01-15", "status": "pending", "autoPay": False},
                 {"id": 2, "name": "Internet Bill", "amount": 1200.0, "dueDate": "2024-01-20", "status": "paid", "autoPay": True}
             ]
+        elif parsed_path.path.startswith('/api/'):
+            response = {"message": "Endpoint available", "path": parsed_path.path}
         else:
             response = {"error": "Not found"}
         
@@ -58,8 +60,15 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 "access_token": "mock-token",
                 "user": {"id": 1, "email": data.get("email", "user@example.com"), "role": "user"}
             }
+        elif parsed_path.path == '/api/auth/signup' or parsed_path.path == '/api/auth/register':
+            response = {
+                "message": "User registered successfully",
+                "user": {"id": 1, "email": data.get("email", "user@example.com")}
+            }
         elif parsed_path.path == '/api/admin/transactions/import':
             response = {"message": "Transactions imported successfully", "count": 0}
+        elif parsed_path.path.startswith('/api/'):
+            response = {"message": "Success", "data": data}
         else:
             response = {"message": "Created"}
         
