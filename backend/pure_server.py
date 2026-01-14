@@ -26,16 +26,22 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             '/': {"message": "Banking Backend API is running"},
             '/api/expenses/': [],
             '/api/bills': [{"id": 1, "name": "Electricity", "amount": 2500, "dueDate": "2024-01-15", "status": "pending", "autoPay": False}],
+            '/api/bills/exchange-rates': {"USD": 83.0, "EUR": 90.0, "GBP": 105.0},
             '/api/accounts': [],
             '/api/accounts/': [],
             '/api/transactions': [],
             '/api/transactions/': [],
             '/api/budgets': [],
             '/api/budgets/': [],
+            '/api/budgets/categories': ["Food", "Transportation", "Entertainment", "Shopping", "Bills"],
             '/api/rewards': [],
             '/api/dashboard-stats': {"total_balance": 0, "total_transactions": 0, "pending_bills": 0},
             '/api/currency/supported': {"currencies": ["USD", "EUR", "GBP", "INR", "JPY"]},
             '/api/currency/convert': {"converted_amount": 100.0, "rate": 1.0, "from_currency": "USD", "to_currency": "INR"},
+            '/api/insights/': [],
+            '/api/insights/spending': [],
+            '/api/insights/categories': [],
+            '/api/insights/trends': [],
             '/api/profile': {"id": 1, "name": "User", "email": "user@example.com"},
             '/api/profile/kyc/status': {"status": "verified", "message": "KYC verified"},
             '/api/admin/system-summary': {"total_users": 100, "active_users": 80, "total_transactions": 500},
@@ -92,6 +98,8 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             response = {"id": 1, "amount": data.get("amount", 0), "description": data.get("description", ""), "category": data.get("category", "")}
         elif path == '/api/bills':
             response = {"id": 1, "name": data.get("name"), "amount": data.get("amount"), "dueDate": data.get("due_date")}
+        elif path in ['/api/alerts/bill-reminders', '/api/alerts/', '/api/alerts']:
+            response = {"message": "Success"}
         elif path == '/api/accounts' or path == '/api/accounts/':
             # Return the created account in an array
             response = [{"id": 1, "name": data.get("name"), "account_type": data.get("account_type"), "balance": data.get("balance", 0), "masked_account": "****1234", "user_id": 1}]
