@@ -65,6 +65,7 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                     "role": "user"
                 }
             }
+            print(f"Login response: {response}")  # Debug log
         elif path in ['/api/auth/signup', '/api/auth/register']:
             response = {
                 "message": "User registered successfully",
