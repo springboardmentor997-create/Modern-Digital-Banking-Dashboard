@@ -41,7 +41,6 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(response).encode())
 
     def do_POST(self):
-        self._set_headers()
         content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
         
@@ -84,6 +83,7 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
         else:
             response = {"message": "Success", "data": data}
         
+        self._set_headers()
         self.wfile.write(json.dumps(response).encode())
     
     def do_PUT(self):
