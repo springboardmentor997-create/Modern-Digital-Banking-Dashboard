@@ -2,13 +2,14 @@ import json
 import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
+from datetime import datetime
 
 class BankingAPIHandler(BaseHTTPRequestHandler):
-    def _set_headers(self):
-        self.send_response(200)
+    def _set_headers(self, status=200):
+        self.send_response(status)
         self.send_header('Content-type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         self.end_headers()
 
@@ -18,21 +19,25 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self._set_headers()
         parsed_path = urlparse(self.path)
+        path = parsed_path.path
         
-        if parsed_path.path == '/':
-            response = {"message": "Banking Backend API is running"}
-        elif parsed_path.path == '/api/expenses/':
-            response = []
-        elif parsed_path.path == '/api/bills':
-            response = [
-                {"id": 1, "name": "Electricity Bill", "amount": 2500.0, "dueDate": "2024-01-15", "status": "pending", "autoPay": False},
-                {"id": 2, "name": "Internet Bill", "amount": 1200.0, "dueDate": "2024-01-20", "status": "paid", "autoPay": True}
-            ]
-        elif parsed_path.path.startswith('/api/'):
-            response = {"message": "Endpoint available", "path": parsed_path.path}
-        else:
-            response = {"error": "Not found"}
+        # Mock responses for all GET endpoints
+        responses = {
+            '/': {"message": "Banking Backend API is running"},
+            '/api/expenses/': [],
+            '/api/bills': [{"id": 1, "name": "Electricity", "amount": 2500, "dueDate": "2024-01-15", "status": "pending", "autoPay": False}],
+            '/api/accounts': [{"id": 1, "name": "Savings", "account_type": "savings", "balance": 50000, "masked_account": "****1234"}],
+            '/api/transactions': [{"id": 1, "amount": 1000, "type": "credit", "date": datetime.now().isoformat()}],
+            '/api/budgets': [{"id": 1, "name": "Monthly", "amount": 30000, "spent": 15000, "category": "General"}],
+            '/api/profile': {"id": 1, "name": "User", "email": "user@example.com"},
+            '/api/profile/kyc/status': {"status": "verified", "message": "KYC verified"},
+            '/api/admin/system-summary': {"total_users": 100, "active_users": 80, "total_transactions": 500},
+            '/api/admin/users': [{"id": 1, "email": "user@example.com", "status": "active"}],
+            '/api/admin/accounts': [],
+            '/api/admin/transactions': [],
+        }
         
+        response = responses.get(path, {"message": "Success", "data": []})
         self.wfile.write(json.dumps(response).encode())
 
     def do_POST(self):
@@ -46,32 +51,49 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             data = {}
         
         parsed_path = urlparse(self.path)
+        path = parsed_path.path
         
-        if parsed_path.path == '/api/expenses/':
+        # Mock responses for all POST endpoints
+        if path == '/api/auth/login':
             response = {
-                "id": 1,
-                "amount": data.get("amount", 0),
-                "description": data.get("description", ""),
-                "category": data.get("category", ""),
-                "expense_date": "2024-01-01T00:00:00Z"
+                "access_token": "mock-token-" + str(datetime.now().timestamp()),
+                "token_type": "bearer",
+                "user": {
+                    "id": 1,
+                    "email": data.get("email", "user@example.com"),
+                    "name": "User",
+                    "role": "user"
+                }
             }
-        elif parsed_path.path == '/api/auth/login':
-            response = {
-                "access_token": "mock-token",
-                "user": {"id": 1, "email": data.get("email", "user@example.com"), "role": "user"}
-            }
-        elif parsed_path.path == '/api/auth/signup' or parsed_path.path == '/api/auth/register':
+        elif path in ['/api/auth/signup', '/api/auth/register']:
             response = {
                 "message": "User registered successfully",
-                "user": {"id": 1, "email": data.get("email", "user@example.com")}
+                "user": {"id": 1, "email": data.get("email")}
             }
-        elif parsed_path.path == '/api/admin/transactions/import':
-            response = {"message": "Transactions imported successfully", "count": 0}
-        elif parsed_path.path.startswith('/api/'):
-            response = {"message": "Success", "data": data}
+        elif path == '/api/expenses/':
+            response = {"id": 1, "amount": data.get("amount", 0), "description": data.get("description", ""), "category": data.get("category", "")}
+        elif path == '/api/bills':
+            response = {"id": 1, "name": data.get("name"), "amount": data.get("amount"), "dueDate": data.get("due_date")}
+        elif path == '/api/accounts':
+            response = {"id": 1, "name": data.get("name"), "account_type": data.get("account_type"), "balance": 0}
+        elif path == '/api/transactions':
+            response = {"id": 1, "amount": data.get("amount"), "type": data.get("type"), "status": "completed"}
+        elif path == '/api/budgets':
+            response = {"id": 1, "name": data.get("name"), "amount": data.get("amount"), "category": data.get("category")}
         else:
-            response = {"message": "Created"}
+            response = {"message": "Success", "data": data}
         
+        self.wfile.write(json.dumps(response).encode())
+    
+    def do_PUT(self):
+        self.do_POST()
+    
+    def do_PATCH(self):
+        self.do_POST()
+    
+    def do_DELETE(self):
+        self._set_headers()
+        response = {"message": "Deleted successfully"}
         self.wfile.write(json.dumps(response).encode())
 
 def run_server():
