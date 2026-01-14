@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Use environment variable for API URL, fallback to production URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://modern-digital-banking-dashboard-1-vg97.onrender.com";
+// Use environment variable for API URL, fallback to relative path for production
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
@@ -71,9 +71,8 @@ axiosClient.interceptors.response.use(
     } else if (status === 500) {
       console.error("🔥 Backend Error (500):", message);
     } else if (!error.response) {
-      console.error("🌐 Network Error: Backend server may be down");
-      console.error("💡 Please check if the backend server is running on https://modern-digital-banking-dashboard-1-vg97.onrender.com");
-      console.error("💡 If running locally, try: cd backend && python start_server.py");
+      console.error("🌐 Network Error: Cannot connect to backend server");
+      console.error("💡 If running locally, ensure backend is running: cd backend && python -m uvicorn app.main:app --reload");
     } else {
       console.error(`❌ API Error (${status}):`, message);
     }

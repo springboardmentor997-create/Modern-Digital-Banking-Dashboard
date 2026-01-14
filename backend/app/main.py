@@ -1,8 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Request, Response
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import uvicorn
 from sqlalchemy import text
+import os
+from pathlib import Path
 
 from app.database import engine, Base, SessionLocal, init_database
 
@@ -253,6 +257,20 @@ def debug_routes():
         if hasattr(route, 'methods') and hasattr(route, 'path'):
             routes.append({"path": route.path, "methods": list(route.methods)})
     return {"routes": routes}
+
+# Serve frontend static files
+frontend_dist = Path(__file__).parent.parent.parent / "frontend" / "dist"
+if frontend_dist.exists():
+    app.mount("/assets", StaticFiles(directory=str(frontend_dist / "assets")), name="assets")
+    
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        # Serve index.html for all non-API routes
+        if not full_path.startswith("api/"):
+            index_file = frontend_dist / "index.html"
+            if index_file.exists():
+                return FileResponse(index_file)
+        return {"error": "Not found"}
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
