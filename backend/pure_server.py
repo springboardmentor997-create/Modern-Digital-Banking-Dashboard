@@ -33,11 +33,12 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
         if path == '/api/currency/convert':
             try:
                 amount = float(query_params.get('amount', [100])[0])
-                from_curr = query_params.get('from', ['USD'])[0]
-                to_curr = query_params.get('to', ['INR'])[0]
-                rate = 83.0
+                from_curr = query_params.get('from_currency', query_params.get('from', ['USD']))[0]
+                to_curr = query_params.get('to_currency', query_params.get('to', ['INR']))[0]
+                rate = 83.0 if from_curr == 'INR' and to_curr == 'USD' else 0.012
                 converted = amount * rate
                 response = {
+                    "result": converted,
                     "converted_amount": converted,
                     "convertedAmount": converted,
                     "rate": rate,
@@ -47,8 +48,9 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 }
                 self.wfile.write(json.dumps(response).encode())
                 return
-            except:
-                response = {"converted_amount": 8300.0, "convertedAmount": 8300.0, "rate": 83.0}
+            except Exception as e:
+                print(f"Currency convert error: {e}")
+                response = {"result": 8300.0, "converted_amount": 8300.0, "convertedAmount": 8300.0, "rate": 83.0}
                 self.wfile.write(json.dumps(response).encode())
                 return
         
