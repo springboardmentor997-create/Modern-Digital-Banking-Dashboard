@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.database import get_db
@@ -68,8 +69,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             expires_delta=timedelta(hours=24)
         )
         
-        print(f"Login successful for: {user.email}, role: {user_role}")
-        return {
+        response_data = {
             "access_token": access_token,
             "user": {
                 "id": user.id, 
@@ -78,6 +78,10 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
                 "role": user_role
             }
         }
+        
+        print(f"Login successful for: {user.email}, role: {user_role}")
+        print(f"Returning response: {response_data}")
+        return JSONResponse(content=response_data)
     except HTTPException:
         raise
     except Exception as e:

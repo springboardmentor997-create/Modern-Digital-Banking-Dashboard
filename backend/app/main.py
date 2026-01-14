@@ -239,6 +239,10 @@ async def get_receipts_endpoint():
 
 
 
+@app.get("/api/test-json")
+def test_json():
+    return {"test": "data", "works": True}
+
 @app.get("/")
 def read_root():
     return {"message": "Banking System API is running", "status": "healthy", "version": "1.0.0"}
