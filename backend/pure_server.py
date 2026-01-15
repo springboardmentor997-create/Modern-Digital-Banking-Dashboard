@@ -85,10 +85,35 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             '/api/dashboard-stats': {"total_balance": 0, "total_transactions": 0, "pending_bills": 0},
             '/api/currency/supported': {"currencies": ["USD", "EUR", "GBP", "INR", "JPY"]},
             '/api/currency/convert': {"converted_amount": 100.0, "rate": 1.0, "from_currency": "USD", "to_currency": "INR"},
-            '/api/insights/': {"total_spent": 0, "categories": [], "trends": []},
-            '/api/insights/spending': {"total": 0, "by_category": []},
-            '/api/insights/categories': {"categories": []},
-            '/api/insights/trends': {"trends": []},
+            '/api/insights/': {
+                "income": 50000,
+                "expenses": 35000,
+                "net_flow": 15000,
+                "savings_rate": 30.0
+            },
+            '/api/insights/spending': {
+                "daily_burn_rate": 1166.67,
+                "projected_monthly_spend": 35000,
+                "top_merchants": [
+                    {"merchant": "Amazon", "amount": 5000},
+                    {"merchant": "Walmart", "amount": 3000}
+                ]
+            },
+            '/api/insights/categories': [
+                {"category": "Food & Dining", "amount": 12000, "percentage": 34.3},
+                {"category": "Transportation", "amount": 8000, "percentage": 22.9},
+                {"category": "Shopping", "amount": 7000, "percentage": 20.0},
+                {"category": "Bills", "amount": 5000, "percentage": 14.3},
+                {"category": "Entertainment", "amount": 3000, "percentage": 8.5}
+            ],
+            '/api/insights/trends': [
+                {"month": "Jan", "savings": 10000},
+                {"month": "Feb", "savings": 12000},
+                {"month": "Mar", "savings": 15000},
+                {"month": "Apr", "savings": 13000},
+                {"month": "May", "savings": 16000},
+                {"month": "Jun", "savings": 15000}
+            ],
             '/api/user/profile': self.current_user,
             '/api/profile': self.current_user,
             '/api/profile/kyc/status': {"status": "verified", "message": "KYC verified"},
