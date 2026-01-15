@@ -10,6 +10,7 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
     created_budgets = []
     created_bills = []
     created_expenses = []
+    created_transactions = []
     current_user = {"id": 1, "name": "Demo User", "email": "user@bank.com", "role": "user", "phone": "+1234567890"}
     
     def _set_headers(self, status=200):
@@ -64,15 +65,15 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             '/api/bills/exchange-rates': {"USD": 83.0, "EUR": 90.0, "GBP": 105.0},
             '/api/accounts': self.created_accounts if self.created_accounts else [],
             '/api/accounts/': self.created_accounts if self.created_accounts else [],
-            '/api/transactions': [
+            '/api/transactions': self.created_transactions if self.created_transactions else [
                 {"id": 1, "amount": 5000, "txn_type": "credit", "description": "Salary", "txn_date": "2024-01-15T00:00:00", "category": "Income", "merchant": "Company", "account_id": 1},
                 {"id": 2, "amount": 1200, "txn_type": "debit", "description": "Rent", "txn_date": "2024-01-10T00:00:00", "category": "Bills", "merchant": "Landlord", "account_id": 1}
             ],
-            '/api/transactions/': [
+            '/api/transactions/': self.created_transactions if self.created_transactions else [
                 {"id": 1, "amount": 5000, "txn_type": "credit", "description": "Salary", "txn_date": "2024-01-15T00:00:00", "category": "Income", "merchant": "Company", "account_id": 1},
                 {"id": 2, "amount": 1200, "txn_type": "debit", "description": "Rent", "txn_date": "2024-01-10T00:00:00", "category": "Bills", "merchant": "Landlord", "account_id": 1}
             ],
-            '/api/transactions/recent': [
+            '/api/transactions/recent': self.created_transactions if self.created_transactions else [
                 {"id": 1, "amount": 5000, "txn_type": "credit", "description": "Salary", "txn_date": "2024-01-15T00:00:00", "category": "Income", "merchant": "Company", "account_id": 1},
                 {"id": 2, "amount": 1200, "txn_type": "debit", "description": "Rent", "txn_date": "2024-01-10T00:00:00", "category": "Bills", "merchant": "Landlord", "account_id": 1}
             ],
@@ -217,8 +218,19 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             }
             self.created_accounts.append(account)
             response = [account]
-        elif path == '/api/transactions':
-            response = {"id": 1, "amount": data.get("amount"), "type": data.get("type"), "status": "completed"}
+        elif path == '/api/transactions' or path == '/api/transactions/':
+            transaction = {
+                "id": len(self.created_transactions) + 1,
+                "amount": data.get("amount", 0),
+                "txn_type": data.get("txn_type", "debit"),
+                "description": data.get("description", ""),
+                "category": data.get("category", "General"),
+                "merchant": data.get("merchant", ""),
+                "account_id": data.get("account_id", 1),
+                "txn_date": data.get("date", datetime.now().isoformat())
+            }
+            self.created_transactions.append(transaction)
+            response = transaction
         elif path == '/api/budgets' or path == '/api/budgets/':
             budget = {
                 "id": len(self.created_budgets) + 1,
