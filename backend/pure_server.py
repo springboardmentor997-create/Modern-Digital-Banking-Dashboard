@@ -11,6 +11,7 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
     created_bills = []
     created_expenses = []
     created_transactions = []
+    # Store current user as class variable so it persists across requests
     current_user = {"id": 1, "name": "Demo User", "email": "user@bank.com", "role": "user", "phone": "+1234567890"}
     
     def _set_headers(self, status=200):
@@ -115,8 +116,8 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 {"month": "May", "savings": 16000},
                 {"month": "Jun", "savings": 15000}
             ],
-            '/api/user/profile': self.current_user,
-            '/api/profile': self.current_user,
+            '/api/user/profile': BankingAPIHandler.current_user,
+            '/api/profile': BankingAPIHandler.current_user,
             '/api/profile/kyc/status': {"status": "verified", "message": "KYC verified"},
             '/api/admin/system-summary': {"total_users": 100, "active_users": 80, "total_transactions": 500},
             '/api/admin/users': [
@@ -163,8 +164,8 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 role = "user"
                 name = "Demo User"
             
-            # Store current user
-            self.current_user = {
+            # Store current user in class variable (persists across requests)
+            BankingAPIHandler.current_user = {
                 "id": 1,
                 "email": email,
                 "name": name,
@@ -175,7 +176,7 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
             response = {
                 "access_token": "mock-token-" + str(datetime.now().timestamp()),
                 "token_type": "bearer",
-                "user": self.current_user
+                "user": BankingAPIHandler.current_user
             }
             print(f"Login response: {response}")  # Debug log
         elif path in ['/api/auth/signup', '/api/auth/register']:
