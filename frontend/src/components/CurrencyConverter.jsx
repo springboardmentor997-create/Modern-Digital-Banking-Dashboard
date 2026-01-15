@@ -53,7 +53,17 @@ const CurrencyConverter = () => {
           amount: parseFloat(amount)
         }
       });
-      setConvertedAmount(response.data.result);
+      // Handle multiple possible response formats
+      const result = response.data.result || response.data.converted_amount || response.data.convertedAmount;
+      if (result) {
+        setConvertedAmount(result);
+      } else {
+        // Fallback calculation
+        const rates = { 'USD': { 'EUR': 0.85, 'INR': 83.0 }, 'EUR': { 'USD': 1.18, 'INR': 97.6 }, 'INR': { 'USD': 0.012, 'EUR': 0.010 } };
+        if (rates[fromCurrency] && rates[fromCurrency][toCurrency]) {
+          setConvertedAmount(parseFloat(amount) * rates[fromCurrency][toCurrency]);
+        }
+      }
     } catch (error) {
       console.error('Conversion failed:', error);
       // Fallback to simple conversion for demo
