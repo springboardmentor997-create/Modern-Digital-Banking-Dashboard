@@ -58,21 +58,23 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
         responses = {
             '/': {"message": "Banking Backend API is running"},
             '/api/expenses/': self.created_expenses if self.created_expenses else [],
+            '/api/expenses': self.created_expenses if self.created_expenses else [],
             '/api/bills': self.created_bills if self.created_bills else [],
+            '/api/bills/': self.created_bills if self.created_bills else [],
             '/api/bills/exchange-rates': {"USD": 83.0, "EUR": 90.0, "GBP": 105.0},
             '/api/accounts': self.created_accounts if self.created_accounts else [],
             '/api/accounts/': self.created_accounts if self.created_accounts else [],
             '/api/transactions': [
-                {"id": 1, "amount": 5000, "type": "credit", "description": "Salary", "date": "2024-01-15", "category": "Income"},
-                {"id": 2, "amount": 1200, "type": "debit", "description": "Rent", "date": "2024-01-10", "category": "Bills"}
+                {"id": 1, "amount": 5000, "txn_type": "credit", "description": "Salary", "txn_date": "2024-01-15T00:00:00", "category": "Income", "merchant": "Company", "account_id": 1},
+                {"id": 2, "amount": 1200, "txn_type": "debit", "description": "Rent", "txn_date": "2024-01-10T00:00:00", "category": "Bills", "merchant": "Landlord", "account_id": 1}
             ],
             '/api/transactions/': [
-                {"id": 1, "amount": 5000, "type": "credit", "description": "Salary", "date": "2024-01-15", "category": "Income"},
-                {"id": 2, "amount": 1200, "type": "debit", "description": "Rent", "date": "2024-01-10", "category": "Bills"}
+                {"id": 1, "amount": 5000, "txn_type": "credit", "description": "Salary", "txn_date": "2024-01-15T00:00:00", "category": "Income", "merchant": "Company", "account_id": 1},
+                {"id": 2, "amount": 1200, "txn_type": "debit", "description": "Rent", "txn_date": "2024-01-10T00:00:00", "category": "Bills", "merchant": "Landlord", "account_id": 1}
             ],
             '/api/transactions/recent': [
-                {"id": 1, "amount": 5000, "type": "credit", "description": "Salary", "date": "2024-01-15", "category": "Income"},
-                {"id": 2, "amount": 1200, "type": "debit", "description": "Rent", "date": "2024-01-10", "category": "Bills"}
+                {"id": 1, "amount": 5000, "txn_type": "credit", "description": "Salary", "txn_date": "2024-01-15T00:00:00", "category": "Income", "merchant": "Company", "account_id": 1},
+                {"id": 2, "amount": 1200, "txn_type": "debit", "description": "Rent", "txn_date": "2024-01-10T00:00:00", "category": "Bills", "merchant": "Landlord", "account_id": 1}
             ],
             '/api/budgets': self.created_budgets if self.created_budgets else [],
             '/api/budgets/': self.created_budgets if self.created_budgets else [],
