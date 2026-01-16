@@ -16,9 +16,10 @@ const UserManagement = () => {
   const loadUsers = async () => {
     try {
       const data = await adminApi.getAllUsers();
-      setUsers(data);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error loading users:', error);
+      setUsers([]);
     } finally {
       setLoading(false);
     }

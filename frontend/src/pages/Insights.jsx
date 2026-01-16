@@ -7,6 +7,7 @@ import {
 import Navbar from '../components/Navbar';
 import { getInsights, getSpendingAnalysis, getCategoryBreakdown, getMonthlyTrends } from '../api/insights';
 import { getTransactions } from '../api/transactions';
+import axiosClient from '../api/client';
 
 const Insights = () => {
   const [insights, setInsights] = useState({
@@ -83,15 +84,19 @@ const Insights = () => {
 
   const exportReport = async (type) => {
     try {
-      const response = await fetch(`/api/export/financial-summary/${type}`);
-      const blob = await response.blob();
+      const response = await axiosClient.get(`/api/export/financial-summary/${type}`, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([response.data]);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `financial-report.${type}`;
       a.click();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Export failed:', error);
+      alert('Export feature is not available at the moment');
     }
   };
 

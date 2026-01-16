@@ -20,9 +20,10 @@ const TransactionManagement = () => {
     const loadTransactions = async () => {
       try {
         const data = await adminApi.getAllTransactions();
-        setTransactions(data);
+        setTransactions(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error loading transactions:', error);
+        setTransactions([]);
       } finally {
         setLoading(false);
       }
