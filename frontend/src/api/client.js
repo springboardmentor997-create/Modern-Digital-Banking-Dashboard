@@ -1,14 +1,14 @@
 import axios from 'axios';
 
-// Use environment variable for API URL, fallback to relative path for production
-const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+// Use environment variable for API URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://modern-digital-banking-dashboard-1-vg97.onrender.com';
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 5000, // 5 second timeout (reduced from 10s)
+  timeout: 30000, // Increased timeout for slow backend responses
 });
 
 axiosClient.interceptors.request.use(
@@ -25,7 +25,7 @@ axiosClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    console.log(`🚀 Request: ${config.method.toUpperCase()} ${config.url}`);
+    console.log(`🚀 Request: ${config.method.toUpperCase()} ${config.baseURL}${config.url}`);
     return config;
   },
   (error) => {
@@ -47,7 +47,6 @@ axiosClient.interceptors.response.use(
       console.error("🔐 Unauthorized (401) Error Details:");
       console.error("- URL:", error.config?.url);
       console.error("- Method:", error.config?.method);
-      console.error("- Headers:", error.config?.headers);
       console.error("- Token in localStorage:", localStorage.getItem('token') ? 'EXISTS' : 'MISSING');
       console.error("- Message:", message);
       
@@ -59,20 +58,14 @@ axiosClient.interceptors.response.use(
         console.warn("🔐 Clearing invalid token and redirecting to login...");
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        
-        // Use React Router navigation instead of hard redirect to preserve state
-        // This prevents clearing React state unnecessarily
         window.location.replace('/login');
       }
     } else if (status === 422) {
       console.error(`❌ Validation Error (${status}):`, error.response?.data);
-      console.error('Request URL:', error.config?.url);
-      console.error('Request Data:', error.config?.data);
     } else if (status === 500) {
       console.error("🔥 Backend Error (500):", message);
     } else if (!error.response) {
       console.error("🌐 Network Error: Cannot connect to backend server");
-      console.error("💡 If running locally, ensure backend is running: cd backend && python -m uvicorn app.main:app --reload");
     } else {
       console.error(`❌ API Error (${status}):`, message);
     }
