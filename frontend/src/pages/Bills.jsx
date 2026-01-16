@@ -3,10 +3,9 @@ import { Calendar, CheckCircle, AlertCircle, Plus, Bell, DollarSign } from 'luci
 import Navbar from '../components/Navbar';
 import Table from '../components/Table';
 import Loader from '../components/Loader';
-// Import only existing files
 import { getBills, createBill, fetchExchangeRates } from "../api/bills";
 import { checkBillReminders } from "../api/alerts";
-import NotificationService from "../api/NotificationService";
+import axiosClient from '../api/client';
 const Bills = () => {
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,25 +63,16 @@ const Bills = () => {
 
   const toggleAutoPay = async (billId) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/bills/${billId}/autopay`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await axiosClient.patch(`/api/bills/${billId}/autopay`);
       
-      if (response.ok) {
-        const result = await response.json();
-        // Update local state
+      if (response.status === 200) {
+        const result = response.data;
         setBills(bills.map(bill => 
           bill.id === billId 
             ? { ...bill, autoPay: result.autoPay }
             : bill
         ));
         alert(result.message);
-      } else {
-        throw new Error('Failed to update auto-pay setting');
       }
     } catch (error) {
       console.error('Error toggling auto-pay:', error);
