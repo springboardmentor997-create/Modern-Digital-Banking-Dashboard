@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Union
-from jose import jwt, JWTError
+import jwt
 from app.config import settings
 
 # --- CONFIGURATION ---
@@ -44,21 +44,14 @@ def create_refresh_token(data: dict, expires_delta: Union[timedelta, None] = Non
 # --- VERIFY TOKEN ---
 def verify_token(token: str, credential_exception):
     try:
-        # Decode using the secret key
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
-        
-        # Extract user_id
-        user_id: str = payload.get("sub") # ✅ Changed 'user_id' to 'sub' (Standard JWT claim)
-        
-        # If 'sub' is missing, try 'user_id' just in case your login logic uses that
+        user_id: str = payload.get("sub")
         if user_id is None:
              user_id = payload.get("user_id")
-
         if user_id is None:
             raise credential_exception
-            
         return user_id
-    except JWTError:
+    except jwt.InvalidTokenError:
         raise credential_exception
 
 def decode_jwt(token: str) -> dict:
@@ -66,5 +59,5 @@ def decode_jwt(token: str) -> dict:
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except JWTError as e:
-        raise JWTError(f"Invalid token: {e}")
+    except jwt.InvalidTokenError as e:
+        raise Exception(f"Invalid token: {e}")

@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
-from typing import Union, Any  # <--- Fixes the 'Any' error
-from jose import jwt
+from typing import Union, Any
+import jwt
 from passlib.context import CryptContext
 
 # --- CONFIGURATION ---
