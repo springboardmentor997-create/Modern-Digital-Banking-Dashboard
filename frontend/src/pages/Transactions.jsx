@@ -41,7 +41,6 @@ const Transactions = () => {
 
   const fetchData = async () => {
     try {
-      // Build query parameters for filtering
       const params = new URLSearchParams();
       if (filters.account_id) params.append('account_id', filters.account_id);
       if (filters.category) params.append('category', filters.category);
@@ -55,9 +54,11 @@ const Transactions = () => {
         axiosClient.get('/api/accounts/')
       ]);
       
-      let filteredTransactions = transactionsRes.data;
+      console.log('✅ Response: 200 /api/transactions/', transactionsRes.data);
+      console.log('✅ Response: 200 /api/accounts/', accountsRes.data);
       
-      // Apply date filtering on frontend if specified
+      let filteredTransactions = Array.isArray(transactionsRes.data) ? transactionsRes.data : [];
+      
       if (filters.date_from || filters.date_to) {
         filteredTransactions = filteredTransactions.filter(transaction => {
           const txnDate = new Date(transaction.txn_date);
@@ -71,10 +72,12 @@ const Transactions = () => {
       }
       
       setTransactions(filteredTransactions);
-      setAccounts(accountsRes.data);
+      setAccounts(Array.isArray(accountsRes.data) ? accountsRes.data : []);
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to load data from server');
+      setTransactions([]);
+      setAccounts([]);
     } finally {
       setLoading(false);
     }
