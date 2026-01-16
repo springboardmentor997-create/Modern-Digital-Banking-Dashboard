@@ -1,5 +1,5 @@
 fastapi==0.104.1
-uvicorn==0.24.0
+uvicorn[standard]==0.24.0
 sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
 python-multipart==0.0.6
@@ -7,5 +7,7 @@ pydantic==2.5.0
 pydantic-settings==2.1.0
 python-dotenv==1.0.0
 aiofiles==23.2.1
-passlib[bcrypt]==1.7.4
+# Use PyJWT instead of python-jose to avoid Rust dependencies
 PyJWT==2.8.0
+# Use passlib without bcrypt extra to avoid Rust compilation
+passlib==1.7.4
