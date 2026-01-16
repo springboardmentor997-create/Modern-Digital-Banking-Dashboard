@@ -101,7 +101,7 @@ const TransactionManagement = () => {
           
           // Reload transactions after import
           const data = await adminApi.getAllTransactions();
-          setTransactions(data);
+          setTransactions(Array.isArray(data) ? data : []);
           
           setShowImportModal(false);
           setImportFile(null);
