@@ -145,7 +145,7 @@ const Dashboard = () => {
         fontSize="12"
         fontWeight="bold"
       >
-        {`${(percent * 100).toFixed(0)}%`}
+        {`${((percent || 0) * 100).toFixed(0)}%`}
       </text>
     );
   };
@@ -176,25 +176,25 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Total Balance"
-            value={formatCurrency(totalBalance)}
+            value={formatCurrency(totalBalance || 0)}
             icon={DollarSign}
             gradient="from-blue-500 to-blue-600"
           />
           <StatCard
             title="This Month Income"
-            value={formatCurrency(dashboardStats.income_this_month || totalIncome)}
+            value={formatCurrency(dashboardStats.income_this_month || totalIncome || 0)}
             icon={TrendingUp}
             gradient="from-green-500 to-green-600"
           />
           <StatCard
             title="This Month Expenses"
-            value={formatCurrency(dashboardStats.expenses_this_month || totalExpense)}
+            value={formatCurrency(dashboardStats.expenses_this_month || totalExpense || 0)}
             icon={TrendingDown}
             gradient="from-red-500 to-red-600"
           />
           <StatCard
             title="Total Accounts"
-            value={accounts.length}
+            value={accounts.length || 0}
             icon={CreditCard}
             gradient="from-purple-500 to-purple-600"
           />

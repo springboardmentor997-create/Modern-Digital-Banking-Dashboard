@@ -93,8 +93,8 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 '/api/budgets/': self.created_budgets if self.created_budgets else [],
                 '/api/budgets/categories': ["Food", "Transportation", "Entertainment", "Shopping", "Bills"],
                 '/api/rewards': [
-                    {"id": 1, "title": "Welcome Bonus", "points": 500, "status": "active", "given_by_admin": True, "admin_message": "Welcome to our bank!", "points_balance": 500},
-                    {"id": 2, "title": "Loyalty Reward", "points": 1000, "status": "active", "given_by_admin": True, "admin_message": "Thank you for being with us.", "points_balance": 1000}
+                    {"id": 1, "title": "Welcome Bonus", "points": 500, "status": "active", "given_by_admin": True, "admin_message": "Welcome to our bank!", "points_balance": 500, "created_at": "2024-01-01T12:00:00"},
+                    {"id": 2, "title": "Loyalty Reward", "points": 1000, "status": "active", "given_by_admin": True, "admin_message": "Thank you for being with us.", "points_balance": 1000, "created_at": "2024-01-15T12:00:00"}
                 ],
                 '/api/alerts': self.created_alerts,
                 '/api/alerts/': self.created_alerts,
@@ -122,7 +122,6 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 '/api/auditor/user-activity-report': [],
                 '/api/auditor/alerts': self.created_alerts,
                 '/api/currency/supported': {"currencies": ["USD", "EUR", "GBP", "INR", "JPY"]},
-                '/api/currency/convert': {"converted_amount": 100.0, "rate": 1.0, "from_currency": "USD", "to_currency": "INR"},
                 '/api/insights/': {
                     "income": 50000,
                     "expenses": 35000,
@@ -152,6 +151,7 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                     {"month": "May", "savings": 16000},
                     {"month": "Jun", "savings": 15000}
                 ],
+                '/api/insights/budgets': [],
                 '/api/user/profile': BankingAPIHandler.current_user,
                 '/api/profile': BankingAPIHandler.current_user,
                 '/api/profile/kyc/status': {"status": "verified", "message": "KYC verified"},
@@ -177,12 +177,22 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
         if not file_path:
             file_path = 'index.html'
         
-        # Look in frontend/dist
-        full_path = os.path.join(os.getcwd(), 'frontend', 'dist', file_path)
+        # Calculate base directory relative to the script location
+        # Script is in frontend/backend/pure_server.py
+        # Dist is in frontend/frontend/dist/
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        backend_dir = script_dir # This is backend/
+        root_dir = os.path.dirname(backend_dir) # This is frontend/ (the root)
+        dist_dir = os.path.join(root_dir, 'frontend', 'dist')
         
-        # If path doesn't exist, serve index.html (for SPA routing)
-        if not os.path.exists(full_path) or os.path.isdir(full_path):
-            full_path = os.path.join(os.getcwd(), 'frontend', 'dist', 'index.html')
+        full_path = os.path.join(dist_dir, file_path)
+        
+        # Check if it's a request for a static asset (has extension)
+        is_asset = '.' in file_path.split('/')[-1]
+        
+        # If it's not a known file and not an API call, serve index.html (SPA routing)
+        if not os.path.exists(full_path) or not is_asset:
+            full_path = os.path.join(dist_dir, 'index.html')
         
         if os.path.exists(full_path):
             status = 200
@@ -249,7 +259,6 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 "token_type": "bearer",
                 "user": BankingAPIHandler.current_user
             }
-            print(f"Login response: {response}")  # Debug log
         elif path in ['/api/auth/signup', '/api/auth/register']:
             response = {
                 "message": "User registered successfully",
@@ -345,7 +354,9 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
         # Handle PATCH /api/bills/{id}/autopay
         if '/api/bills/' in path and '/autopay' in path:
             try:
-                bill_id = int(path.split('/')[3])
+                # Path format: /api/bills/1/autopay
+                parts = path.split('/')
+                bill_id = int(parts[3])
                 # Find and update the bill
                 for bill in self.created_bills:
                     if bill['id'] == bill_id:
@@ -358,8 +369,6 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                         self.wfile.write(json.dumps(response).encode())
                         return
                 
-                # If not found in created_bills, it might be an initial bill
-                # But we initialized created_bills now, so it should be there.
                 response = {"message": "Bill not found", "autoPay": False}
                 self._set_headers(404)
                 self.wfile.write(json.dumps(response).encode())
@@ -369,7 +378,8 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps(response).encode())
         elif '/api/alerts/' in path and '/read' in path:
             try:
-                alert_id = int(path.split('/')[3])
+                parts = path.split('/')
+                alert_id = int(parts[3])
                 for alert in self.created_alerts:
                     if alert['id'] == alert_id:
                         alert['read'] = True
@@ -394,5 +404,4 @@ def run_server():
     server.serve_forever()
 
 if __name__ == '__main__':
-    run_server()#      
- 
+    run_server()

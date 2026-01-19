@@ -65,14 +65,26 @@ const Bills = () => {
     try {
       const response = await axiosClient.patch(`/api/bills/${billId}/autopay`);
       
-      if (response.status === 200) {
+      if (response && response.status === 200) {
         const result = response.data;
-        setBills(bills.map(bill => 
-          bill.id === billId 
-            ? { ...bill, autoPay: result.autoPay }
-            : bill
-        ));
-        alert(result.message);
+        if (result && result.autoPay !== undefined) {
+          setBills(prevBills => prevBills.map(bill => 
+            bill.id === billId 
+              ? { ...bill, autoPay: result.autoPay }
+              : bill
+          ));
+          if (result.message) {
+            alert(result.message);
+          }
+        } else {
+          console.warn('Auto-pay response missing expected data:', result);
+          // Fallback toggle if data is missing but status is 200
+          setBills(prevBills => prevBills.map(bill => 
+            bill.id === billId 
+              ? { ...bill, autoPay: !bill.autoPay }
+              : bill
+          ));
+        }
       }
     } catch (error) {
       console.error('Error toggling auto-pay:', error);

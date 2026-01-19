@@ -58,14 +58,14 @@ const Insights = () => {
       }
 
       setInsights({
-        cashFlow,
-        topMerchants: spending.top_merchants || [],
+        cashFlow: cashFlow || { income: 0, expenses: 0, net_flow: 0, savings_rate: 0 },
+        topMerchants: (spending && spending.top_merchants) || [],
         burnRate: {
-          daily_burn_rate: spending.daily_burn_rate || 0,
-          projected_monthly_spend: spending.projected_monthly_spend || 0
+          daily_burn_rate: (spending && spending.daily_burn_rate) || 0,
+          projected_monthly_spend: (spending && spending.projected_monthly_spend) || 0
         },
-        categoryBreakdown: categories,
-        savingsTrend: trends
+        categoryBreakdown: Array.isArray(categories) ? categories : [],
+        savingsTrend: Array.isArray(trends) ? trends : []
       });
     } catch (error) {
       console.error('Failed to fetch insights:', error);
@@ -174,11 +174,11 @@ const Insights = () => {
           <div className="space-y-3">
             <div>
               <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Daily Average</p>
-              <p className="text-2xl font-bold text-gray-900">₹{insights.burnRate?.daily_burn_rate?.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-gray-900">₹{(insights.burnRate?.daily_burn_rate || 0).toFixed(2)}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Projected Monthly</p>
-              <p className="text-xl font-semibold text-gray-700">₹{insights.burnRate?.projected_monthly_spend?.toFixed(2)}</p>
+              <p className="text-xl font-semibold text-gray-700">₹{(insights.burnRate?.projected_monthly_spend || 0).toFixed(2)}</p>
             </div>
           </div>
         </div>
@@ -188,7 +188,7 @@ const Insights = () => {
           <PieChart className="text-purple-600 mb-2" size={32} />
           <h3 className="text-lg font-semibold text-gray-800">Savings Rate</h3>
           <div className="text-5xl font-extrabold text-purple-600 my-2">
-            {insights.cashFlow?.savings_rate?.toFixed(1)}%
+            {(insights.cashFlow?.savings_rate || 0).toFixed(1)}%
           </div>
           <p className="text-gray-500 text-sm">of your income is saved</p>
         </div>
@@ -204,7 +204,7 @@ const Insights = () => {
           </div>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height={256}>
-              <AreaChart data={insights.savingsTrend} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+              <AreaChart data={insights.savingsTrend || []} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                 <defs>
                   <linearGradient id="colorSavings" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
@@ -225,17 +225,17 @@ const Insights = () => {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold mb-6 text-gray-800">Spending Breakdown</h3>
           <div className="space-y-5">
-            {insights.categoryBreakdown?.length > 0 ? (
-              insights.categoryBreakdown.map((category, index) => (
+            {(insights.categoryBreakdown || []).length > 0 ? (
+              (insights.categoryBreakdown || []).map((category, index) => (
                 <div key={index} className="space-y-1">
                   <div className="flex justify-between text-sm">
                     <span className="font-medium text-gray-700">{category.category}</span>
-                    <span className="text-gray-900 font-bold">₹{category.amount?.toFixed(2)}</span>
+                    <span className="text-gray-900 font-bold">₹{(category.amount || 0).toFixed(2)}</span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2.5">
                     <div
                       className="bg-blue-500 h-2.5 rounded-full transition-all duration-500"
-                      style={{ width: `${category.percentage}%` }}
+                      style={{ width: `${category.percentage || 0}%` }}
                     ></div>
                   </div>
                 </div>
