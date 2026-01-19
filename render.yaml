@@ -7,7 +7,10 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://modern-digital-banking-dashboard-1-vg97.onrender.com
+    headers:
+      - key: X-Frame-Options
+        value: DENY
     routes:
       - type: rewrite
-        source: /*
-        destination: /index.html
+        source: "/*"
+        destination: "/index.html"
