@@ -10,11 +10,32 @@ export const login = async (credentials) => {
     password: credentials.password
   };
   console.log('Login request data:', loginData);
-  const response = await axiosClient.post('/api/auth/login', loginData);
-  console.log('Login response data:', response.data);
-  console.log('Has access_token?', !!response.data?.access_token);
-  console.log('Has user?', !!response.data?.user);
-  return response.data;
+  
+  try {
+    const response = await axiosClient.post('/api/auth/login', loginData);
+    console.log('Login response data:', response.data);
+    console.log('Has access_token?', !!response.data?.access_token);
+    console.log('Has user?', !!response.data?.user);
+    
+    if (!response.data?.access_token) {
+      console.error('Backend returned no access_token:', response.data);
+      throw new Error('Backend did not return access token');
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('Login API error:', error);
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      throw new Error('Connection timeout - backend may be down');
+    }
+    if (error.code === 'ERR_NETWORK' || !error.response) {
+      throw new Error('Cannot connect to backend server');
+    }
+    if (error.response?.status === 404) {
+      throw new Error('Login endpoint not found - check backend URL');
+    }
+    throw error;
+  }
 };
 
 export const signup = async (data) => {
