@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import datetime
 from enum import Enum
 
+
 class DocumentTypeEnum(str, Enum):
     aadhaar = "aadhaar"
     pan = "pan"
@@ -10,11 +11,13 @@ class DocumentTypeEnum(str, Enum):
     driving_license = "driving_license"
     voter_id = "voter_id"
 
+
 class KYCStatusEnum(str, Enum):
     pending = "pending"
     under_review = "under_review"
     verified = "verified"
     rejected = "rejected"
+
 
 class KYCSubmissionSchema(BaseModel):
     full_name: str
@@ -23,7 +26,7 @@ class KYCSubmissionSchema(BaseModel):
     phone: str
     document_type: DocumentTypeEnum
     document_number: str
-    
+
     @field_validator('document_number')
     def validate_document_number(cls, v, info):
         doc_type = info.data.get('document_type')
@@ -39,6 +42,7 @@ class KYCSubmissionSchema(BaseModel):
             raise ValueError('Phone number must be 10 digits')
         return v
 
+
 class KYCDocumentResponse(BaseModel):
     id: int
     full_name: str
@@ -48,19 +52,21 @@ class KYCDocumentResponse(BaseModel):
     submitted_at: datetime
     verification_date: Optional[datetime]
     rejection_reason: Optional[str]
-    
+
     class Config:
         from_attributes = True
+
 
 class KYCVerificationSchema(BaseModel):
     action: str  # "approved", "rejected", "requested_changes"
     comments: Optional[str] = None
-    
+
     @field_validator('action')
     def validate_action(cls, v):
         if v not in ['approved', 'rejected', 'requested_changes']:
             raise ValueError('Action must be approved, rejected, or requested_changes')
         return v
+
 
 class KYCStatusResponse(BaseModel):
     kyc_status: str

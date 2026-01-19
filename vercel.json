@@ -8,7 +8,7 @@
       "destination": "https://modern-digital-banking-dashboard-1-vg97.onrender.com/api/$1"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

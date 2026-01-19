@@ -111,7 +111,13 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
             "access_token": access_token, 
             "refresh_token": refresh_token,
             "token_type": "bearer", 
-            "user": {"email": new_user.email, "name": new_user.name}
+            "user": {
+                "id": new_user.id,
+                "email": new_user.email, 
+                "name": new_user.name,
+                "role": new_user.role,
+                "kyc_status": new_user.kyc_status
+            }
         }
     except HTTPException:
         raise
@@ -155,7 +161,9 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
             "user": {
                 "id": user.id,
                 "email": user.email, 
-                "name": getattr(user, 'full_name', 'User') or getattr(user, 'name', 'User')
+                "name": getattr(user, 'full_name', 'User') or getattr(user, 'name', 'User'),
+                "role": user.role,
+                "kyc_status": user.kyc_status
             }
         }
 

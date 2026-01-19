@@ -319,7 +319,7 @@ const SmartExpenseTracker = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-green-100">
+    <div className="min-h-screen bg-linear-to-br from-green-50 via-blue-50 to-green-100">
       <Navbar title="Smart Expense Tracker" />
       
       <div className="p-4 space-y-4">
@@ -583,19 +583,19 @@ const SmartExpenseTracker = () => {
                 <div className="space-y-6">
                   {/* Summary Cards */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-xl">
+                    <div className="bg-linear-to-r from-blue-500 to-blue-600 text-white p-4 rounded-xl">
                       <div className="text-2xl font-bold">₹{(analytics?.total_expenses || 0).toFixed(2)}</div>
                       <div className="text-blue-100">Total Expenses</div>
                     </div>
-                    <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-xl">
+                    <div className="bg-linear-to-r from-green-500 to-green-600 text-white p-4 rounded-xl">
                       <div className="text-2xl font-bold">₹{(analytics?.average_daily || 0).toFixed(2)}</div>
                       <div className="text-green-100">Daily Average</div>
                     </div>
-                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-xl">
+                    <div className="bg-linear-to-r from-purple-500 to-purple-600 text-white p-4 rounded-xl">
                       <div className="text-2xl font-bold">{analytics?.expense_count || 0}</div>
                       <div className="text-purple-100">Total Transactions</div>
                     </div>
-                    <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-xl">
+                    <div className="bg-linear-to-r from-red-500 to-red-600 text-white p-4 rounded-xl">
                       <div className="text-2xl font-bold">₹{(analytics?.highest_expense || 0).toFixed(2)}</div>
                       <div className="text-red-100">Highest Expense</div>
                     </div>

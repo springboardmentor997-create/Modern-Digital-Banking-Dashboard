@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
       console.log('AuthContext: access_token exists?', !!response?.access_token);
       console.log('AuthContext: user exists?', !!response?.user);
       
-      if (response?.access_token) {
+      if (response?.access_token && response?.user) {
         console.log('AuthContext: Saving token and user to localStorage');
         localStorage.setItem("token", response.access_token);
         localStorage.setItem("user", JSON.stringify(response.user));
@@ -46,7 +46,9 @@ export const AuthProvider = ({ children }) => {
         console.log('AuthContext: Login successful, returning true');
         return true; 
       }
-      console.log('AuthContext: No access_token in response, returning false');
+      
+      console.log('AuthContext: No access_token or user in response, returning false');
+      if (!response?.user) console.warn('AuthContext: User object missing in response');
       return false;
     } catch (error) {
       console.error('AuthContext: Login error:', error);
@@ -57,7 +59,7 @@ export const AuthProvider = ({ children }) => {
   const signup = async (data) => {
     try {
       const response = await signupApi(data);
-      if (response?.access_token) {
+      if (response?.access_token && response?.user) {
         localStorage.setItem("token", response.access_token);
         localStorage.setItem("user", JSON.stringify(response.user));
         setToken(response.access_token);
