@@ -187,7 +187,7 @@ const Profile = () => {
                       <div className="flex items-center gap-3">
                         <div className="text-right">
                           <div className="text-sm text-gray-500">Balance</div>
-                          <div className="font-semibold">${acc.balance.toFixed(2)}</div>
+                          <div className="font-semibold">₹{(Number(acc.balance) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
                         </div>
 
                         {acc.is_active ? (

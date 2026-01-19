@@ -134,7 +134,7 @@ const AccountProfile = () => {
                     <div>
                       <p className="font-medium text-gray-900">{transaction.description}</p>
                       <p className="text-sm text-gray-600">
-                        {new Date(transaction.date).toLocaleDateString()}
+                        {transaction.date ? new Date(transaction.date).toLocaleDateString() : 'N/A'}
                       </p>
                     </div>
                   </div>
@@ -145,7 +145,7 @@ const AccountProfile = () => {
                   }`}>
                     <p className="font-bold">
                       {transaction.txn_type === 'credit' || transaction.type === 'credit' ? '+' : '-'}
-                      ₹{parseFloat(transaction.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      ₹{parseFloat(transaction.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                 </div>

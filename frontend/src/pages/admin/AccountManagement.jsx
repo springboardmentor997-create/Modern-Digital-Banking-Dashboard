@@ -166,7 +166,7 @@ const AccountManagement = () => {
                     {account.account_number ? `****${account.account_number.slice(-4)}` : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(account.created_at).toLocaleDateString()}
+                    {account.created_at ? new Date(account.created_at).toLocaleDateString() : 'N/A'}
                   </td>
                 </tr>
               ))}

@@ -45,10 +45,13 @@ async def get_all_users(db: Session = Depends(get_db), admin: User = Depends(req
         "id": u.id,
         "name": u.name or "N/A",
         "email": u.email,
-        "role": u.role.value if u.role else "user",
+        "role": u.role.value if hasattr(u.role, 'value') else str(u.role),
         "is_active": u.is_active,
-        "kyc_status": u.kyc_status.value if u.kyc_status else "unverified",
-        "created_at": u.created_at
+        "kyc_status": u.kyc_status.value if hasattr(u.kyc_status, 'value') else str(u.kyc_status),
+        "last_login": u.last_login,
+        "created_at": u.created_at,
+        "accounts_count": len(u.accounts) if hasattr(u, 'accounts') else 0,
+        "transactions_count": len(u.transactions) if hasattr(u, 'transactions') else 0
     } for u in users]
 
 @router.get("/accounts")
@@ -57,24 +60,32 @@ async def get_all_accounts(db: Session = Depends(get_db), admin: User = Depends(
     print(f"DEBUG: Found {len(accounts)} accounts in database")
     return [{
         "id": a.id,
-        "user_name": a.user.name or "N/A",
-        "user_email": a.user.email,
-        "account_type": a.account_type.value if a.account_type else "savings",
+        "user_id": a.user_id,
+        "user_name": a.user.name if a.user else "N/A",
+        "user_email": a.user.email if a.user else "N/A",
+        "account_type": a.account_type.value if hasattr(a.account_type, 'value') else str(a.account_type),
         "balance": float(a.balance) if a.balance else 0.0,
         "bank_name": a.bank_name or "Asunova Bank",
-        "account_number": a.masked_account or "N/A",
+        "account_number": a.account_number or "N/A",
+        "masked_account": a.masked_account or "N/A",
+        "is_active": a.is_active,
         "created_at": a.created_at
     } for a in accounts]
 
 @router.get("/transactions")
-async def get_all_transactions(db: Session = Depends(get_db)):
+async def get_all_transactions(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     transactions = db.query(Transaction).join(Account).join(User).all()
     return [{
         "id": t.id,
-        "user_name": t.account.user.name or "N/A",
+        "user_id": t.user_id,
+        "user_name": t.account.user.name if t.account and t.account.user else "N/A",
+        "account_id": t.account_id,
         "amount": float(t.amount) if t.amount else 0.0,
-        "txn_type": t.txn_type.value if t.txn_type else "debit",
+        "txn_type": t.txn_type.value if hasattr(t.txn_type, 'value') else str(t.txn_type),
+        "category": t.category,
         "description": t.description or "N/A",
+        "merchant": t.merchant,
+        "status": t.status,
         "txn_date": t.txn_date
     } for t in transactions]
 
@@ -121,7 +132,7 @@ async def get_suspicious_activity(db: Session = Depends(get_db), admin: User = D
     for txn in large_txns:
         suspicious.append({
             "type": "large_transaction",
-            "user_name": txn.account.user.name,
+            "user_name": txn.account.user.name if txn.account and txn.account.user else "N/A",
             "amount": float(txn.amount),
             "description": txn.description,
             "date": txn.txn_date,
@@ -260,8 +271,8 @@ async def get_financial_report(db: Session = Depends(get_db), admin: User = Depe
     ).limit(10).all()
     
     top_accounts_data = [{
-        "user_name": user.name,
-        "user_email": user.email,
+        "user_name": user.name if user else "N/A",
+        "user_email": user.email if user else "N/A",
         "account_type": account.account_type,
         "balance": float(account.balance)
     } for account, user in top_accounts]
@@ -284,15 +295,15 @@ async def get_audit_logs(db: Session = Depends(get_db), admin: User = Depends(re
     
     user_activities = [{
         "type": "user_registration",
-        "user_name": user.name,
-        "user_email": user.email,
+        "user_name": user.name if user else "N/A",
+        "user_email": user.email if user else "N/A",
         "timestamp": user.created_at,
         "details": f"New user registered with role: {user.role}"
     } for user in recent_users]
     
     transaction_activities = [{
         "type": "transaction",
-        "user_name": user.name,
+        "user_name": user.name if user else "N/A",
         "timestamp": transaction.txn_date,
         "details": f"{transaction.txn_type.upper()} of ₹{transaction.amount} - {transaction.description}"
     } for transaction, user in recent_transactions]
@@ -347,6 +358,29 @@ async def get_system_health(db: Session = Depends(get_db), admin: User = Depends
             "last_checked": datetime.now().isoformat()
         }
 
+
+@router.put("/users/{user_id}/activate")
+async def activate_user(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.is_active = True
+    db.commit()
+    return {"message": "User activated successfully"}
+
+@router.put("/users/{user_id}/deactivate")
+async def deactivate_user(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent admin from deactivating themselves
+    if user.id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot deactivate your own admin account")
+        
+    user.is_active = False
+    db.commit()
+    return {"message": "User deactivated successfully"}
 
 # Bulk user operations
 @router.post("/users/bulk-activate")

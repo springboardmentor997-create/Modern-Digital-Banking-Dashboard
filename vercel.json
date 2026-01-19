@@ -1,9 +1,12 @@
 {
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
-  "framework": null,
-  "installCommand": "echo 'Skip root install'",
+  "cleanUrls": true,
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://modern-digital-banking-dashboard-1-vg97.onrender.com/api/$1"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

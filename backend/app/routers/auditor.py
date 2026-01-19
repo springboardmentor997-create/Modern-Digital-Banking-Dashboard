@@ -6,16 +6,13 @@ from app.models.user import User, KYCStatus, UserRole
 from app.models.account import Account
 from app.models.transaction import Transaction
 from app.models.alert import Alert
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_auditor
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/auditor", tags=["auditor"])
 
-def require_auditor(current_user: User = Depends(get_current_user)):
-    if current_user.role != "auditor":
-        raise HTTPException(status_code=403, detail="Auditor access required")
-    return current_user
+# Role check is now handled by require_auditor in dependencies.py
 
 # Read-Only User Data
 @router.get("/users")

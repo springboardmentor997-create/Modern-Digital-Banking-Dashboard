@@ -188,7 +188,7 @@ const Accounts = () => {
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-400 font-mono">{generateAccountHash(account.id)}</span>
           {visibleBalances.has(account.id) ? (
-            <span>₹{parseFloat(account.balance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+            <span>₹{(Number(account.balance) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
           ) : (
             <span>₹****.**</span>
           )}

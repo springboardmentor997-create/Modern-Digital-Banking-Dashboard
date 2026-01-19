@@ -61,6 +61,10 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             print(f"Password verification failed for: {request.email}")
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
+        # Update last login
+        user.last_login = datetime.utcnow()
+        db.commit()
+        
         # Create JWT token
         user_role = user.role.value if hasattr(user.role, 'value') else str(user.role) if hasattr(user, 'role') else 'user'
         access_token = create_access_token(

@@ -255,9 +255,9 @@ const RewardsManagement = () => {
                   </td>
                   <td className="py-4 px-4">
                     <span className="font-semibold text-gray-900">
-                      {reward.reward_type === 'cashback' ? `₹${parseFloat(reward.amount).toLocaleString()}` : 
-                       reward.reward_type === 'points' ? `${reward.amount} pts` : 
-                       `₹${parseFloat(reward.amount).toLocaleString()}`}
+                      {reward.reward_type === 'cashback' ? `₹${(parseFloat(reward.amount) || 0).toLocaleString()}` : 
+                       reward.reward_type === 'points' ? `${reward.amount || 0} pts` : 
+                       `₹${(parseFloat(reward.amount) || 0).toLocaleString()}`}
                     </span>
                   </td>
                   <td className="py-4 px-4">
@@ -275,7 +275,7 @@ const RewardsManagement = () => {
                   </td>
                   <td className="py-4 px-4">
                     <span className="text-sm text-gray-600">
-                      {new Date(reward.expires_at).toLocaleDateString()}
+                      {reward.expires_at ? new Date(reward.expires_at).toLocaleDateString() : 'N/A'}
                     </span>
                   </td>
                   <td className="py-4 px-4">
@@ -314,13 +314,13 @@ const RewardsManagement = () => {
 };
 
 const CreateRewardModal = ({ users, onClose, onCreate }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     user_id: '',
     reward_type: 'cashback',
     amount: '',
     description: '',
     expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  });
+  }));
 
   const handleSubmit = (e) => {
     e.preventDefault();

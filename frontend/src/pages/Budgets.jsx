@@ -166,7 +166,7 @@ const Budgets = () => {
                       </div>
                     </div>
                     <span className={`text-sm font-bold ${isOverBudget ? 'text-red-600' : 'text-sky-600'}`}>
-                      {percentage.toFixed(0)}%
+                      {(percentage || 0).toFixed(0)}%
                     </span>
                   </div>
 

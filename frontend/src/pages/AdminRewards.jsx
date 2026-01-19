@@ -339,7 +339,7 @@ const AdminRewards = () => {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-500">
-                        {new Date(reward.created_at).toLocaleDateString()}
+                        {reward.created_at ? new Date(reward.created_at).toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="py-3 px-4">
                         <button

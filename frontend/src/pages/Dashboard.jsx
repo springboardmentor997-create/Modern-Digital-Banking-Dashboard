@@ -66,7 +66,7 @@ const Dashboard = () => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
-    }).format(amount);
+    }).format(Number(amount) || 0);
   };
 
   const formatDate = (dateString) => {
@@ -145,7 +145,7 @@ const Dashboard = () => {
         fontSize="12"
         fontWeight="bold"
       >
-        {`${((percent || 0) * 100).toFixed(0)}%`}
+        {`${((Number(percent) || 0) * 100).toFixed(0)}%`}
       </text>
     );
   };
@@ -162,7 +162,7 @@ const Dashboard = () => {
             <span className="text-sm font-medium text-blue-800">
               {new Date().toLocaleDateString('en-US', { 
                 weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-              })}
+              }) || 'N/A'}
             </span>
           </div>
         </div>

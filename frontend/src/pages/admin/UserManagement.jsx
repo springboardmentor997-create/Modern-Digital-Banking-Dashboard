@@ -249,7 +249,7 @@ const UserManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-500">
                       <Calendar className="w-4 h-4 mr-2" />
-                      {new Date(userData.created_at).toLocaleDateString()}
+                      {userData.created_at ? new Date(userData.created_at).toLocaleDateString() : 'N/A'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

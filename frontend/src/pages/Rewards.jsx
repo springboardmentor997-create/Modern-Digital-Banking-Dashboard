@@ -125,7 +125,7 @@ const Rewards = () => {
                     <Star className="w-5 h-5 text-yellow-500" />
                   </div>
                   <div className="text-xs text-gray-400">
-                    Received: {new Date(reward.created_at).toLocaleDateString()}
+                    Received: {reward.created_at ? new Date(reward.created_at).toLocaleDateString() : 'N/A'}
                   </div>
                 </div>
               ))}

@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import Column, Integer, String, Text, DateTime, Enum as SQLEnum
 from sqlalchemy.sql import func
 from app.database import get_db, Base
-from app.dependencies import get_current_user
-from app.models.user import User
+from app.dependencies import get_current_user, require_admin, require_support
+from app.models.user import User, UserRole
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
@@ -284,16 +284,13 @@ def generate_bot_response(user_message: str) -> str:
     else:
         return "Thank you for your message. I'm here to help with account issues, transactions, technical support, and general banking questions. Could you please provide more details about what you need assistance with?"
 
-# Admin endpoints for managing support tickets
+# Admin/Support endpoints for managing support tickets
 @router.get("/admin/tickets")
 async def get_all_tickets(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_support),
     db: Session = Depends(get_db)
 ):
-    """Get all support tickets (admin only)"""
-    if getattr(current_user, 'role', 'user') != 'admin':
-        raise HTTPException(status_code=403, detail="Admin access required")
-    
+    """Get all support tickets (Support/Admin only)"""
     tickets = db.query(SupportTicket).order_by(
         SupportTicket.created_at.desc()
     ).all()
@@ -315,13 +312,10 @@ async def get_all_tickets(
 async def update_ticket_status(
     ticket_id: int,
     status: TicketStatus,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_support),
     db: Session = Depends(get_db)
 ):
-    """Update ticket status (admin only)"""
-    if getattr(current_user, 'role', 'user') != 'admin':
-        raise HTTPException(status_code=403, detail="Admin access required")
-    
+    """Update ticket status (Support/Admin only)"""
     ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")

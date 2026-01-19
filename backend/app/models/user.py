@@ -27,6 +27,7 @@ class User(Base):
     role = Column(Enum(UserRole), default=UserRole.user)
     is_active = Column(Boolean, default=True)
     kyc_status = Column(Enum(KYCStatus), default=KYCStatus.unverified)
+    last_login = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # --- RELATIONSHIPS ---

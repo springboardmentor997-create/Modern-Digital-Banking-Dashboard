@@ -301,10 +301,10 @@ const TransactionManagement = () => {
                 <div className={`text-lg font-bold ${
                   txn.txn_type === 'credit' ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {txn.txn_type === 'credit' ? '+' : '-'}₹{parseFloat(txn.amount).toLocaleString()}
+                  {txn.txn_type === 'credit' ? '+' : '-'}₹{(Number(txn.amount) || 0).toLocaleString()}
                 </div>
                 <div className="text-xs text-gray-500">
-                  {new Date(txn.txn_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {txn.txn_date ? new Date(txn.txn_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A'}
                 </div>
               </div>
               <div className="text-sm text-gray-600 truncate">
@@ -370,7 +370,7 @@ const TransactionManagement = () => {
                     <div className={`text-sm font-bold ${
                       txn.txn_type === 'credit' ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {txn.txn_type === 'credit' ? '+' : '-'}₹{parseFloat(txn.amount).toLocaleString()}
+                      {txn.txn_type === 'credit' ? '+' : '-'}₹{(Number(txn.amount) || 0).toLocaleString()}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -380,7 +380,7 @@ const TransactionManagement = () => {
                     {txn.description || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(txn.txn_date).toLocaleDateString()}
+                    {txn.txn_date ? new Date(txn.txn_date).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
@@ -459,7 +459,7 @@ const TransactionManagement = () => {
                             <div className={`text-sm font-bold ${
                               txn.txn_type === 'credit' ? 'text-green-600' : 'text-red-600'
                             }`}>
-                              {txn.txn_type === 'credit' ? '+' : '-'}₹{parseFloat(txn.amount).toLocaleString()}
+                              {txn.txn_type === 'credit' ? '+' : '-'}₹{(Number(txn.amount) || 0).toLocaleString()}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -469,7 +469,7 @@ const TransactionManagement = () => {
                             {txn.description || 'N/A'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(txn.txn_date).toLocaleDateString()}
+                            {txn.txn_date ? new Date(txn.txn_date).toLocaleDateString() : 'N/A'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {txn.account_type || 'N/A'}

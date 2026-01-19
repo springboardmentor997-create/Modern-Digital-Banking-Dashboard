@@ -198,7 +198,7 @@ const AdminDashboard = () => {
                     <div className="flex-1">
                       <p className="text-xs text-gray-900">{alert.message}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        {new Date(alert.created_at).toLocaleString()}
+                        {alert.created_at ? new Date(alert.created_at).toLocaleString() : 'N/A'}
                       </p>
                     </div>
                     {!alert.is_read && <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />}
@@ -236,12 +236,12 @@ const AdminDashboard = () => {
                       {activity.type.replace('_', ' ').toUpperCase()}
                     </span>
                     <span className="text-xs text-gray-500">
-                      {new Date(activity.date).toLocaleString()}
+                      {activity.date ? new Date(activity.date).toLocaleString() : 'N/A'}
                     </span>
                   </div>
                   <p className="text-xs text-gray-900 font-medium">{activity.user_name}</p>
-                  {activity.amount && (
-                    <p className="text-xs text-gray-600">Amount: ₹{activity.amount.toLocaleString()}</p>
+                  {activity.amount !== undefined && activity.amount !== null && (
+                    <p className="text-xs text-gray-600">Amount: ₹{(activity.amount || 0).toLocaleString()}</p>
                   )}
                 </div>
               )) : (

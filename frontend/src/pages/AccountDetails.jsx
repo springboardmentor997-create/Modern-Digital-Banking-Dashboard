@@ -35,7 +35,7 @@ const AccountDetails = () => {
   const renderRow = (transaction) => (
     <tr key={transaction.id} className="hover:bg-gray-50">
       <td className="px-6 py-4 text-gray-600">
-        {new Date(transaction.date).toLocaleDateString()}
+        {transaction.date ? new Date(transaction.date).toLocaleDateString() : 'N/A'}
       </td>
       <td className="px-6 py-4 font-medium text-gray-900">
         {transaction.description}
@@ -46,7 +46,7 @@ const AccountDetails = () => {
       <td className={`px-6 py-4 font-medium ${
         transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
       }`}>
-        {transaction.type === 'income' ? '+' : '-'}₹{Math.abs(transaction.amount).toLocaleString()}
+        {transaction.type === 'income' ? '+' : '-'}₹{(Math.abs(transaction.amount) || 0).toLocaleString()}
       </td>
       <td className="px-6 py-4">
         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -75,7 +75,7 @@ const AccountDetails = () => {
           <div className="flex justify-between items-start mb-8">
             <div>
               <p className="text-sky-100 mb-1">Total Balance</p>
-              <h2 className="text-4xl font-bold">₹{account.balance?.toLocaleString()}</h2>
+              <h2 className="text-4xl font-bold">₹{(account.balance || 0).toLocaleString()}</h2>
             </div>
             <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
               <CreditCard size={32} className="text-white" />

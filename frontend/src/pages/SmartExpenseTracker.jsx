@@ -7,8 +7,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://modern-digital-banking-dashboard-1-vg97.onrender.com';
-const API_URL = `${API_BASE_URL}/api`;
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+const API_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL : (API_BASE_URL ? `${API_BASE_URL}/api` : '/api');
 
 const SmartExpenseTracker = () => {
   const { user, token } = useAuth();
@@ -381,7 +381,7 @@ const SmartExpenseTracker = () => {
                     {getCategoryIcon(category)}
                   </div>
                   <p className="text-xs text-gray-600">{category}</p>
-                  <p className="font-semibold text-gray-900">₹{amount.toFixed(2)}</p>
+                  <p className="font-semibold text-gray-900">₹{(amount || 0).toFixed(2)}</p>
                 </div>
               ))}
             </div>
@@ -410,7 +410,7 @@ const SmartExpenseTracker = () => {
           </div>
           
           <div className="divide-y divide-gray-100">
-            {expenses.map(expense => (
+            {(expenses || []).map(expense => (
               <div key={expense.id} className="p-4 hover:bg-gray-50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -434,17 +434,17 @@ const SmartExpenseTracker = () => {
                         </span>
                         <span className="flex items-center">
                           <MapPin className="w-3 h-3 mr-1" />
-                          {expense.location}
+                          {expense.location || 'N/A'}
                         </span>
                         <span className="flex items-center">
                           <Clock className="w-3 h-3 mr-1" />
-                          {new Date(expense.expense_date).toLocaleDateString()}
+                          {expense.expense_date ? new Date(expense.expense_date).toLocaleDateString() : 'N/A'}
                         </span>
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900">₹{expense.amount.toFixed(2)}</p>
+                    <p className="font-semibold text-gray-900">₹{(expense.amount || 0).toFixed(2)}</p>
                     <div className="flex space-x-1">
                       <button 
                         onClick={() => editExpense(expense)}
@@ -584,19 +584,19 @@ const SmartExpenseTracker = () => {
                   {/* Summary Cards */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-xl">
-                      <div className="text-2xl font-bold">₹{analytics.total_expenses.toFixed(2)}</div>
+                      <div className="text-2xl font-bold">₹{(analytics?.total_expenses || 0).toFixed(2)}</div>
                       <div className="text-blue-100">Total Expenses</div>
                     </div>
                     <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-xl">
-                      <div className="text-2xl font-bold">₹{analytics.average_daily.toFixed(2)}</div>
+                      <div className="text-2xl font-bold">₹{(analytics?.average_daily || 0).toFixed(2)}</div>
                       <div className="text-green-100">Daily Average</div>
                     </div>
                     <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-xl">
-                      <div className="text-2xl font-bold">{analytics.expense_count}</div>
+                      <div className="text-2xl font-bold">{analytics?.expense_count || 0}</div>
                       <div className="text-purple-100">Total Transactions</div>
                     </div>
                     <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-xl">
-                      <div className="text-2xl font-bold">₹{analytics.highest_expense.toFixed(2)}</div>
+                      <div className="text-2xl font-bold">₹{(analytics?.highest_expense || 0).toFixed(2)}</div>
                       <div className="text-red-100">Highest Expense</div>
                     </div>
                   </div>
@@ -605,8 +605,8 @@ const SmartExpenseTracker = () => {
                   <div className="bg-gray-50 p-4 rounded-xl">
                     <h4 className="text-lg font-semibold mb-4">Category Breakdown</h4>
                     <div className="space-y-3">
-                      {Object.entries(analytics.category_breakdown).map(([category, amount]) => {
-                        const percentage = (amount / analytics.total_expenses) * 100;
+                      {Object.entries(analytics?.category_breakdown || {}).map(([category, amount]) => {
+                        const percentage = (analytics?.total_expenses || 0) > 0 ? ((amount || 0) / analytics.total_expenses) * 100 : 0;
                         return (
                           <div key={category} className="flex items-center justify-between">
                             <div className="flex items-center space-x-3">
@@ -614,8 +614,8 @@ const SmartExpenseTracker = () => {
                               <span className="font-medium">{category}</span>
                             </div>
                             <div className="text-right">
-                              <div className="font-semibold">₹{amount.toFixed(2)}</div>
-                              <div className="text-sm text-gray-500">{percentage.toFixed(1)}%</div>
+                              <div className="font-semibold">₹{(amount || 0).toFixed(2)}</div>
+                              <div className="text-sm text-gray-500">{(percentage || 0).toFixed(1)}%</div>
                             </div>
                           </div>
                         );
@@ -624,17 +624,17 @@ const SmartExpenseTracker = () => {
                   </div>
                   
                   {/* Top Merchants */}
-                  {analytics.top_merchants.length > 0 && (
+                  {(analytics?.top_merchants || []).length > 0 && (
                     <div className="bg-gray-50 p-4 rounded-xl">
                       <h4 className="text-lg font-semibold mb-4">Top Merchants</h4>
                       <div className="space-y-2">
-                        {analytics.top_merchants.map((merchant, index) => (
+                        {(analytics?.top_merchants || []).map((merchant, index) => (
                           <div key={index} className="flex items-center justify-between py-2">
                             <div>
                               <div className="font-medium">{merchant.merchant}</div>
                               <div className="text-sm text-gray-500">{merchant.count} transactions</div>
                             </div>
-                            <div className="font-semibold">₹{merchant.total.toFixed(2)}</div>
+                            <div className="font-semibold">₹{(merchant.total || 0).toFixed(2)}</div>
                           </div>
                         ))}
                       </div>
@@ -673,15 +673,15 @@ const SmartExpenseTracker = () => {
                         <div className="flex items-center space-x-3">
                           <Receipt className="w-8 h-8 text-green-600" />
                           <div>
-                            <div className="font-medium">{receipt.description}</div>
+                            <div className="font-medium">{receipt.description || 'No description'}</div>
                             <div className="text-sm text-gray-500">
-                              {receipt.merchant} • {new Date(receipt.date).toLocaleDateString()}
+                              {receipt.merchant || 'Unknown Merchant'} • {new Date(receipt.expense_date || receipt.date || Date.now()).toLocaleDateString()}
                             </div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-semibold">₹{receipt.amount.toFixed(2)}</div>
-                          <div className="text-sm text-gray-500">{receipt.category}</div>
+                          <div className="font-semibold">₹{(receipt.amount || 0).toFixed(2)}</div>
+                          <div className="text-sm text-gray-500">{receipt.category || 'Uncategorized'}</div>
                         </div>
                       </div>
                     </div>

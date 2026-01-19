@@ -251,7 +251,7 @@ const AlertsLogs = () => {
                           <p className="text-gray-700 mb-2 text-sm leading-relaxed">{alert.message}</p>
                           <div className="flex items-center text-gray-500">
                             <Clock className="w-3 h-3 mr-1" />
-                            <span className="text-xs">{new Date(alert.created_at).toLocaleString()}</span>
+                            <span className="text-xs">{alert.created_at ? new Date(alert.created_at).toLocaleString() : 'N/A'}</span>
                           </div>
                         </div>
                         <div className={`px-3 py-1 rounded-full text-xs font-bold transition-all duration-300 ${
@@ -306,13 +306,13 @@ const AlertsLogs = () => {
                           </div>
                           <p className="text-gray-700 mb-2 text-sm leading-relaxed">
                             {activity.type === 'large_transaction' 
-                              ? `🚨 Large transaction detected: ₹${activity.amount?.toLocaleString()} - ${activity.description}`
-                              : `⚠️ Inactive user activity detected: ${activity.email}`
+                              ? `🚨 Large transaction detected: ₹${(Number(activity.amount) || 0).toLocaleString()} - ${activity.description || ''}`
+                              : `⚠️ Inactive user activity detected: ${activity.email || ''}`
                             }
                           </p>
                           <div className="flex items-center text-gray-500">
                             <Clock className="w-3 h-3 mr-1" />
-                            <span className="text-xs">{new Date(activity.date).toLocaleString()}</span>
+                            <span className="text-xs">{activity.date ? new Date(activity.date).toLocaleString() : 'N/A'}</span>
                           </div>
                         </div>
                       </div>

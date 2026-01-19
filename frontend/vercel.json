@@ -1,5 +1,10 @@
 {
+  "cleanUrls": true,
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://modern-digital-banking-dashboard-1-vg97.onrender.com/api/$1"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

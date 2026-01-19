@@ -530,7 +530,7 @@ const Transactions = () => {
                         </span>
                       </td>
                       <td className={`px-6 py-4 whitespace-nowrap text-sm font-bold ${getTransactionColor(transaction.txn_type)}`}>
-                        {transaction.txn_type === 'credit' ? '+' : '-'} ₹{Math.abs(transaction.amount).toLocaleString('en-IN')}
+                        {transaction.txn_type === 'credit' ? '+' : '-'} ₹{(Math.abs(transaction.amount) || 0).toLocaleString('en-IN')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex gap-3">

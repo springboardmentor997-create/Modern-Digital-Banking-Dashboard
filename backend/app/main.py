@@ -217,25 +217,7 @@ async def update_config_endpoint():
 async def get_budget_categories_endpoint():
     return ["Food", "Transportation", "Entertainment", "Shopping", "Bills"]
 
-@app.get("/api/expenses/")
-async def get_expenses_endpoint():
-    return []
-
-@app.post("/api/expenses/")
-async def create_expense_endpoint():
-    return {"message": "Expense created successfully"}
-
-@app.get("/api/expenses/categories/list")
-async def get_expense_categories_endpoint():
-    return ["Food", "Transportation", "Entertainment", "Shopping", "Bills"]
-
-@app.get("/api/expenses/analytics/summary")
-async def get_expense_analytics_endpoint():
-    return {"total": 0, "categories": []}
-
-@app.get("/api/expenses/receipts/")
-async def get_receipts_endpoint():
-    return []
+# Expense endpoints are handled by app.routers.expenses_router
 
 
 
