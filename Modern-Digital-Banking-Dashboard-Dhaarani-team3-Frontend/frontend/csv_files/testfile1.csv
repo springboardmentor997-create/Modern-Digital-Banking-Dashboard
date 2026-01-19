@@ -1,0 +1,5 @@
+description,category,amount,currency,txn_type,merchant,txn_date
+Grocery shopping,Food,1200,USD,DEBIT,Walmart,2025-12-27T10:19:36.061Z
+Salary Credit,Income,50000,USD,CREDIT,Company XYZ,2025-12-01T09:00:00.000Z
+Electricity Bill,Utilities,2500,USD,DEBIT,Electricity Board,2025-12-15T18:30:00.000Z
+Online Subscription,Entertainment,799,USD,DEBIT,Netflix,2025-12-05T21:00:00.0

@@ -1,0 +1,11 @@
+description,category,amount,currency,txn_type,merchant,txn_date
+Grocery shopping,Food,1200,USD,DEBIT,Walmart,2025-12-27T10:19:36.061Z
+Salary Credit,Income,50000,USD,CREDIT,Company XYZ,2025-12-01T09:00:00.000Z
+Electricity Bill,Utilities,2500,USD,DEBIT,Electricity Board,2025-12-15T18:30:00.000Z
+Online Subscription,Entertainment,799,USD,DEBIT,Netflix,2025-12-05T21:00:00.000Z
+Fuel Refill,Transport,3200,USD,DEBIT,Shell,2025-12-08T08:45:10.500Z
+Restaurant Dinner,Food,2800,USD,DEBIT,McDonalds,2025-12-10T19:30:45.250Z
+Cashback Credit,Income,150,USD,CREDIT,Bank Offer,2025-12-11T11:15:00.000Z
+Mobile Recharge,Utilities,399,USD,DEBIT,Verizon,2025-12-12T16:05:30.000Z
+Gym Membership,Health,2000,USD,DEBIT,Golds Gym,2025-12-18T06:30:00.000Z
+Interest Credit,Income,350,USD,CREDIT,Your Bank,2025-12-20T23:59:59.999Z

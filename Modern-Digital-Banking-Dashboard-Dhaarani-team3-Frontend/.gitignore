@@ -1,0 +1,138 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.vite/
+dist/
+build/
+
+# Vite / Rollup cache
+.rpt2_cache/
+.rts2_cache/
+
+# Environment files
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+*.egg
+.pytest_cache/
+venv/
+.venv/
+ENV/
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# SQLite databases
+*.db
+*.sqlite
+banking.db
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Coverage and test output
+.coverage
+htmlcov/
+coverage/
+coverage.xml
+
+# Misc
+*.tmp
+*.temp
+*.bak
+*.swp
+# -------------------------
+# General
+# -------------------------
+.DS_Store
+*.log
+*.tmp
+*.swp
+*.swo
+.env
+.env.*
+!.env.example
+
+# -------------------------
+# Node / Frontend
+# -------------------------
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/.parcel-cache/
+frontend/.next/
+frontend/.turbo/
+frontend/.eslintcache
+
+# Environment files inside frontend
+frontend/.env
+frontend/.env.local
+frontend/.env.development
+frontend/.env.production
+frontend/.env.test
+
+# -------------------------
+# Python / Backend
+# -------------------------
+backend/__pycache__/
+backend/*.pyc
+backend/**/*.pyc
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.ruff_cache/
+backend/venv/
+backend/.venv/
+backend/env/
+backend/.env
+
+# Alembic migration artifacts
+backend/alembic/versions/*.pyc
+backend/alembic/__pycache__/
+backend/alembic/versions/__pycache__/
+
+# SQLite or other local DBs
+backend/*.db
+backend/*.sqlite3
+
+# -------------------------
+# Logs
+# -------------------------
+logs/
+backend/logs/
+frontend/logs/
+*.log
+
+# -------------------------
+# VSCode / IDE
+# -------------------------
+.vscode/
+.idea/
+*.iml
+
+# -------------------------
+# Output / build artifacts
+# -------------------------
+dist/
+build/
+coverage/
