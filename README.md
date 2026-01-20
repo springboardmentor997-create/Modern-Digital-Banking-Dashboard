@@ -1,4 +1,4 @@
-# 🏦 Modern Digital Banking Dashboard – Backend
+# 🏦 Aureus – Modern Digital Banking Dashboard – Backend
 
 This repository contains the **backend services** for the Modern Digital Banking Dashboard.
 
