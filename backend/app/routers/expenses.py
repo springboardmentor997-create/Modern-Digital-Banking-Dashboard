@@ -171,6 +171,26 @@ def get_receipts(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch receipts: {str(e)}")
 
+@router.get("/receipts/{expense_id}")
+def get_receipt(
+    expense_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Get a specific receipt by expense ID"""
+    expense = ExpenseService.get_expense_by_id(db, expense_id, current_user.id)
+    if not expense or not expense.has_receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    return {
+        "id": expense.id,
+        "amount": float(expense.amount),
+        "description": expense.description,
+        "merchant": expense.merchant,
+        "date": expense.expense_date.isoformat(),
+        "receipt_url": expense.receipt_url,
+        "category": expense.category
+    }
+
 @router.post("/bulk-import")
 def bulk_import_expenses(
     file: UploadFile = File(...),
