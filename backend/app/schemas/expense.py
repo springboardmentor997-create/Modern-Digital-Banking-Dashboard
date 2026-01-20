@@ -26,7 +26,7 @@ class ExpenseResponse(BaseModel):
     user_id: int
     amount: float
     description: str
-    category: str
+    category: Optional[str]
     location: Optional[str]
     merchant: Optional[str]
     expense_date: datetime
