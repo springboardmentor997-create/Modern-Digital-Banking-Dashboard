@@ -20,6 +20,11 @@ from app.models.bill import Bill
 from app.models.reward import Reward
 from app.models.admin_log import AdminLog
 from app.models.expense import Expense
+# Import KYC models
+try:
+    from app.models.kyc import KYCDocument, KYCVerificationLog
+except ImportError:
+    pass
 # Import support models to ensure tables are created
 from app.routers.support import SupportTicket, ChatMessage
 from app.utils.hash_password import hash_password
@@ -33,7 +38,6 @@ from app.routers.alerts import router as alerts_api_router
 from app.routers.rewards import router as rewards_api_router
 from app.routers.bills import router as bills_api_router
 from app.budgets.router import router as budgets_router
-from app.dashboard_router import router as dashboard_router
 from app.routers.insights import router as insights_router
 from app.routers.exports import router as exports_router
 from app.routers.admin import router as admin_router
@@ -71,9 +75,8 @@ try:
     
     # Only run Postgres-specific cleanup when using Postgres
     if "postgresql" in str(engine.url):
-        with engine.connect() as connection:
+        with engine.begin() as connection:
             connection.execute(text("DROP SEQUENCE IF EXISTS categories_id_seq CASCADE;"))
-            connection.commit()
 except Exception as e:
     print(f"Warning during database cleanup: {e}")
     pass
@@ -94,7 +97,7 @@ def setup_database():
             # Create admin user
             admin_user = User(
                 email="admin@bank.com",
-                password=hash_password("admin123"),
+                password=hash_password("test123"),
                 name="Admin User",
                 role=UserRole.admin,
                 is_active=True,
@@ -103,7 +106,7 @@ def setup_database():
             db.add(admin_user)
             db.commit()
             db.refresh(admin_user)
-            print("Admin user created: admin@bank.com / admin123")
+            print("Admin user created: admin@bank.com / test123")
         else:
             print("Admin user already exists: admin@bank.com")
         
@@ -112,7 +115,7 @@ def setup_database():
         if not regular_user:
             regular_user = User(
                 email="user@bank.com",
-                password=hash_password("user123"),
+                password=hash_password("test123"),
                 name="Regular User",
                 role=UserRole.user,
                 is_active=True,
@@ -121,7 +124,7 @@ def setup_database():
             db.add(regular_user)
             db.commit()
             db.refresh(regular_user)
-            print("Sample user created: user@bank.com / user123")
+            print("Sample user created: user@bank.com / test123")
         else:
             print("Sample user already exists: user@bank.com")
             
@@ -182,7 +185,6 @@ except Exception:
 
 # Router registration
 app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
-app.include_router(dashboard_router, prefix="/api", tags=["Dashboard Main"])
 app.include_router(accounts_router, prefix="/api/accounts", tags=["Accounts"])
 app.include_router(transactions_router, prefix="/api/transactions", tags=["Transactions"])
 app.include_router(dashboard_stats_router, prefix="/api", tags=["Dashboard"])

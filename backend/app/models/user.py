@@ -6,7 +6,10 @@ import enum
 
 class KYCStatus(str, enum.Enum):
     unverified = "unverified"
+    pending = "pending"
+    under_review = "under_review"
     verified = "verified"
+    rejected = "rejected"
 
 class UserRole(str, enum.Enum):
     admin = "admin"

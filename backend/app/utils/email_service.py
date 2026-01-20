@@ -16,7 +16,7 @@ def send_otp_email(email: str) -> str:
     otp_storage[email] = otp
     
     if not settings.SENDER_EMAIL or not settings.SENDER_PASSWORD:
-        print(f"⚠️ Missing credentials. Mock OTP for {email}: {otp}")
+        print(f"Missing credentials. Mock OTP for {email}: {otp}")
         return otp
 
     try:
@@ -40,12 +40,12 @@ def send_otp_email(email: str) -> str:
         server.sendmail(settings.SENDER_EMAIL, email, message.as_string())
         server.quit()
         
-        print(f"✅ Email sent to {email}")
+        print(f"Email sent to {email}")
         return otp
         
     except Exception as e:
-        print(f"❌ Error sending email: {e}")
-        print(f"⚠️ Mock OTP for testing: {otp}")
+        print(f"Error sending email: {e}")
+        print(f"Mock OTP for testing: {otp}")
         return otp
 
 def verify_otp_logic(email: str, otp: str) -> bool:
@@ -58,15 +58,15 @@ def verify_otp_logic(email: str, otp: str) -> bool:
 
 def send_payment_link_email(recipient_email: str, payment_url: str, amount: float, description: str = None, sender_name: str = None) -> bool:
     """Send a payment link email to the given recipient. Returns True if sent, False otherwise."""
-    subject = f"You've received a payment link for ₹{amount}"
-    body = f"<p>{sender_name or 'Someone'} has sent you a payment request of <strong>₹{amount}</strong>.</p>"
+    subject = f"You've received a payment link for {amount}"
+    body = f"<p>{sender_name or 'Someone'} has sent you a payment request of <strong>{amount}</strong>.</p>"
     if description:
         body += f"<p>Description: {description}</p>"
     body += f"<p>Open this link to pay: <a href=\"{payment_url}\">{payment_url}</a></p>"
     body += "<p>If you did not expect this, you can ignore this email.</p>"
 
     if not settings.SENDER_EMAIL or not settings.SENDER_PASSWORD:
-        print(f"⚠️ Missing credentials. Mock email to {recipient_email}: subject={subject}, body={body}")
+        print(f"Missing credentials. Mock email to {recipient_email}: subject={subject}, body={body}")
         return False
 
     try:
@@ -81,8 +81,8 @@ def send_payment_link_email(recipient_email: str, payment_url: str, amount: floa
         server.login(settings.SENDER_EMAIL, settings.SENDER_PASSWORD)
         server.sendmail(settings.SENDER_EMAIL, recipient_email, message.as_string())
         server.quit()
-        print(f"✅ Payment link email sent to {recipient_email}")
+        print(f"Payment link email sent to {recipient_email}")
         return True
     except Exception as e:
-        print(f"❌ Error sending payment link email to {recipient_email}: {e}")
+        print(f"Error sending payment link email to {recipient_email}: {e}")
         return False

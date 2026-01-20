@@ -25,7 +25,7 @@ def get_alerts():
             "type": "budget_exceeded",
             "priority": "high",
             "title": "Budget Alert: Dining",
-            "message": "You've spent ₹450.00 (90.0%) of your ₹500.00 budget",
+            "message": "You've spent Rs. 450.00 (90.0%) of your Rs. 500.00 budget",
             "created_at": datetime.utcnow().isoformat(),
             "is_read": False
         },
@@ -34,7 +34,7 @@ def get_alerts():
             "type": "bill_due",
             "priority": "critical",
             "title": "Bill Due: Electricity",
-            "message": "₹120.00 due in 1 day",
+            "message": "Rs. 120.00 due in 1 day",
             "created_at": datetime.utcnow().isoformat(),
             "is_read": False
         }

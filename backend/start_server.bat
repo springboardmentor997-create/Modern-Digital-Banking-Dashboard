@@ -1,5 +1,5 @@
 @echo off
-echo Starting Banking Backend Server...
-cd /d "%~dp0"
-python -m pip install -r requirements.txt
-python main.py
+echo Starting Banking System Backend Server...
+cd /d "c:\Users\URMILA\Downloads\frontend (5)\frontend\backend"
+python flask_server.py
+pause

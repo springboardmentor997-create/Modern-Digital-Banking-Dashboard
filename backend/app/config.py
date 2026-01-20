@@ -27,11 +27,8 @@ class Settings:
     ALGORITHM = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
-    # Database URL - prioritize environment variable
-    DATABASE_URL = os.getenv(
-        "DATABASE_URL",
-        "postgresql://postgres:Urmila@localhost:5433/banking_db"
-    )
+    # Database URL - use environment variable with fallback to SQLite
+    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./banking_app.db")
     
     # OTP Settings
     OTP_EXPIRY_MINUTES = int(os.getenv("OTP_EXPIRY_MINUTES", "15"))

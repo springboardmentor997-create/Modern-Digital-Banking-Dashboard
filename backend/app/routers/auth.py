@@ -23,13 +23,13 @@ router = APIRouter(
 )
 
 # =======================
-# 🔐 OAuth2 Scheme
+# OAuth2 Scheme
 # =======================
 # This defines where the frontend should send the username/password to get a token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 # =======================
-# 📝 Pydantic Models
+# Pydantic Models
 # =======================
 
 class UserLogin(BaseModel):
@@ -56,9 +56,9 @@ class ResetPassword(BaseModel):
     otp: str = None
 
 # =======================
-# 🛡️ GLOBAL AUTH DEPENDENCY
+# GLOBAL AUTH DEPENDENCY
 # =======================
-# 🚨 CRITICAL: This is the function 'transactions.py' is trying to import!
+# CRITICAL: This is the function 'transactions.py' is trying to import!
 # It verifies the token and returns the User object from the database.
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -84,7 +84,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 # =======================
-# 🚀 Auth Routes
+# Auth Routes
 # =======================
 
 @router.post("/signup")
@@ -122,36 +122,36 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ SIGNUP ERROR: {str(e)}")
+        print(f"SIGNUP ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail="Signup failed")
 
 @router.post("/login")
 def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     try:
-        print(f"🔍 Login attempt for: {user_credentials.email}")
+        print(f"Login attempt for: {user_credentials.email}")
         
         # 1. Find user
         user = db.query(User).filter(User.email == user_credentials.email).first()
-        print(f"👤 User found: {user is not None}")
+        print(f"User found: {user is not None}")
 
         if not user:
-            print("❌ User not found in database")
+            print("User not found in database")
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
         # 2. Verify password
-        print(f"🔐 Verifying password...")
+        print(f"Verifying password...")
         password_valid = verify_password(user_credentials.password, user.password)
-        print(f"🔐 Password valid: {password_valid}")
+        print(f"Password valid: {password_valid}")
         
         if not password_valid:
-            print("❌ Password verification failed")
+            print("Password verification failed")
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
         # 3. Generate Tokens
         access_token = create_access_token(data={"user_id": str(user.id)})
         refresh_token = create_refresh_token(data={"user_id": str(user.id)})
         
-        print(f"✅ Login successful for user: {user.email}")
+        print(f"Login successful for user: {user.email}")
         
         # 4. Return Response
         return {
@@ -170,12 +170,12 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     except HTTPException as http_ex:
         raise http_ex
     except Exception as e:
-        print(f"💥 Login error: {str(e)}")
+        print(f"Login error: {str(e)}")
         traceback.print_exc() 
         raise HTTPException(status_code=500, detail=str(e))
 
 # =======================
-# 🔐 Password Reset Routes
+# Password Reset Routes
 # =======================
 
 @router.post("/forgot-password")
@@ -212,11 +212,11 @@ def forgot_password(request: ForgotPassword, db: Session = Depends(get_db)):
         db.add(pr)
         db.commit()
 
-        print(f"✅ Password reset OTP created and email queued for {user.email}")
+        print(f"Password reset OTP created and email queued for {user.email}")
         return {"message": "If the email exists, an OTP has been sent"}
 
     except Exception as e:
-        print(f"❌ Forgot-password error: {e}")
+        print(f"Forgot-password error: {e}")
         return {"message": "If the email exists, an OTP has been sent"}
 
 @router.post("/verify-otp")

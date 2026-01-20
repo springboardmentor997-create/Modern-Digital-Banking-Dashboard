@@ -156,7 +156,7 @@ class BudgetService:
             spent = query.scalar()
             result = abs(float(spent)) if spent else 0.0
             
-            logger.info(f"💰 Calculated spent for category '{category_name}' (id={category_id}): ₹{result}")
+            logger.info(f"Calculated spent for category '{category_name}' (id={category_id}): {result}")
             return result
             
         except Exception as e:
@@ -192,7 +192,7 @@ class BudgetService:
             new_total = current_spent + abs(amount)
             limit = float(budget.limit_amount)
             
-            logger.info(f"📊 Budget check for '{budget.name}': ₹{current_spent} + ₹{abs(amount)} = ₹{new_total} / ₹{limit}")
+            logger.info(f"Budget check for '{budget.name}': {current_spent} + {abs(amount)} = {new_total} / {limit}")
             
             if new_total > limit:
                 # Update spent amount and create alert
@@ -201,7 +201,7 @@ class BudgetService:
                 
                 return {
                     "alert": True,
-                    "message": f"This transaction exceeds your '{budget.name}' budget! You've spent ₹{new_total:.2f} of ₹{limit:.2f}",
+                    "message": f"This transaction exceeds your '{budget.name}' budget! You've spent {new_total:.2f} of {limit:.2f}",
                     "remaining": limit - current_spent,
                     "budget_name": budget.name
                 }
@@ -212,7 +212,7 @@ class BudgetService:
                 
                 return {
                     "warning": True,
-                    "message": f"You've used {(new_total/limit*100):.0f}% of your '{budget.name}' budget (₹{new_total:.2f} / ₹{limit:.2f})",
+                    "message": f"You've used {(new_total/limit*100):.0f}% of your '{budget.name}' budget ({new_total:.2f} / {limit:.2f})",
                     "budget_name": budget.name
                 }
             else:

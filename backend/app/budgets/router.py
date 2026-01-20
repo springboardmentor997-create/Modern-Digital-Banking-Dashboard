@@ -33,14 +33,14 @@ def get_budget_categories(
 ):
     # Returns the list directly so the frontend can map it immediately
     return [
-        {"id": 1, "name": "Food & Dining", "icon": "🍔"},
-        {"id": 2, "name": "Transportation", "icon": "🚗"},
-        {"id": 3, "name": "Shopping", "icon": "🛍️"},
-        {"id": 4, "name": "Entertainment", "icon": "🎬"},
-        {"id": 5, "name": "Bills & Utilities", "icon": "💡"},
-        {"id": 6, "name": "Healthcare", "icon": "🏥"},
-        {"id": 7, "name": "Income", "icon": "💰"},
-        {"id": 8, "name": "General", "icon": "📦"}
+        {"id": 1, "name": "Food & Dining", "icon": "Food"},
+        {"id": 2, "name": "Transportation", "icon": "Transport"},
+        {"id": 3, "name": "Shopping", "icon": "Shop"},
+        {"id": 4, "name": "Entertainment", "icon": "Fun"},
+        {"id": 5, "name": "Bills & Utilities", "icon": "Bills"},
+        {"id": 6, "name": "Healthcare", "icon": "Health"},
+        {"id": 7, "name": "Income", "icon": "Cash"},
+        {"id": 8, "name": "General", "icon": "Box"}
     ]
 
 @router.get("/summary")

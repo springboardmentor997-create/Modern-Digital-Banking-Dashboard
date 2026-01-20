@@ -181,7 +181,7 @@ async def get_system_logs_audit(db: Session = Depends(get_db), auditor: User = D
         "user_id": user.id,
         "user_name": user.name,
         "timestamp": transaction.txn_date,
-        "details": f"{transaction.txn_type.upper()} of ₹{transaction.amount} - {transaction.description}",
+        "details": f"{transaction.txn_type.upper()} of Rs.{transaction.amount} - {transaction.description}",
         "metadata": {
             "transaction_id": transaction.id,
             "amount": float(transaction.amount),

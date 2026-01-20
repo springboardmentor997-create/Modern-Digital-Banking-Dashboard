@@ -4,8 +4,8 @@ from app.config import settings
 from sqlalchemy import text
 import os
 
-# Use environment variable or fallback to local database
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:Urmila@localhost:5433/banking_db")
+# Use database URL from settings
+DATABASE_URL = settings.DATABASE_URL
 
 # Configure engine with proper PostgreSQL settings
 if "postgresql" in DATABASE_URL:
