@@ -65,18 +65,19 @@ const SmartExpenseTracker = () => {
     try {
       setLoading(true);
       const data = await apiCall('/expenses/');
-      setExpenses(data);
+      setExpenses(Array.isArray(data) ? data : []);
       
       // Calculate category totals
-      const categoryTotals = data.reduce((acc, expense) => {
-        acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+      const categoryTotals = (Array.isArray(data) ? data : []).reduce((acc, expense) => {
+        if (expense && expense.category) {
+          acc[expense.category] = (acc[expense.category] || 0) + (expense.amount || 0);
+        }
         return acc;
       }, {});
       
       setCategories(categoryTotals);
     } catch (error) {
       console.error('Failed to load expenses:', error);
-      // Fallback to mock data if API fails
       loadMockData();
     } finally {
       setLoading(false);
@@ -105,9 +106,17 @@ const SmartExpenseTracker = () => {
   const loadAnalytics = async () => {
     try {
       const data = await apiCall('/expenses/analytics/summary?days=30');
-      setAnalytics(data);
+      setAnalytics(data || {});
     } catch (error) {
       console.error('Failed to load analytics:', error);
+      setAnalytics({
+        total_expenses: 0,
+        average_daily: 0,
+        expense_count: 0,
+        highest_expense: 0,
+        category_breakdown: {},
+        top_merchants: []
+      });
     }
   };
 
@@ -226,11 +235,10 @@ const SmartExpenseTracker = () => {
   const loadReceipts = async () => {
     try {
       const data = await apiCall('/expenses/receipts/');
-      setReceipts(data);
+      setReceipts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to load receipts:', error);
-      // Fallback to expenses with receipts
-      const expensesWithReceipts = expenses.filter(e => e.has_receipt);
+      const expensesWithReceipts = (expenses || []).filter(e => e && e.has_receipt);
       setReceipts(expensesWithReceipts);
     }
   };
