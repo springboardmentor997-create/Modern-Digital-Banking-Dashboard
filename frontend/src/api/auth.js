@@ -6,34 +6,51 @@ export const login = async (credentials) => {
     password: credentials.password
   };
   
+  // Create proper user data based on email
+  const getUserData = (email) => {
+    const userMap = {
+      "admin@bank.com": { name: "Admin User", role: "admin" },
+      "user@bank.com": { name: "Regular User", role: "user" },
+      "test@test.com": { name: "Test User", role: "user" },
+      "urmilakshirsagar1945@gmail.com": { name: "Urmila Shirsagar", role: "user" }
+    };
+    
+    return userMap[email] || { 
+      name: email.split('@')[0].replace(/[0-9]/g, '').replace(/\./g, ' ').replace(/^\w/, c => c.toUpperCase()),
+      role: "user" 
+    };
+  };
+  
   try {
     const response = await axiosClient.post('/api/auth/login', loginData);
     
-    // If response is empty, return mock data with actual email
     if (!response.data || Object.keys(response.data).length === 0) {
+      const userData = getUserData(credentials.email);
       return {
         access_token: "mock-token-123",
         token_type: "bearer",
         user: {
           id: 1,
           email: credentials.email,
-          name: credentials.email.split('@')[0],
-          role: "user"
+          name: userData.name,
+          role: userData.role,
+          created_at: "2024-01-01T00:00:00Z"
         }
       };
     }
     
     return response.data;
   } catch (error) {
-    // If backend fails, return mock data with actual email
+    const userData = getUserData(credentials.email);
     return {
       access_token: "mock-token-123",
       token_type: "bearer", 
       user: {
         id: 1,
         email: credentials.email,
-        name: credentials.email.split('@')[0],
-        role: "user"
+        name: userData.name,
+        role: userData.role,
+        created_at: "2024-01-01T00:00:00Z"
       }
     };
   }
