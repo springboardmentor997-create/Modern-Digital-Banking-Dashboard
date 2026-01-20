@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, validator
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from ..utils.validators import is_strong_password, normalize_phone
@@ -41,6 +41,8 @@ class UserOut(BaseModel):
     address: Optional[str]
     pin_code: Optional[str]
     kyc_status: str
+    is_admin: bool
+    last_login: Optional[datetime]
 
     # pydantic v2 replacement for orm_mode
     model_config = {"from_attributes": True}

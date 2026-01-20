@@ -1,3 +1,23 @@
+"""
+Environment Configuration
+
+What:
+- Loads environment variables
+- Stores secrets & environment-specific values
+
+Backend Connections:
+- Used by:
+  - database.py (DB URL)
+  - auth logic (JWT secrets)
+  - email / alerts if enabled
+
+Frontend Connections:
+- Indirect
+- Controls authentication behavior that frontend depends on
+"""
+
+
+
 import re
 
 PASSWORD_REGEX = re.compile(
@@ -16,10 +36,11 @@ def is_strong_password(password: str) -> bool:
     return bool(PASSWORD_REGEX.match(password))
 
 
-def normalize_phone(phone: str) -> str:
+def normalize_phone(phone) -> str:
     """
     Strip non-digit characters and return digits only.
-    Caller should validate length afterwards (e.g. 10 digits).
+    Accepts int or string safely.
     """
-    digits = re.sub(r"\D", "", phone or "")
+    phone_str = str(phone) if phone is not None else ""
+    digits = re.sub(r"\D", "", phone_str)
     return digits

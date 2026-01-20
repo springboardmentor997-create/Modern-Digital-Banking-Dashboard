@@ -7,7 +7,7 @@ class UserCreate(BaseModel):
     password: str
     phone: Optional[str] = None
     dob: Optional[str] = None   # yyyy-mm-dd
-    pin: Optional[str] = None
+    pin_code: Optional[str] = None 
     address: Optional[str] = None
     kyc_authorize: Optional[bool] = False
 
@@ -30,6 +30,10 @@ class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
 
+class VerifyOtpSchema(BaseModel):
+    email: EmailStr
+    otp: str
+
 class ResetPasswordRequest(BaseModel):
-    token: str
+    email: EmailStr
     new_password: str

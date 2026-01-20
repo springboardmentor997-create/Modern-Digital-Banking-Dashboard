@@ -3,12 +3,17 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from datetime import datetime
 import traceback, logging
-from app.auth.service import forgot_password, reset_password
-from app.database import get_db   
-from app.auth.schemas import ForgotPasswordRequest, ResetPasswordRequest
-import app.auth.service as auth_service
+
+from app.database import get_db
+from app.auth.schemas import (
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    VerifyOtpSchema
+)
 from app.models.user import User
+from app.models.otp import OTP
 from app.schemas.user import UserCreate, UserResponse
 from app.schemas.token import TokenResponse
 from app.utils.hashing import Hash
@@ -17,6 +22,7 @@ from app.utils.jwt import (
     create_refresh_token,
     decode_refresh_token
 )
+from app.auth.service import send_otp, authenticate_user
 
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -28,215 +34,194 @@ logger = logging.getLogger("uvicorn.error")
 REFRESH_COOKIE_NAME = "refresh_token"
 REFRESH_COOKIE_PARAMS = {
     "httponly": True,
-    "samesite": "lax",   # 'none' + secure=True if your frontend is on different domain & you use HTTPS
-    "secure": False,     # set True in production with HTTPS
+    "samesite": "lax",
+    "secure": False,
 }
 
 # ---------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------
 def _make_user_dict(user: User):
-    return {"id": user.id, "name": user.name, "email": user.email, "phone": getattr(user, "phone", None)}
+    return {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "phone": getattr(user, "phone", None),
+        "is_admin": user.is_admin
+    }
 
 # ---------------------------------------------------------------------
-# REGISTER (existing) - returns UserResponse
+# REGISTER
 # ---------------------------------------------------------------------
 @router.post("/register", response_model=UserResponse, status_code=201)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     try:
-        existing_user = db.query(User).filter(User.email == user.email).first()
-        if existing_user:
+        if db.query(User).filter(User.email == user.email).first():
             raise HTTPException(status_code=400, detail="Email already registered")
 
         new_user = User(
             name=user.name,
             email=user.email,
-            password=Hash.bcrypt(user.password)
+            password=Hash.bcrypt(user.password),
         )
 
         for attr in ("phone", "dob", "address", "pin_code", "kyc_status"):
-            if hasattr(user, attr) and getattr(user, attr, None) is not None and hasattr(new_user, attr):
+            if hasattr(user, attr) and getattr(user, attr, None) is not None:
                 setattr(new_user, attr, getattr(user, attr))
 
         db.add(new_user)
-        try:
-            db.commit()
-        except IntegrityError:
-            db.rollback()
-            raise HTTPException(status_code=400, detail="Email or data conflicts with existing user")
+        db.commit()
         db.refresh(new_user)
         return new_user
 
-    except HTTPException:
-        raise
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Email conflict")
     except Exception as exc:
-        tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-        logger.error("Registration error: %s\n%s", exc, tb)
-        raise HTTPException(status_code=500, detail=f"Registration failed: {str(exc)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(exc))
+    
 
 # ---------------------------------------------------------------------
-# REGISTER + SET REFRESH COOKIE (preferred for browsers)
+# LOGIN
 # ---------------------------------------------------------------------
-@router.post("/register/cookie", status_code=201)
-def register_user_cookie(user: UserCreate, response: Response, db: Session = Depends(get_db)):
-    try:
-        existing_user = db.query(User).filter(User.email == user.email).first()
-        if existing_user:
-            raise HTTPException(status_code=400, detail="Email already registered")
-
-        new_user = User(
-            name=user.name,
-            email=user.email,
-            password=Hash.bcrypt(user.password)
-        )
-
-        for attr in ("phone", "dob", "address", "pin_code", "kyc_status"):
-            if hasattr(user, attr) and getattr(user, attr, None) is not None and hasattr(new_user, attr):
-                setattr(new_user, attr, getattr(user, attr))
-
-        db.add(new_user)
-        try:
-            db.commit()
-        except IntegrityError:
-            db.rollback()
-            raise HTTPException(status_code=400, detail="Email or data conflicts with existing user")
-        db.refresh(new_user)
-
-        access_token = create_access_token(subject=new_user.id)
-        refresh_token = create_refresh_token(subject=new_user.id)
-
-        resp = JSONResponse(content={"access_token": access_token, "user": _make_user_dict(new_user)}, status_code=201)
-        resp.set_cookie(
-            key=REFRESH_COOKIE_NAME,
-            value=refresh_token,
-            httponly=REFRESH_COOKIE_PARAMS["httponly"],
-            samesite=REFRESH_COOKIE_PARAMS["samesite"],
-            secure=REFRESH_COOKIE_PARAMS["secure"],
-        )
-        return resp
-
-    except HTTPException:
-        raise
-    except Exception as exc:
-        tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-        logger.error("Registration cookie error: %s\n%s", exc, tb)
-        raise HTTPException(status_code=500, detail=f"Registration failed: {str(exc)}")
-
-# ---------------------------------------------------------------------
-# LOGIN (existing OAuth2) - returns tokens in body
-# ---------------------------------------------------------------------
-@router.post("/login", response_model=TokenResponse)
-def login(
+@router.post("/login")
+def login_oauth(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not Hash.verify(user.password, form_data.password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password"
-        )
-    access_token = create_access_token(subject=user.id)
-    refresh_token = create_refresh_token(subject=user.id)
-    return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+    result = authenticate_user(db, form_data.username, form_data.password)
+
+    if not result or isinstance(result, dict):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    access_token = create_access_token(subject=result.id)
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": _make_user_dict(result)
+    }
+
 
 # ---------------------------------------------------------------------
-# LOGIN + SET REFRESH COOKIE (axios-friendly JSON)
+# LOGIN (COOKIE)
 # ---------------------------------------------------------------------
 @router.post("/login/cookie")
 def login_cookie(payload: dict, db: Session = Depends(get_db)):
-    email = payload.get("email")
+    identifier = payload.get("identifier")
     password = payload.get("password")
-    if not email or not password:
-        raise HTTPException(status_code=400, detail="Missing email or password")
 
-    user = db.query(User).filter(User.email == email).first()
-    if not user or not Hash.verify(user.password, password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    if not identifier or not password:
+        raise HTTPException(status_code=400, detail="Missing credentials")
+    
+    result = authenticate_user(db, identifier, password)
+
+    if result is None:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    
+    if isinstance(result, dict) and result.get("otp_required"):
+        return {
+            "otp_required": True, 
+            "user_id": result["user_id"],
+            "message": "OTP sent to registered email"
+            }
+    
+    user =result
 
     access_token = create_access_token(subject=user.id)
     refresh_token = create_refresh_token(subject=user.id)
 
-    resp = JSONResponse(content={"access_token": access_token, "user": _make_user_dict(user)}, status_code=200)
+    resp = JSONResponse(
+        content={"access_token": access_token, "user": _make_user_dict(user)}
+    )
     resp.set_cookie(
         key=REFRESH_COOKIE_NAME,
         value=refresh_token,
-        httponly=REFRESH_COOKIE_PARAMS["httponly"],
-        samesite=REFRESH_COOKIE_PARAMS["samesite"],
-        secure=REFRESH_COOKIE_PARAMS["secure"],
+        **REFRESH_COOKIE_PARAMS
     )
     return resp
 
 # ---------------------------------------------------------------------
-# REFRESH (existing) - body-based
+# FORGOT PASSWORD (EMAIL / PHONE)
 # ---------------------------------------------------------------------
-@router.post("/refresh", response_model=TokenResponse)
-def refresh_token(refresh_token: str):
-    try:
-        decoded = decode_refresh_token(refresh_token)
-        user_id = decoded.get("sub")
-        new_access = create_access_token(subject=user_id)
-        new_refresh = create_refresh_token(subject=user_id)
-        return TokenResponse(access_token=new_access, refresh_token=new_refresh)
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
-
-# ---------------------------------------------------------------------
-# REFRESH FROM COOKIE (recommended) - reads HttpOnly cookie
-# ---------------------------------------------------------------------
-@router.post("/refresh/cookie")
-def refresh_from_cookie(request: Request):
-    try:
-        refresh_token = request.cookies.get(REFRESH_COOKIE_NAME)
-        if not refresh_token:
-            raise HTTPException(status_code=401, detail="Missing refresh cookie")
-
-        decoded = decode_refresh_token(refresh_token)
-        user_id = decoded.get("sub")
-
-        new_access = create_access_token(subject=user_id)
-        new_refresh = create_refresh_token(subject=user_id)
-
-        resp = JSONResponse(content={"access_token": new_access, "user": {"id": int(user_id)}}, status_code=200)
-        resp.set_cookie(
-            key=REFRESH_COOKIE_NAME,
-            value=new_refresh,
-            httponly=REFRESH_COOKIE_PARAMS["httponly"],
-            samesite=REFRESH_COOKIE_PARAMS["samesite"],
-            secure=REFRESH_COOKIE_PARAMS["secure"],
-        )
-        return resp
-    except HTTPException:
-        raise
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
-
-
-
 @router.post("/forgot-password")
-def forgot_password_api(
-    data: ForgotPasswordRequest,
+def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    send_otp(db, data.email)
+    return {"message": "OTP sent"}
+
+
+# ---------------------------------------------------------------------
+# VERIFY OTP
+# ---------------------------------------------------------------------
+@router.post("/verify-otp")
+def verify_otp(data: VerifyOtpSchema, db: Session = Depends(get_db)):
+    otp = db.query(OTP).filter(
+        OTP.identifier == (data.email),
+        OTP.otp == data.otp
+    ).first()
+
+    if not otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    if otp.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="OTP expired")
+    
+    user = db.query(User).filter(User.email == data.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    db.delete(otp)
+    db.commit()
+
+    
+    access_token = create_access_token(subject=user.id)
+    refresh_token = create_refresh_token(subject=user.id)
+
+    resp = JSONResponse(
+        content={
+            "access_token": access_token,
+            "user": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "phone": user.phone,
+                "is_admin": user.is_admin
+            }
+        }
+    )
+
+    resp.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+    )
+
+    return resp
+
+
+# ---------------------------------------------------------------------
+# RESEND LOGIN OTP (FOR 2-STEP LOGIN)
+# ---------------------------------------------------------------------
+@router.post("/resend-login-otp")
+def resend_login_otp(
+    data: ForgotPasswordRequest,  # reuse schema (email field)
     db: Session = Depends(get_db)
 ):
-    auth_service.forgot_password(db, data.email)
-    return {
-        "message": "Reset link sent"
-    }
+    send_otp(db, data.email)
+    return {"message": "OTP resent"}
 
-
-@router.post("/reset-password")
-def reset_password_api(
-    data: ResetPasswordRequest,
+# ---------------------------------------------------------------------
+# RESEND PIN CHANGE OTP
+# ---------------------------------------------------------------------
+@router.post("/resend-pin-otp")
+def resend_pin_otp(
+    data: ForgotPasswordRequest,  # contains email
     db: Session = Depends(get_db)
 ):
-    success = auth_service.reset_password(db, data.token, data.new_password)
+    send_otp(db, data.email)
+    return {"message": "OTP resent for PIN change"}
 
-    if not success:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid or expired token"
-        )
-
-    return {
-        "message": "Password updated successfully"
-    }

@@ -1,4 +1,21 @@
-# backend/app/config.py
+"""
+Configuration File
+
+What:
+- Stores environment variables
+- JWT secret, DB URL, token expiry
+
+Backend Connections:
+- Used by:
+  - auth router
+  - jwt utilities
+  - security utilities
+
+Frontend Connections:
+- Login.jsx & Register.jsx depend on auth behavior
+  configured using values from this file
+"""
+
 import os
 import sys
 from pathlib import Path

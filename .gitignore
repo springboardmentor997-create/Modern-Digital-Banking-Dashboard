@@ -42,3 +42,10 @@ logs/
 # -------------------------
 alembic/__pycache__/
 alembic/versions/__pycache__/
+
+
+# -------------------------
+# Firebase
+# -------------------------
+backend/app/firebase/*.json
+app/config/firebase_key.json

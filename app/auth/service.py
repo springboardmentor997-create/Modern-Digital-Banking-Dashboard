@@ -5,6 +5,19 @@ from app.models.user import User
 from sqlalchemy.exc import IntegrityError
 import secrets
 from sqlalchemy.orm import Session
+from app.utils.hashing import Hash
+from app.utils.validators import is_strong_password
+from app.models.otp import OTP
+import random
+from app.utils.email_utils import send_email
+from app.models.user_settings import UserSettings
+from app.alerts.service import create_alert
+from app.models.user_device import UserDevice
+from app.firebase.firebase import send_push_notification
+from datetime import datetime, timedelta, timezone
+
+
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -50,46 +63,109 @@ def get_user_by_email(db_session, email: str):
     return db_session.query(User).filter(User.email == email).first()
 
 
-# =========================
-# FORGOT / RESET PASSWORD
-# =========================
-
-def generate_reset_token() -> str:
-    return secrets.token_urlsafe(32)
-
-
-def forgot_password(db: Session, email: str):
-    """
-    Generates reset token for user.
-    Always returns success (even if user not found).
-    """
+def reset_password(db: Session, email: str, new_password: str) -> bool:
     user = db.query(User).filter(User.email == email).first()
-    if not user:
-        return
-
-    user.reset_token = secrets.token_urlsafe(32)
-    user.reset_token_expiry = datetime.utcnow() + timedelta(minutes=30)
-
-    db.add(user)        # 🔑 REQUIRED
-    db.commit()
-    db.refresh(user)    # 🔑 REQUIRED
-
-
-def reset_password(db: Session, token: str, new_password: str) -> bool:
-    """
-    Resets password using valid reset token.
-    """
-    user = db.query(User).filter(User.reset_token == token).first()
 
     if not user:
         return False
 
-    if not user.reset_token_expiry or user.reset_token_expiry < datetime.utcnow():
-        return False
+    # ❌ New password must not be same as old password
+    if Hash.verify(user.password, new_password):
+        raise ValueError("New password cannot be the same as old password")
 
-    user.password = hash_password(new_password)
-    user.reset_token = None
-    user.reset_token_expiry = None
+    # ❌ Password strength validation
+    if not is_strong_password(new_password):
+        raise ValueError(
+            "Password must be at least 8 characters long and include "
+            "uppercase, lowercase, number, and special character"
+        )
 
+    # ✅ Update password
+    user.password = Hash.bcrypt(new_password)
     db.commit()
     return True
+
+
+
+
+def send_otp(db: Session, identifier: str):
+    otp_code = str(random.randint(100000, 999999))
+
+    otp = OTP(
+        identifier=identifier,
+        otp=otp_code,
+        expires_at=OTP.expiry()
+    )
+
+    db.add(otp)
+    db.commit()
+
+    # ✅ EMAIL OTP (FREE)
+    if "@" in identifier:
+        send_email(
+            to_email=identifier,
+            subject="Your OTP Code",
+            body=f"Your OTP is {otp_code}. It is valid for 2 minutes."
+        )
+
+
+    
+def authenticate_user(db: Session, identifier: str, password: str):
+    user = get_user_by_email(db, identifier)
+
+    if not user or not Hash.verify(user.password, password):
+        return None
+
+    # ✅ Load settings
+    settings = (
+        db.query(UserSettings)
+        .filter(UserSettings.user_id == user.id)
+        .first()
+    )
+
+    # 🔔 LOGIN ALERT
+    if settings and settings.login_alerts:
+        create_alert(
+            db=db,
+            user_id=user.id,
+            alert_type="login",
+            message="New device login detected"
+        )
+
+
+        if settings.email_alerts:
+            send_email(
+                to_email=user.email,
+                subject="New Login Alert",
+                body="A new device login to your account was detected."
+            )
+
+        devices = db.query(UserDevice).filter(
+            UserDevice.user_id == user.id
+        ).all()
+
+        for device in devices:
+            try:
+                send_push_notification(
+                    token=device.device_token,
+                    title="New Login Alert",
+                    body="A new device login to your account was detected."
+                )
+            except Exception as e:
+                print("Push notification failed:", e)
+
+    # 🔐 TWO-FACTOR AUTH
+    if settings and settings.two_factor_enabled:
+        send_otp(db, user.email)
+        return {
+            "otp_required": True,
+            "user_id": user.id
+        }
+    
+
+    user.last_login = datetime.utcnow()
+    db.commit()
+    db.refresh(user)
+
+    # ✅ Normal login success
+    return user
