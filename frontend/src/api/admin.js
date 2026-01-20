@@ -2,8 +2,13 @@ import axiosClient from './client';
 
 // User Management
 export const getAllUsers = async () => {
-  const response = await axiosClient.get('/api/admin/users');
-  return response.data;
+  try {
+    const response = await axiosClient.get('/api/admin/users');
+    return response.data.users || [];
+  } catch (error) {
+    console.error('Failed to fetch users:', error);
+    return [];
+  }
 };
 
 export const activateUser = async (userId) => {
@@ -54,13 +59,23 @@ export const getSystemSummary = async () => {
 
 // Data Management
 export const getAllAccounts = async () => {
-  const response = await axiosClient.get('/api/admin/accounts');
-  return response.data;
+  try {
+    const response = await axiosClient.get('/api/admin/accounts');
+    return response.data.accounts || [];
+  } catch (error) {
+    console.error('Failed to fetch accounts:', error);
+    return [];
+  }
 };
 
 export const getAllTransactions = async () => {
-  const response = await axiosClient.get('/api/admin/transactions');
-  return response.data;
+  try {
+    const response = await axiosClient.get('/api/admin/transactions');
+    return response.data.transactions || [];
+  } catch (error) {
+    console.error('Failed to fetch transactions:', error);
+    return [];
+  }
 };
 
 export const getSuspiciousActivity = async () => {
