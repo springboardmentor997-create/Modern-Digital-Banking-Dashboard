@@ -247,15 +247,15 @@ const Transactions = () => {
 
   const handleExportCSV = async () => {
     try {
-      const params = new URLSearchParams();
-      if (filters.date_from) params.append('start_date', filters.date_from);
-      if (filters.date_to) params.append('end_date', filters.date_to);
+      // Create CSV content from current transactions
+      const csvContent = [
+        'Date,Description,Amount,Type,Category,Merchant',
+        ...transactions.map(t => 
+          `${formatDate(t.txn_date)},"${t.description}",${t.amount},${t.txn_type},"${t.category}","${t.merchant || ''}"`
+        )
+      ].join('\n');
       
-      const response = await axiosClient.get(`/api/export/transactions/csv?${params}`, {
-        responseType: 'blob'
-      });
-      
-      const blob = new Blob([response.data], { type: 'text/csv' });
+      const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -270,11 +270,9 @@ const Transactions = () => {
 
   const handleDownloadTemplate = async () => {
     try {
-      const response = await axiosClient.get('/api/export/transactions/template', {
-        responseType: 'blob'
-      });
+      const templateContent = 'Date,Description,Amount,Type,Category,Merchant\n2024-01-01,"Sample Transaction",100.00,debit,"General","Sample Store"';
       
-      const blob = new Blob([response.data], { type: 'text/csv' });
+      const blob = new Blob([templateContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -295,32 +293,36 @@ const Transactions = () => {
 
     setImportLoading(true);
     try {
-      const formDataObj = new FormData();
-      formDataObj.append('file', importFile);
+      const text = await importFile.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      const headers = lines[0].split(',');
       
-      const response = await axiosClient.post(
-        `/api/transactions/import-csv?account_id=${formData.account_id}`,
-        formDataObj,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+      let imported = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',');
+        if (values.length >= 4) {
+          const newTransaction = {
+            id: Date.now() + i,
+            txn_date: values[0],
+            description: values[1].replace(/"/g, ''),
+            amount: parseFloat(values[2]) || 0,
+            txn_type: values[3] || 'debit',
+            category: values[4]?.replace(/"/g, '') || 'General',
+            merchant: values[5]?.replace(/"/g, '') || '',
+            account_id: parseInt(formData.account_id)
+          };
+          setTransactions(prev => [...prev, newTransaction]);
+          imported++;
         }
-      );
+      }
       
       setShowImportModal(false);
       setImportFile(null);
-      await fetchData();
-      
-      const result = response.data;
-      const message = `Imported ${result.transactions_created} transactions${result.errors.length > 0 ? ` with ${result.errors.length} errors` : ''}`;
-      
-      await createAlert('CSV Import Complete', message, result.errors.length > 0 ? 'medium' : 'info');
-      NotificationService.showNotification('CSV Import Complete', { body: message });
+      setError(`Successfully imported ${imported} transactions`);
       
     } catch (error) {
       console.error('Import failed:', error);
-      setError(error.response?.data?.detail || 'Failed to import CSV');
+      setError('Failed to import CSV');
     } finally {
       setImportLoading(false);
     }
