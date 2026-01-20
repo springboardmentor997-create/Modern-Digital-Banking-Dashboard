@@ -24,28 +24,16 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const userData = await getProfile();
-        setUser(userData);
-        setEditName(userData.name);
-
-        // Fetch accounts too
-        try {
-          const accountsPayload = await getAccounts();
-          setAccounts(accountsPayload.accounts || []);
-        } catch (e) {
-          console.warn('Failed to load accounts', e);
-          setAccounts([]);
-        }
-
-      } catch (err) {
-        console.error('Profile fetch error:', err);
-        // Fallback to auth context user data
+        // Use auth context user data directly
         if (authUser) {
           setUser(authUser);
-          setEditName(authUser.name);
+          setEditName(authUser.name || authUser.email);
         } else {
-          setError('Failed to load profile');
+          setError('No user data available');
         }
+      } catch (err) {
+        console.error('Profile fetch error:', err);
+        setError('Failed to load profile');
       } finally {
         setLoading(false);
       }
