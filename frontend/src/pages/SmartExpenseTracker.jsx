@@ -33,10 +33,7 @@ const SmartExpenseTracker = () => {
   });
 
   useEffect(() => {
-    loadExpenseData();
-    loadCategories();
-    loadAnalytics();
-    loadReceipts();
+    loadMockData();
   }, []);
 
   const apiCall = async (endpoint, options = {}) => {
@@ -149,11 +146,37 @@ const SmartExpenseTracker = () => {
     setExpenses(mockExpenses);
     
     const categoryTotals = mockExpenses.reduce((acc, expense) => {
-      acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+      if (expense && expense.category) {
+        acc[expense.category] = (acc[expense.category] || 0) + (expense.amount || 0);
+      }
       return acc;
     }, {});
     
     setCategories(categoryTotals);
+    
+    setAnalytics({
+      total_expenses: 135.66,
+      average_daily: 45.22,
+      expense_count: 2,
+      highest_expense: 89.99,
+      category_breakdown: categoryTotals,
+      top_merchants: [
+        { merchant: 'Starbucks', count: 1, total: 45.67 },
+        { merchant: 'Shell', count: 1, total: 89.99 }
+      ]
+    });
+    
+    setReceipts(mockExpenses.filter(e => e.has_receipt));
+    
+    setAvailableCategories([
+      { name: "Food & Dining", icon: "🍔", color: "bg-red-500" },
+      { name: "Transportation", icon: "🚗", color: "bg-blue-500" },
+      { name: "Groceries", icon: "🛒", color: "bg-green-500" },
+      { name: "Entertainment", icon: "🎬", color: "bg-purple-500" },
+      { name: "Shopping", icon: "🛍️", color: "bg-yellow-500" },
+      { name: "Healthcare", icon: "🏥", color: "bg-pink-500" },
+      { name: "Utilities", icon: "💡", color: "bg-indigo-500" }
+    ]);
   };
 
   const handleReceiptScan = async (file) => {
@@ -197,39 +220,22 @@ const SmartExpenseTracker = () => {
       return;
     }
     
-    try {
-      setLoading(true);
-      const expenseData = {
-        amount: parseFloat(newExpense.amount),
-        description: newExpense.description,
-        category: newExpense.category,
-        location: newExpense.location,
-        merchant: newExpense.merchant,
-        has_receipt: newExpense.has_receipt,
-        ai_suggested: false
-      };
-      
-      const createdExpense = await apiCall('/expenses/', {
-        method: 'POST',
-        body: JSON.stringify(expenseData)
-      });
-      
-      setExpenses([createdExpense, ...expenses]);
-      setNewExpense({ amount: '', description: '', category: '', location: '', merchant: '', has_receipt: false });
-      setShowAddExpense(false);
-      
-      // Reload data to update analytics
-      loadExpenseData();
-      loadAnalytics();
-      if (expenseData.has_receipt) {
-        loadReceipts();
-      }
-    } catch (error) {
-      console.error('Failed to add expense:', error);
-      alert('Failed to add expense. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    const newId = Math.max(...expenses.map(e => e.id), 0) + 1;
+    const expenseData = {
+      id: newId,
+      amount: parseFloat(newExpense.amount),
+      description: newExpense.description,
+      category: newExpense.category,
+      location: newExpense.location,
+      merchant: newExpense.merchant,
+      has_receipt: newExpense.has_receipt,
+      ai_suggested: false,
+      expense_date: new Date().toISOString()
+    };
+    
+    setExpenses([expenseData, ...expenses]);
+    setNewExpense({ amount: '', description: '', category: '', location: '', merchant: '', has_receipt: false });
+    setShowAddExpense(false);
   };
 
   const loadReceipts = async () => {
