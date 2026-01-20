@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Use environment variable for API URL or empty string for relative paths (works with Vercel rewrites)
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+// Use environment variable for API URL or backend URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://modern-digital-banking-dashboard-1-vg97.onrender.com';
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,

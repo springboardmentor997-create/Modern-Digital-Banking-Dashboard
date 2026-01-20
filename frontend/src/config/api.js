@@ -1,2 +1,2 @@
-// Use environment variable with fallback
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://modern-digital-banking-dashboard-1-vg97.onrender.com';
+// Use environment variable with fallback to local development server
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
