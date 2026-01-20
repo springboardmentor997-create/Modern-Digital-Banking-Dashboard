@@ -9,7 +9,7 @@ export const login = async (credentials) => {
   try {
     const response = await axiosClient.post('/api/auth/login', loginData);
     
-    // If response is empty, return mock data
+    // If response is empty, return mock data with actual email
     if (!response.data || Object.keys(response.data).length === 0) {
       return {
         access_token: "mock-token-123",
@@ -17,7 +17,7 @@ export const login = async (credentials) => {
         user: {
           id: 1,
           email: credentials.email,
-          name: "User",
+          name: credentials.email.split('@')[0],
           role: "user"
         }
       };
@@ -25,14 +25,14 @@ export const login = async (credentials) => {
     
     return response.data;
   } catch (error) {
-    // If backend fails, return mock data for any credentials
+    // If backend fails, return mock data with actual email
     return {
       access_token: "mock-token-123",
       token_type: "bearer", 
       user: {
         id: 1,
         email: credentials.email,
-        name: "User",
+        name: credentials.email.split('@')[0],
         role: "user"
       }
     };
