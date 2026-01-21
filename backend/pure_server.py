@@ -22,6 +22,45 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
     # Store current user as class variable so it persists across requests
     current_user = {"id": 1, "name": "Demo User", "email": "user@bank.com", "role": "user", "phone": "+1234567890", "kyc_status": "unverified", "created_at": "2024-01-01T00:00:00"}
     
+    def _calculate_category_breakdown(self):
+        """Calculate category breakdown from expenses and transactions"""
+        categories = {}
+        
+        # Add expenses
+        for expense in self.created_expenses:
+            category = expense.get('category', 'General')
+            amount = expense.get('amount', 0)
+            categories[category] = categories.get(category, 0) + amount
+        
+        # Add debit transactions
+        for transaction in self.created_transactions:
+            if transaction.get('txn_type') == 'debit':
+                category = transaction.get('category', 'General')
+                amount = transaction.get('amount', 0)
+                categories[category] = categories.get(category, 0) + amount
+        
+        # Calculate percentages
+        total = sum(categories.values()) or 1
+        result = []
+        for category, amount in categories.items():
+            result.append({
+                "category": category,
+                "amount": amount,
+                "percentage": (amount / total) * 100
+            })
+        
+        # Return default if no data
+        if not result:
+            return [
+                {"category": "Food & Dining", "amount": 12000, "percentage": 34.3},
+                {"category": "Transportation", "amount": 8000, "percentage": 22.9},
+                {"category": "Shopping", "amount": 7000, "percentage": 20.0},
+                {"category": "Bills", "amount": 5000, "percentage": 14.3},
+                {"category": "Entertainment", "amount": 3000, "percentage": 8.5}
+            ]
+        
+        return result
+    
     def _set_headers(self, status=200):
         self.send_response(status)
         self.send_header('Content-type', 'application/json')
@@ -123,26 +162,20 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 '/api/auditor/alerts': self.created_alerts,
                 '/api/currency/supported': {"currencies": ["USD", "EUR", "GBP", "INR", "JPY"]},
                 '/api/insights/': {
-                    "income": 50000,
-                    "expenses": 35000,
-                    "net_flow": 15000,
+                    "income": sum(t.get('amount', 0) for t in self.created_transactions if t.get('txn_type') == 'credit') or 50000,
+                    "expenses": sum(e.get('amount', 0) for e in self.created_expenses) + sum(t.get('amount', 0) for t in self.created_transactions if t.get('txn_type') == 'debit') or 35000,
+                    "net_flow": (sum(t.get('amount', 0) for t in self.created_transactions if t.get('txn_type') == 'credit') or 50000) - (sum(e.get('amount', 0) for e in self.created_expenses) + sum(t.get('amount', 0) for t in self.created_transactions if t.get('txn_type') == 'debit') or 35000),
                     "savings_rate": 30.0
                 },
                 '/api/insights/spending': {
-                    "daily_burn_rate": 1166.67,
-                    "projected_monthly_spend": 35000,
+                    "daily_burn_rate": (sum(e.get('amount', 0) for e in self.created_expenses) + sum(t.get('amount', 0) for t in self.created_transactions if t.get('txn_type') == 'debit')) / 30 or 1166.67,
+                    "projected_monthly_spend": sum(e.get('amount', 0) for e in self.created_expenses) + sum(t.get('amount', 0) for t in self.created_transactions if t.get('txn_type') == 'debit') or 35000,
                     "top_merchants": [
                         {"merchant": "Amazon", "amount": 5000},
                         {"merchant": "Walmart", "amount": 3000}
                     ]
                 },
-                '/api/insights/categories': [
-                    {"category": "Food & Dining", "amount": 12000, "percentage": 34.3},
-                    {"category": "Transportation", "amount": 8000, "percentage": 22.9},
-                    {"category": "Shopping", "amount": 7000, "percentage": 20.0},
-                    {"category": "Bills", "amount": 5000, "percentage": 14.3},
-                    {"category": "Entertainment", "amount": 3000, "percentage": 8.5}
-                ],
+                '/api/insights/categories': self._calculate_category_breakdown(),
                 '/api/insights/trends': [
                     {"month": "Jan", "savings": 10000},
                     {"month": "Feb", "savings": 12000},
@@ -155,16 +188,24 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 '/api/user/profile': BankingAPIHandler.current_user,
                 '/api/profile': BankingAPIHandler.current_user,
                 '/api/profile/kyc/status': {"status": "verified", "message": "KYC verified"},
-                '/api/admin/system-summary': {"total_users": 100, "active_users": 80, "total_transactions": 500},
+                '/api/admin/system-summary': {
+                    "total_users": 100,
+                    "active_users": 80,
+                    "total_transactions": len(self.created_transactions) + 2,
+                    "total_accounts": len(self.created_accounts) + 1,
+                    "total_balance": sum(a.get('balance', 0) for a in self.created_accounts) + 150000,
+                    "pending_bills": len([b for b in self.created_bills if b['status'] == 'pending']),
+                    "total_expenses": sum(e.get('amount', 0) for e in self.created_expenses)
+                },
                 '/api/admin/users': [
-                    {"id": 1, "email": "user@bank.com", "name": "User", "role": "user", "is_active": True, "kyc_status": "verified"},
+                    BankingAPIHandler.current_user,
                     {"id": 2, "email": "admin@bank.com", "name": "Admin", "role": "admin", "is_active": True, "kyc_status": "verified"}
                 ],
-                '/api/admin/accounts': [
-                    {"id": 1, "user_id": 1, "account_type": "savings", "balance": 50000, "masked_account": "****1234"}
+                '/api/admin/accounts': self.created_accounts + [
+                    {"id": 999, "user_id": 1, "account_type": "savings", "balance": 50000, "masked_account": "****1234"}
                 ],
-                '/api/admin/transactions': [
-                    {"id": 1, "amount": 1000, "type": "credit", "date": datetime.now().isoformat(), "status": "completed"}
+                '/api/admin/transactions': self.created_transactions + [
+                    {"id": 999, "amount": 1000, "type": "credit", "date": datetime.now().isoformat(), "status": "completed"}
                 ],
             }
             
