@@ -189,24 +189,32 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 '/api/profile': BankingAPIHandler.current_user,
                 '/api/profile/kyc/status': {"status": "verified", "message": "KYC verified"},
                 '/api/admin/system-summary': {
-                    "total_users": 100,
-                    "active_users": 80,
+                    "total_users": len(self.created_accounts) + 2,  # Current user + admin + created accounts
+                    "active_users": len(self.created_accounts) + 2,
                     "total_transactions": len(self.created_transactions) + 2,
                     "total_accounts": len(self.created_accounts) + 1,
                     "total_balance": sum(a.get('balance', 0) for a in self.created_accounts) + 150000,
                     "pending_bills": len([b for b in self.created_bills if b['status'] == 'pending']),
-                    "total_expenses": sum(e.get('amount', 0) for e in self.created_expenses)
+                    "total_expenses": sum(e.get('amount', 0) for e in self.created_expenses),
+                    "pending_kyc": 0,
+                    "verified_kyc": len(self.created_accounts) + 2
                 },
-                '/api/admin/users': [
-                    BankingAPIHandler.current_user,
-                    {"id": 2, "email": "admin@bank.com", "name": "Admin", "role": "admin", "is_active": True, "kyc_status": "verified"}
-                ],
-                '/api/admin/accounts': self.created_accounts + [
-                    {"id": 999, "user_id": 1, "account_type": "savings", "balance": 50000, "masked_account": "****1234"}
-                ],
-                '/api/admin/transactions': self.created_transactions + [
-                    {"id": 999, "amount": 1000, "type": "credit", "date": datetime.now().isoformat(), "status": "completed"}
-                ],
+                '/api/admin/users': {
+                    "users": [
+                        BankingAPIHandler.current_user,
+                        {"id": 2, "email": "admin@bank.com", "name": "Admin User", "role": "admin", "is_active": True, "kyc_status": "verified", "created_at": "2024-01-01T00:00:00", "phone": "+1234567890"}
+                    ] + [{"id": i+10, "email": f"user{i}@bank.com", "name": f"User {i}", "role": "user", "is_active": True, "kyc_status": "verified", "created_at": "2024-01-01T00:00:00", "phone": "+1234567890"} for i in range(len(self.created_accounts))]
+                },
+                '/api/admin/accounts': {
+                    "accounts": self.created_accounts + [
+                        {"id": 999, "user_id": 1, "account_type": "savings", "balance": 50000, "masked_account": "****1234", "name": "Primary Savings"}
+                    ]
+                },
+                '/api/admin/transactions': {
+                    "transactions": self.created_transactions + [
+                        {"id": 999, "amount": 1000, "type": "credit", "date": datetime.now().isoformat(), "status": "completed", "description": "Sample Transaction"}
+                    ]
+                },
             }
             
             response = responses.get(path, {"message": "Success", "data": []})
