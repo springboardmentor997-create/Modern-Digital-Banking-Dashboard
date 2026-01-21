@@ -281,25 +281,22 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 '/api/admin/system-summary': {
                     "total_users": 100,
                     "active_users": 85,
-                    "total_transactions": len(self.created_transactions) + 150,
-                    "total_accounts": len(self.created_accounts) + 100,
-                    "total_balance": sum(a.get('balance', 0) for a in self.created_accounts) + 15000000,
+                    "total_transactions": len(self.created_transactions) + 500,
+                    "total_accounts": 100,
+                    "total_balance": 15000000,
                     "pending_bills": len([b for b in self.created_bills if b['status'] == 'pending']),
                     "total_expenses": sum(e.get('amount', 0) for e in self.created_expenses),
                     "pending_kyc": 15,
                     "verified_kyc": 85
                 },
-                '/api/admin/users': {
-                    "users": self._generate_mock_users()
-                },
-                '/api/admin/accounts': {
-                    "accounts": self._generate_mock_accounts()
-                },
-                '/api/admin/transactions': {
-                    "transactions": self.created_transactions + [
-                        {"id": 999, "amount": 1000, "type": "credit", "date": datetime.now().isoformat(), "status": "completed", "description": "Sample Transaction"}
-                    ]
-                },
+                '/api/admin/users': self._generate_mock_users(),
+                '/api/admin/accounts': self._generate_mock_accounts(),
+                '/api/admin/transactions': self.created_transactions + [
+                    {"id": 999, "amount": 1000, "type": "credit", "date": datetime.now().isoformat(), "status": "completed", "description": "Sample Transaction"}
+                ] + [
+                    {"id": i, "amount": 1000 + (i * 100), "type": "credit" if i % 2 == 0 else "debit", "date": f"2024-01-{(i % 28) + 1:02d}T00:00:00", "status": "completed", "description": f"Transaction {i}"}
+                    for i in range(1, 500)
+                ],
             }
             
             response = responses.get(path, {"message": "Success", "data": []})
