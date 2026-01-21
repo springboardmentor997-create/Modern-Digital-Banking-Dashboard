@@ -5,7 +5,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && copy public\_redirects dist\_redirects",
     "lint": "eslint .",
     "preview": "vite preview"
   },
