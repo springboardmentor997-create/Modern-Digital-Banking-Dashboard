@@ -23,29 +23,71 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
     current_user = {"id": 1, "name": "Demo User", "email": "user@bank.com", "role": "user", "phone": "+1234567890", "kyc_status": "unverified", "created_at": "2024-01-01T00:00:00"}
     
     def _generate_mock_users(self):
-        """Generate 100 mock users for admin dashboard"""
-        import random
+        """Generate realistic users for admin dashboard including registered users"""
+        # Start with current logged-in user and predefined users
         users = [
             BankingAPIHandler.current_user,
-            {"id": 2, "email": "admin@bank.com", "name": "Admin User", "role": "admin", "is_active": True, "kyc_status": "verified", "created_at": "2024-01-01T00:00:00", "phone": "+1234567890"}
+            {"id": 2, "email": "admin@bank.com", "name": "Admin User", "role": "admin", "is_active": True, "kyc_status": "verified", "created_at": "2024-01-01T00:00:00", "phone": "+1234567890"},
+            {"id": 3, "email": "auditor@bank.com", "name": "Auditor User", "role": "auditor", "is_active": True, "kyc_status": "verified", "created_at": "2024-01-02T00:00:00", "phone": "+1234567891"},
+            {"id": 4, "email": "support@bank.com", "name": "Support User", "role": "support", "is_active": True, "kyc_status": "verified", "created_at": "2024-01-03T00:00:00", "phone": "+1234567892"},
+            {"id": 5, "email": "urmila@bank.com", "name": "Urmila Sharma", "role": "user", "is_active": True, "kyc_status": "verified", "created_at": "2024-01-04T00:00:00", "phone": "+1234567893"},
+            {"id": 6, "email": "diksha@bank.com", "name": "Diksha Patel", "role": "user", "is_active": True, "kyc_status": "verified", "created_at": "2024-01-05T00:00:00", "phone": "+1234567894"},
+            {"id": 7, "email": "test@bank.com", "name": "Test User", "role": "user", "is_active": True, "kyc_status": "pending", "created_at": "2024-01-06T00:00:00", "phone": "+1234567895"}
         ]
         
-        # Generate 98 more users
-        names = ["John Smith", "Jane Doe", "Mike Johnson", "Sarah Wilson", "David Brown", "Lisa Davis", "Chris Miller", "Emma Garcia", "Ryan Martinez", "Ashley Rodriguez"]
-        roles = ["user", "user", "user", "user", "support", "auditor"]
+        # Add more realistic users
+        realistic_users = [
+            {"name": "John Smith", "email": "john.smith@bank.com", "role": "user"},
+            {"name": "Sarah Johnson", "email": "sarah.johnson@bank.com", "role": "user"},
+            {"name": "Michael Brown", "email": "michael.brown@bank.com", "role": "user"},
+            {"name": "Emily Davis", "email": "emily.davis@bank.com", "role": "user"},
+            {"name": "David Wilson", "email": "david.wilson@bank.com", "role": "support"},
+            {"name": "Lisa Garcia", "email": "lisa.garcia@bank.com", "role": "user"},
+            {"name": "Chris Martinez", "email": "chris.martinez@bank.com", "role": "auditor"},
+            {"name": "Ashley Rodriguez", "email": "ashley.rodriguez@bank.com", "role": "user"},
+            {"name": "Ryan Miller", "email": "ryan.miller@bank.com", "role": "user"},
+            {"name": "Jessica Taylor", "email": "jessica.taylor@bank.com", "role": "user"},
+            {"name": "Kevin Anderson", "email": "kevin.anderson@bank.com", "role": "user"},
+            {"name": "Amanda Thomas", "email": "amanda.thomas@bank.com", "role": "user"},
+            {"name": "Brandon Jackson", "email": "brandon.jackson@bank.com", "role": "user"},
+            {"name": "Stephanie White", "email": "stephanie.white@bank.com", "role": "support"},
+            {"name": "Daniel Harris", "email": "daniel.harris@bank.com", "role": "user"}
+        ]
+        
+        import random
         statuses = ["verified", "verified", "verified", "pending"]
         
-        for i in range(3, 101):
-            name = f"{random.choice(names.split()[0])} {random.choice(['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'])}"
+        # Add realistic users
+        for i, user_data in enumerate(realistic_users, start=8):
             users.append({
                 "id": i,
-                "email": f"user{i}@bank.com",
+                "email": user_data["email"],
+                "name": user_data["name"],
+                "role": user_data["role"],
+                "is_active": random.choice([True, True, True, False]),
+                "kyc_status": random.choice(statuses),
+                "created_at": f"2024-01-{random.randint(7,28):02d}T00:00:00",
+                "phone": f"+1{random.randint(1000000000, 9999999999)}"
+            })
+        
+        # Fill remaining slots with generated users
+        remaining_count = 100 - len(users)
+        names = ["Alex", "Jordan", "Taylor", "Morgan", "Casey", "Riley", "Avery", "Quinn", "Sage", "River"]
+        surnames = ["Kumar", "Singh", "Patel", "Gupta", "Sharma", "Verma", "Agarwal", "Jain", "Bansal", "Chopra"]
+        roles = ["user", "user", "user", "user", "support"]
+        
+        for i in range(remaining_count):
+            user_id = len(users) + 1
+            name = f"{random.choice(names)} {random.choice(surnames)}"
+            users.append({
+                "id": user_id,
+                "email": f"user{user_id}@bank.com",
                 "name": name,
                 "role": random.choice(roles),
                 "is_active": random.choice([True, True, True, False]),
                 "kyc_status": random.choice(statuses),
                 "created_at": f"2024-{random.randint(1,12):02d}-{random.randint(1,28):02d}T00:00:00",
-                "phone": f"+1{random.randint(1000000000, 9999999999)}"
+                "phone": f"+91{random.randint(1000000000, 9999999999)}"
             })
         
         return users
@@ -343,7 +385,10 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 "email": email,
                 "name": name,
                 "role": role,
-                "phone": "+1234567890"
+                "phone": "+1234567890",
+                "created_at": "2024-01-01T00:00:00",
+                "kyc_status": "verified",
+                "is_active": True
             }
             
             response = {
