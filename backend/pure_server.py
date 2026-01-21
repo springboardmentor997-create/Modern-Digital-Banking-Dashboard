@@ -22,6 +22,54 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
     # Store current user as class variable so it persists across requests
     current_user = {"id": 1, "name": "Demo User", "email": "user@bank.com", "role": "user", "phone": "+1234567890", "kyc_status": "unverified", "created_at": "2024-01-01T00:00:00"}
     
+    def _generate_mock_users(self):
+        """Generate 100 mock users for admin dashboard"""
+        import random
+        users = [
+            BankingAPIHandler.current_user,
+            {"id": 2, "email": "admin@bank.com", "name": "Admin User", "role": "admin", "is_active": True, "kyc_status": "verified", "created_at": "2024-01-01T00:00:00", "phone": "+1234567890"}
+        ]
+        
+        # Generate 98 more users
+        names = ["John Smith", "Jane Doe", "Mike Johnson", "Sarah Wilson", "David Brown", "Lisa Davis", "Chris Miller", "Emma Garcia", "Ryan Martinez", "Ashley Rodriguez"]
+        roles = ["user", "user", "user", "user", "support", "auditor"]
+        statuses = ["verified", "verified", "verified", "pending"]
+        
+        for i in range(3, 101):
+            name = f"{random.choice(names.split()[0])} {random.choice(['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'])}"
+            users.append({
+                "id": i,
+                "email": f"user{i}@bank.com",
+                "name": name,
+                "role": random.choice(roles),
+                "is_active": random.choice([True, True, True, False]),
+                "kyc_status": random.choice(statuses),
+                "created_at": f"2024-{random.randint(1,12):02d}-{random.randint(1,28):02d}T00:00:00",
+                "phone": f"+1{random.randint(1000000000, 9999999999)}"
+            })
+        
+        return users
+    
+    def _generate_mock_accounts(self):
+        """Generate mock accounts for admin dashboard"""
+        import random
+        accounts = list(self.created_accounts)
+        
+        # Add 100 mock accounts
+        account_types = ["savings", "checking", "credit", "investment"]
+        for i in range(1, 101):
+            accounts.append({
+                "id": i + 1000,
+                "user_id": random.randint(1, 100),
+                "account_type": random.choice(account_types),
+                "balance": random.randint(1000, 500000),
+                "masked_account": f"****{random.randint(1000, 9999)}",
+                "name": f"{random.choice(account_types).title()} Account",
+                "created_at": f"2024-{random.randint(1,12):02d}-{random.randint(1,28):02d}T00:00:00"
+            })
+        
+        return accounts
+    
     def _calculate_category_breakdown(self):
         """Calculate category breakdown from expenses and transactions"""
         categories = {}
@@ -189,26 +237,21 @@ class BankingAPIHandler(BaseHTTPRequestHandler):
                 '/api/profile': BankingAPIHandler.current_user,
                 '/api/profile/kyc/status': {"status": "verified", "message": "KYC verified"},
                 '/api/admin/system-summary': {
-                    "total_users": len(self.created_accounts) + 2,  # Current user + admin + created accounts
-                    "active_users": len(self.created_accounts) + 2,
-                    "total_transactions": len(self.created_transactions) + 2,
-                    "total_accounts": len(self.created_accounts) + 1,
-                    "total_balance": sum(a.get('balance', 0) for a in self.created_accounts) + 150000,
+                    "total_users": 100,
+                    "active_users": 85,
+                    "total_transactions": len(self.created_transactions) + 150,
+                    "total_accounts": len(self.created_accounts) + 100,
+                    "total_balance": sum(a.get('balance', 0) for a in self.created_accounts) + 15000000,
                     "pending_bills": len([b for b in self.created_bills if b['status'] == 'pending']),
                     "total_expenses": sum(e.get('amount', 0) for e in self.created_expenses),
-                    "pending_kyc": 0,
-                    "verified_kyc": len(self.created_accounts) + 2
+                    "pending_kyc": 15,
+                    "verified_kyc": 85
                 },
                 '/api/admin/users': {
-                    "users": [
-                        BankingAPIHandler.current_user,
-                        {"id": 2, "email": "admin@bank.com", "name": "Admin User", "role": "admin", "is_active": True, "kyc_status": "verified", "created_at": "2024-01-01T00:00:00", "phone": "+1234567890"}
-                    ] + [{"id": i+10, "email": f"user{i}@bank.com", "name": f"User {i}", "role": "user", "is_active": True, "kyc_status": "verified", "created_at": "2024-01-01T00:00:00", "phone": "+1234567890"} for i in range(len(self.created_accounts))]
+                    "users": self._generate_mock_users()
                 },
                 '/api/admin/accounts': {
-                    "accounts": self.created_accounts + [
-                        {"id": 999, "user_id": 1, "account_type": "savings", "balance": 50000, "masked_account": "****1234", "name": "Primary Savings"}
-                    ]
+                    "accounts": self._generate_mock_accounts()
                 },
                 '/api/admin/transactions': {
                     "transactions": self.created_transactions + [
