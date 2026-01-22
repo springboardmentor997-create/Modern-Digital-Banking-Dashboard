@@ -1,0 +1,28 @@
+﻿# Dependencies
+node_modules
+.pnp
+.pnp.js
+venv/
+__pycache__/
+*.pyc
+
+# Distribution
+dist
+build
+
+# Env
+.env
+
+# Logs and Summaries
+ALL-ERRORS-FIXED-SUMMARY.md
+FINAL-FIXES-SUMMARY.md
+NO_DEPENDENCIES.txt
+requirements.txt.disabled
+runtime.txt
+SETUP_GUIDE.md
+Procfile
+
+# Misc
+.DS_Store
+.vscode
+frontend-only-repo/
